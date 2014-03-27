@@ -27,15 +27,17 @@ import edu.stanford.nlp.pipeline.POSTaggerAnnotator;
 import edu.stanford.nlp.pipeline.PTBTokenizerAnnotator;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.pipeline.WordsToSentencesAnnotator;
-import edu.stanford.nlp.trees.semgraph.SemanticGraph;
-import edu.stanford.nlp.trees.semgraph.SemanticGraphCoreAnnotations;
-import edu.stanford.nlp.trees.semgraph.SemanticGraphEdge;
+import edu.stanford.nlp.pipeline.XMLOutputter;
+import edu.stanford.nlp.semgraph.SemanticGraph;
+import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations;
+import edu.stanford.nlp.semgraph.SemanticGraphEdge;
+import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation;
+import edu.stanford.nlp.trees.GrammaticalStructureFactory;
+import edu.stanford.nlp.trees.EnglishGrammaticalStructureFactory;
+import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
-import edu.stanford.nlp.trees.semgraph.SemanticGraph;
-import edu.stanford.nlp.trees.semgraph.SemanticGraphCoreAnnotations;
-import edu.stanford.nlp.trees.semgraph.SemanticGraphEdge;
 import edu.stanford.nlp.util.CoreMap;
-import edu.stanford.nlp.trees.semgraph.SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation;
+
 
 /**
  * An in-memory version of the Annotated Gigaword pipeline, using only the
@@ -59,16 +61,14 @@ public class InMemoryAnnoPipeline {
     private WordsToSentencesAnnotator words2SentencesAnnotator;
     //NOTE: we're only using this for its annotationToDoc method
     private StanfordCoreNLP pipeline;
-
+    private static GrammaticalStructureFactory gsf = new EnglishGrammaticalStructureFactory();
     private static String[] documentLevelStages = {"pos", "lemma", "parse", "ner"};
 
     public InMemoryAnnoPipeline() {
         docCounter = 0;
-
         ptbTokenizer = new PTBTokenizerAnnotator();
         posTagger = new POSTaggerAnnotator();
         words2SentencesAnnotator = new WordsToSentencesAnnotator();
-        words2SentencesAnnotator.setOneSentence(false);
         Properties props = new Properties();
         String annotatorList = "tokenize, ssplit, pos, lemma, parse, ner";
         if (debug) {
@@ -86,7 +86,7 @@ public class InMemoryAnnoPipeline {
      * @return     An annotation object containing the tokenized and sentence-split 
      *             text.    
      */
-    public Annotation annotateSentence(String text){
+    public Annotation splitAndTokenizeText(String text){
         Annotation sentence = new Annotation(text);
         ptbTokenizer.annotate(sentence);
         words2SentencesAnnotator.annotate(sentence);
@@ -96,7 +96,7 @@ public class InMemoryAnnoPipeline {
     public AgigaDocument annotate(Annotation annotation) throws IOException {
         return annotate(pipeline, annotation);
     }
-    
+
     public static AgigaDocument annotate(StanfordCoreNLP pipeline, Annotation annotation) throws IOException {
         for(String stage : documentLevelStages){
             if(stage.equals("dcoref")){
@@ -162,6 +162,10 @@ public class InMemoryAnnoPipeline {
         return agigaDoc;
     }
 
+    private static void fillInParseAnnotations(boolean verbose, CoreMap sentence, Tree tree){
+        ParserAnnotatorUtils.fillInParseAnnotations(verbose, true, gsf, sentence, tree);
+    }
+
     /**
      * NOTICE: Copied and modified version from edu.jhu.annotation.GigawordAnnotator.
      * 
@@ -212,7 +216,7 @@ public class InMemoryAnnoPipeline {
             // AnnotatedGigaword)
             for (CoreMap sentence : anno.get(SentencesAnnotation.class)) {
                 try {
-                    ParserAnnotatorUtils.fillInParseAnnotations(false, sentence, sentence.get(TreeAnnotation.class));
+                    fillInParseAnnotations(false, sentence, sentence.get(TreeAnnotation.class));
                 } catch (Exception e) {
                     if (debug) {
                         System.err.println("Error filling in parse annotation for sentence " + sentence);
@@ -226,8 +230,7 @@ public class InMemoryAnnoPipeline {
                 Element thisSent = sentElems.get(i);
                 Element basicDepElem = thisSent.getFirstChildElement("basic-dependencies");
                 basicDepElem.removeChildren();
-                SemanticGraph semGraph = sentences.get(i).get(
-                                                              SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
+                SemanticGraph semGraph = sentences.get(i).get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
                 addDependencyToXML(semGraph, basicDepElem);
                 
                 Element colDepElem = thisSent.getFirstChildElement("collapsed-dependencies");
@@ -237,8 +240,7 @@ public class InMemoryAnnoPipeline {
                 
                 Element colCcDepElem = thisSent.getFirstChildElement("collapsed-ccprocessed-dependencies");
                 colCcDepElem.removeChildren();
-                semGraph = sentences.get(i).get(
-                                                SemanticGraphCoreAnnotations.CollapsedCCProcessedDependenciesAnnotation.class);
+                semGraph = sentences.get(i).get(SemanticGraphCoreAnnotations.CollapsedCCProcessedDependenciesAnnotation.class);
                 addDependencyToXML(semGraph, colCcDepElem);
             }
         }

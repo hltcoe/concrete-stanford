@@ -13,13 +13,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import edu.jhu.hlt.concrete.Communication;
-import edu.jhu.hlt.concrete.SectionSegmentation;
-import edu.jhu.hlt.concrete.Section;
-import edu.jhu.hlt.concrete.SectionKind;
-import edu.jhu.hlt.concrete.SentenceSegmentation;
-import edu.jhu.hlt.concrete.Sentence;
-import edu.jhu.hlt.concrete.util.Serialization;
+import edu.jhu.agiga.*;
+import edu.jhu.hlt.concrete.*;
+import edu.jhu.hlt.concrete.util.ThriftIO;
 
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreAnnotations.*;
@@ -30,6 +26,7 @@ import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.util.CoreMap;
 
+import org.apache.thrift.TException;
 
 public class StanfordAgigaPipe {
     static final String usage = "You must specify an input path: java edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe --input path/to/input/file --output path/to/output/file\n"
@@ -48,40 +45,23 @@ public class StanfordAgigaPipe {
     private String outputFile = null;
     private InMemoryAnnoPipeline pipeline;
 
-    private Set<String> annotateNames;
+    private Set<SectionKind> annotateNames;
     
     private int charOffset = 0;
-    private int tokenOffset = 0;
-    private int wordOffset = 0;
+    private int globalTokenOffset = 0;
 
-    public static void main(String[] args) throws IOException{
+    public static void main(String[] args) throws TException, IOException{
         StanfordAgigaPipe sap = new StanfordAgigaPipe(args);
         sap.go();
     }
 
     public StanfordAgigaPipe(String[] args) {
-        annotateNames = new HashSet<String>();
+        annotateNames = new HashSet<SectionKind>();
         parseArgs(args);
         if(inputFile == null || outputFile==null){
             System.err.println(usage);
             System.exit(1);
         }
-        // try {
-        //     //TODO
-        //     tbr = new ProtocolBufferReader(inputFile, Concrete.Communication.class);
-        // } catch(Exception e){
-        //     System.err.println("Trouble reading in theory file " + inputFile);
-        //     System.err.println(e.getMessage());
-        //     System.exit(1);
-        // }
-        // try {
-        //     //TODO
-        //     tbw = new ProtocolBufferWriter(outputFile);
-        // } catch(Exception e){
-        //     System.err.println("Trouble opening new output Thrift file " + outputFile);
-        //     System.err.println(e.getMessage());
-        //     System.exit(1);
-        // } 
         pipeline = new InMemoryAnnoPipeline();
     }
 
@@ -91,8 +71,8 @@ public class StanfordAgigaPipe {
         try {
             while (i < args.length) {
                 if(args[i].equals("--annotate-sections")){
-                    String toanno =args[++i].split(",");
-                    for(String t : toanno) annotateNames.add(t);
+                    String[] toanno =args[++i].split(",");
+                    for(String t : toanno) annotateNames.add(SectionKind.valueOf(t));
                     userAddedAnnotations = true;
                 }
                 // if(args[i].equals("--aggregate-by-first-section-number"))
@@ -111,47 +91,84 @@ public class StanfordAgigaPipe {
             System.err.println(usage);
             System.exit(1);
         }
-        if(!userAddedAnnotations) annotateNames.add("PASSAGE");
+        if(!userAddedAnnotations) annotateNames.add(SectionKind.PASSAGE);
     }
 
-    public void go() throws IOException{
-        Communication communication = Serialization.fromBytes(Files.readAllBytes(Paths.get(inputFile)));
-        runPipelineOnCommunicationSectionsAndSentences(comm);
-        if(debug) System.err.println(comm);
-        writeCommunication(comm);
+    public void go() throws TException, IOException{        
+        Communication communication = ThriftIO.readFile(inputFile);
+        runPipelineOnCommunicationSectionsAndSentences(communication);
+        if(debug) System.err.println(communication);
+        writeCommunication(communication);
     }
 
-    //TODO: keep track of all coref-able sections
-    private void runPipelineOnCommunicationSectionsAndSentences(Communication comm) {
+    /**
+     * Construct a dummy Annotation object that will serve as an aggregator.
+     * The properties SentencesAnnotation.class and TokensAnnotation.class are 
+     * initialized with lists of CoreMap and CoreLabel objects, respectively.
+     */
+    private Annotation getSeededDocumentAnnotation(){
+        Annotation documentAnnotation = new Annotation((String)null);
+        documentAnnotation.set(SentencesAnnotation.class, new ArrayList<CoreMap>());
+        documentAnnotation.set(TokensAnnotation.class, new ArrayList<CoreLabel>());
+        return documentAnnotation;
+    }
+
+    /**
+     * This steps through the given communication. For each section segmentation, it will
+     * go through each of the sections, first doing what localized processing it can (i.e., 
+     * all but coref resolution), and then doing the global processing (coref). 
+     */
+    public void runPipelineOnCommunicationSectionsAndSentences(Communication comm) {
         if (!comm.isSetText())
             throw new IllegalArgumentException("Expecting Communication Text.");
-        if (comm.getSectionSegmentationCount() == 0)
+        if (comm.getSectionSegmentations().size() == 0)
             throw new IllegalArgumentException("Expecting Communication SectionSegmentations.");
+
+        //if called multiple times, reset the sentence count
+        sentenceCount = 1;
 		
         String commText = comm.getText();
         List<Annotation> finishedAnnotations = new ArrayList<Annotation>();
-        sentenceCount = 1;
-        int[] numberOfSentences = new int[];
+
         for(SectionSegmentation sectionSegmentation : comm.getSectionSegmentations()){
             //TODO: get section and sentence segmentation info from metadata
             List<Section> sections = sectionSegmentation.getSectionList();
-            List<UUID> sectionUUIDs = new ArrayList<UUID>();
-            UUID sectionSegmentationUUID = sectionSegmentation.getUuid();
+            List<String> sectionUUIDs = new ArrayList<String>();
+            List<Integer> numberOfSentences = new ArrayList<Integer>();
+            List<Tokenization> tokenizations = new ArrayList<Tokenization>();
+            Annotation documentAnnotation = getSeededDocumentAnnotation();
+            String sectionSegmentationUUID = sectionSegmentation.getUuid();
             for (Section section : sections) {
-                List<CoreMap> sectionBuffer = new ArrayList<CoreMap>();
-                if ((section.isSetKind() && !annotateNames.contains(section.getKind()))
-                    || section.getSentenceSegmentation().size() == 0) continue;
-                sectionUUIDs.add(section.getUuid());
                 TextSpan sts= section.getTextSpan();
                 // 1) First *perform* the tokenization & sentence splits
-                //    and add those results to the buffer
-                sectionBuffer.add(pipeline.annotateSentence(commText.substr(sts.getStart(),
-                                                                            sts.getEnd())));
-                if(sectionBuffer.size() > 0)
-                    process(section, sectionSegmentationUUID, sectionUUIDs, numberOfSentences, sectionBuffer);
+                //    Note we do this first, even before checking the content-type
+                String sectionText = commText.substring(sts.getStart(), sts.getEnding());
+                Annotation a = pipeline.splitAndTokenizeText(sectionText);
+                if((section.isSetKind() && !annotateNames.contains(section.getKind()) ) || 
+                   section.getSentenceSegmentation().size() == 0) {
+                    //We MUST update the character offset
+                    charOffset += sectionText.length();
+                    //NOTE: It's possible we want to account for sentences in non-contentful sections
+                    //If that's the case, then we need to update the globalToken and sentence offset
+                    //variables correctly.
+                    if(a == null) continue;
+
+                    // List<CoreLabel> sentTokens = a.get(TokensAnnotation.class);
+                    // int tokenEnd = tokenOffset + sentTokens.size();
+                    // sentAnno.set(SentenceIndexAnnotation.class, sentIndex);
+                    // sentIndex++;
+                    // sentenceCount++;
+                    // tokenOffset = tokenEnd;
+                    // document.set(TokensAnnotation.class, docTokens);
+
+                    continue;
+                }
+                sectionUUIDs.add(section.getUuid());
+                // 2) Second, perform the other localized processing
+                processSection(section, a, documentAnnotation, tokenizations);
             }
+            // 3) Third, do coref; cross-reference against sectionUUIDs
         }
-        //Finally, run coref on all corefable sections
     }
 
     /**
@@ -176,12 +193,13 @@ public class StanfordAgigaPipe {
 
     /**
      * Ensures that there is actually something to process for 
-     * the current section.
+     * the current section. Note, this will not halt computation: 
+     * it will only produce a warning message.
      */
     private void validateSectionBuffer(List<CoreMap> sectionBuffer){
         //first cat all CoreMap objects in sectionBuffer into one
         if(sectionBuffer==null || sectionBuffer.size()==0){
-            System.err.println("For communication " + commToAnnotate +", no sentences found on this invocation");
+            System.err.println("no sentences found on this invocation");
         }
         if(debug){
             System.err.println("CALL TO PROCESS");
@@ -190,94 +208,71 @@ public class StanfordAgigaPipe {
     }
 	
     /**
-     * Convert a list of tokenized sentences into a document Annotation.<br/>
-     * If given no sentences, returns null.
+     * Convert tokenized sentences (<code>sentAnno</code>) into a document Annotation.<br/>
      *
-     * (Originally from anno-pipeline)
-     * 
      * @param sentences
      * @return
      */
-    public Annotation sentencesToSection(List<CoreMap> sentences) {
-        if (sentences.size() == 0) {
-            if (debug)
-                System.err.println("0 sentences");
-            return null;
+    public void sentencesToSection(CoreMap sentAnno, Annotation document) {
+        if (sentAnno == null) {
+            System.err.println("encountering null sentAnno");
+            return;
         }
         String docText = null;
-        Annotation document = new Annotation(docText);
-        document.set(SentencesAnnotation.class, sentences);
-        List<CoreLabel> docTokens = new ArrayList<CoreLabel>();
-        int sentIndex = sentenceCount;
-        System.err.println("converting list of CoreMap sentences to Annotations, starting at token offset " + tokenBegin);
-        for (CoreMap sentAnno : sentences) {
-            if (sentAnno == null) {
-                System.err.println("encountering null sentAnno");
-                continue;
-            }
-            List<CoreLabel> sentTokens = sentAnno.get(TokensAnnotation.class);
-            docTokens.addAll(sentTokens);
-            int tokenEnd = tokenOffset + sentTokens.size();
-            sentAnno.set(TokenBeginAnnotation.class, tokenOffset);
-            sentAnno.set(TokenEndAnnotation.class, tokenEnd);
-            sentAnno.set(SentenceIndexAnnotation.class, sentIndex);
-            sentIndex++;
-            sentenceCount++;
-            tokenOffset = tokenEnd;
-        }
+
+        List<CoreMap> docSents = document.get(SentencesAnnotation.class);
+        docSents.add(sentAnno);
+        document.set(SentencesAnnotation.class, docSents);
+        
+        List<CoreLabel> docTokens = document.get(TokensAnnotation.class);
+        System.err.println("converting list of CoreMap sentences to Annotations, starting at token offset " + globalTokenOffset);
+         
+        List<CoreLabel> sentTokens = sentAnno.get(TokensAnnotation.class);
+        docTokens.addAll(sentTokens);
+        int tokenEnd = globalTokenOffset + sentTokens.size();
+        sentAnno.set(TokenBeginAnnotation.class, globalTokenOffset);
+        sentAnno.set(TokenEndAnnotation.class, tokenEnd);
+        sentAnno.set(SentenceIndexAnnotation.class, sentenceCount++);
+        globalTokenOffset = tokenEnd;
         document.set(TokensAnnotation.class, docTokens);
+        
         for (CoreLabel token : docTokens) {
+            //note that character offsets are global
             String tokenText = token.get(TextAnnotation.class);
             token.set(CharacterOffsetBeginAnnotation.class, charOffset);
             charOffset += tokenText.length();
             token.set(CharacterOffsetEndAnnotation.class, charOffset);
             charOffset++; // Skip space
         }
-        for (CoreMap sentenceAnnotation : sentences) {
-            if (sentenceAnnotation == null) {
-                continue;
-            }
-            List<CoreLabel> sentenceTokens = sentenceAnnotation.get(TokensAnnotation.class);
-            sentenceAnnotation.set(CharacterOffsetBeginAnnotation.class,
-                                   sentenceTokens.get(0).get(CharacterOffsetBeginAnnotation.class));
-            sentenceAnnotation.set(CharacterOffsetEndAnnotation.class,
-                                   sentenceTokens.get(sentenceTokens.size() - 1).get(CharacterOffsetEndAnnotation.class));
-        }
-        return document;
+        List<CoreLabel> sentenceTokens = sentAnno.get(TokensAnnotation.class);
+        sentAnno.set(CharacterOffsetBeginAnnotation.class,
+                     sentenceTokens.get(0).get(CharacterOffsetBeginAnnotation.class));
+        sentAnno.set(CharacterOffsetEndAnnotation.class,
+                     sentenceTokens.get(sentenceTokens.size() - 1).get(CharacterOffsetEndAnnotation.class));
+
     }
 
     /**
-     * WARNING: This has the side effects of clearing sectionUUIDs and sectionBuffer.
-     * These two clears are imperative to this working correctly.
+     * Given a particular section ({@code section}) from a communication,
+     * further locally process {@code sentenceSplitText}; add those new 
+     * annotations to an aggregating {@code docAnnotation} to use for 
+     * later global processing.
      */
-    //Add all the annotations within the section buffer to section
-    public void process(Section section,
-                        UUID sectionSegmentationUUID,
-                        List<UUID> sectionUUIDs,
-                        int[] numberOfSentences,
-                        List<CoreMap> sectionBuffer) {
+    public void processSection(Section section,
+                               Annotation sentenceSplitText,
+                               Annotation docAnnotation,
+                               List<Tokenization> tokenizations){
         ////proposed
         // validateSectionBuffer(sectionBuffer);
         // Annotation annotation = sentencesToSection(sectionBuffer);
         // annotation = annotate(annotation);
         // pushAnnotationsToSection(annotation, section);
 
-        validateSectionBuffer(sectionBuffer);
-        Annotation annotation = sentencesToSection(sectionBuffer);
-        AgigaDocument agigaDoc = annotate(annotation);
-        AgigaConcreteAnnotator t = new AgigaConcreteAnnotator(debug);
-        t.annotate(commToAnnotate, sectionSegmentationUUID, sectionUUIDs, numberOfSentences, agigaDoc);
-        //FINALLY: clear the  lists
-        sectionBuffer.clear(); 
-        //sectionUUIDs.clear();
-        //return newcomm;
+        sentencesToSection(sentenceSplitText, docAnnotation);
+        AgigaDocument agigaDoc = annotate(sentenceSplitText);
+        AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(debug);
+        agigaToConcrete.convertSection(section, agigaDoc, tokenizations);
     }
-
-
-    private void pushAnnotationsToSection(Annotation annotation, Section section){
-        
-    }
-
 	
     /* This method contains code for transforming lists of Stanford's CoreLabels into 
      * Concrete tokenizations.  We might want to use it if we get rid of agiga. 
