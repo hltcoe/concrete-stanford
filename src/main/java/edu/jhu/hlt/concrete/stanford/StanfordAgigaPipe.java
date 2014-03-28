@@ -107,7 +107,7 @@ public class StanfordAgigaPipe {
      * initialized with lists of CoreMap and CoreLabel objects, respectively.
      */
     private Annotation getSeededDocumentAnnotation(){
-        Annotation documentAnnotation = new Annotation((String)null);
+        Annotation documentAnnotation = new Annotation("");
         documentAnnotation.set(SentencesAnnotation.class, new ArrayList<CoreMap>());
         documentAnnotation.set(TokensAnnotation.class, new ArrayList<CoreLabel>());
         return documentAnnotation;
@@ -130,6 +130,10 @@ public class StanfordAgigaPipe {
         String commText = comm.getText();
         List<Annotation> finishedAnnotations = new ArrayList<Annotation>();
 
+        System.out.println("Communication stats:");
+        System.out.println("\tid   = "+ comm.getId());
+        System.out.println("\tuuid = " + comm.getUuid());
+        System.out.println("\ttype = " + comm.getType());
         for(SectionSegmentation sectionSegmentation : comm.getSectionSegmentations()){
             //TODO: get section and sentence segmentation info from metadata
             List<Section> sections = sectionSegmentation.getSectionList();
@@ -137,15 +141,21 @@ public class StanfordAgigaPipe {
             List<Integer> numberOfSentences = new ArrayList<Integer>();
             List<Tokenization> tokenizations = new ArrayList<Tokenization>();
             Annotation documentAnnotation = getSeededDocumentAnnotation();
+            System.out.println("documentAnnotation = " + documentAnnotation);
             String sectionSegmentationUUID = sectionSegmentation.getUuid();
+            System.out.println("SectionSegmentation uuid = " + sectionSegmentation.getUuid());
             for (Section section : sections) {
                 TextSpan sts= section.getTextSpan();
                 // 1) First *perform* the tokenization & sentence splits
                 //    Note we do this first, even before checking the content-type
                 String sectionText = commText.substring(sts.getStart(), sts.getEnding());
                 Annotation a = pipeline.splitAndTokenizeText(sectionText);
-                if((section.isSetKind() && !annotateNames.contains(section.getKind()) ) || 
-                   section.getSentenceSegmentation().size() == 0) {
+                System.out.println("Section....");
+                System.out.println("\tuuid = " + section.getUuid());
+                System.out.println("\ttext = " + sectionText);
+                System.out.print("\tkind = ");
+                System.out.println(section.getKind() + " in annotateNames: " + annotateNames);
+                if(!annotateNames.contains(section.getKind())) { 
                     //We MUST update the character offset
                     charOffset += sectionText.length();
                     //NOTE: It's possible we want to account for sentences in non-contentful sections
@@ -218,7 +228,6 @@ public class StanfordAgigaPipe {
             System.err.println("encountering null sentAnno");
             return;
         }
-        String docText = null;
 
         List<CoreMap> docSents = document.get(SentencesAnnotation.class);
         docSents.add(sentAnno);
@@ -358,8 +367,8 @@ public class StanfordAgigaPipe {
 
 
     //TODO: NOT YET IMPLEMENTED
-    public void writeCommunication(Communication communication){
-        throw new RuntimeException("Not yet implemented :( ");
+    public void writeCommunication(Communication communication) throws IOException, TException{
+        ThriftIO.writeFile(outputFile, communication);
     }
 
 

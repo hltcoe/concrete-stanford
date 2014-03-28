@@ -7,13 +7,13 @@
   <version>1.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>concrete-stanford</name>
+  <name>anno-pipeline-2</name>
 
-  <parent>
-    <groupId>edu.jhu.parent</groupId>
-    <artifactId>parent</artifactId>
-    <version>1.0.0</version>
-  </parent>
+  <!-- <parent> -->
+  <!--   <groupId>edu.jhu.parent</groupId> -->
+  <!--   <artifactId>parent</artifactId> -->
+  <!--   <version>1.0.0</version> -->
+  <!-- </parent> -->
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -43,7 +43,7 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-core</artifactId>
-      <version>2.0.5</version>
+      <version>2.0.6</version>
     </dependency>
     <!-- change these dependencies -->
 
@@ -66,9 +66,10 @@
       <version>1.2</version>
     </dependency>
     <dependency>
-      <groupId>edu.jhu.hlt.concrete</groupId>
+      <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-agiga</artifactId>
-      <version>2.0.0-SNAPSHOT</version>
+      <version>2.0.0.0.1</version> 
+      <!-- <version>2.0.0-20140106.224620-2</version>-->
     </dependency>
 
   </dependencies>

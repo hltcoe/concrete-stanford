@@ -2,9 +2,12 @@ package edu.jhu.hlt.concrete.util;
 
 import edu.jhu.hlt.concrete.Communication;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 import org.apache.thrift.TDeserializer;
 import org.apache.thrift.TSerializer;
@@ -21,6 +24,12 @@ public class ThriftIO {
         return deserialized;
     }
 
+
+    public static void writeFile(String outputFile, Communication communication) throws IOException, TException {
+        byte[] bytez = new TSerializer(new TBinaryProtocol.Factory()).serialize(communication);
+        Path path = (new File(outputFile)).toPath();
+        Files.write(path, bytez, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+    }
 
 }
 

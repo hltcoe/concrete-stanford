@@ -3,7 +3,9 @@ package edu.jhu.hlt.concrete.stanford;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import nu.xom.Attribute;
@@ -99,11 +101,15 @@ public class InMemoryAnnoPipeline {
 
     public static AgigaDocument annotate(StanfordCoreNLP pipeline, Annotation annotation) throws IOException {
         for(String stage : documentLevelStages){
-            if(stage.equals("dcoref")){
-                fixNullDependencyGraphs(annotation);
-            }
+            if(debug) System.err.println("DEBUG: annotation stage = " + stage);
+            // if(stage.equals("dcoref")){
+            //     fixNullDependencyGraphs(annotation);
+            // }
             try{
                 (StanfordCoreNLP.getExistingAnnotator(stage)).annotate(annotation);
+                if(stage.equals("parse")){
+                    fixNullDependencyGraphs(annotation);
+                }
             } catch(Exception e){
                 System.err.println("Error annotating " + stage);
             }
@@ -228,23 +234,30 @@ public class InMemoryAnnoPipeline {
             Elements sentElems = docElem.getFirstChildElement("sentences").getChildElements("sentence");
             for (int i = 0; i < sentElems.size(); i++) {
                 Element thisSent = sentElems.get(i);
-                Element basicDepElem = thisSent.getFirstChildElement("basic-dependencies");
-                basicDepElem.removeChildren();
-                SemanticGraph semGraph = sentences.get(i).get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
-                addDependencyToXML(semGraph, basicDepElem);
-                
-                Element colDepElem = thisSent.getFirstChildElement("collapsed-dependencies");
-                colDepElem.removeChildren();
-                semGraph = sentences.get(i).get(SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation.class);
-                addDependencyToXML(semGraph, colDepElem);
-                
-                Element colCcDepElem = thisSent.getFirstChildElement("collapsed-ccprocessed-dependencies");
-                colCcDepElem.removeChildren();
-                semGraph = sentences.get(i).get(SemanticGraphCoreAnnotations.CollapsedCCProcessedDependenciesAnnotation.class);
-                addDependencyToXML(semGraph, colCcDepElem);
+                Elements allDependencyParses = thisSent.getChildElements("dependencies");
+                int numDParses = allDependencyParses.size();
+                for(int j = 0; j < numDParses; j++){
+                    Element depElem = allDependencyParses.get(j);
+                    Attribute att = depElem.getAttribute("type");
+                    String type = att.getValue();
+                    if(type == null) 
+                        throw new RuntimeException("null type in dependency element");
+                    depElem.removeChildren();
+                    depElem.setLocalName(type);
+                    SemanticGraph semGraph;
+                    if(type.equals("basic-dependencies"))
+                        semGraph = sentences.get(i).get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
+                    else if(type.equals("collapsed-dependencies"))
+                        semGraph = sentences.get(i).get(SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation.class);
+                    else if(type.equals("collapsed-ccprocessed-dependencies"))
+                        semGraph = sentences.get(i).get(SemanticGraphCoreAnnotations.CollapsedCCProcessedDependenciesAnnotation.class);
+                    else
+                        throw new RuntimeException("unknown dependency type " + type);
+                    addDependencyToXML(semGraph, depElem);                    
+                    depElem.removeAttribute(att);
+                }
             }
         }
-        
         return xmlDoc;
     }
 

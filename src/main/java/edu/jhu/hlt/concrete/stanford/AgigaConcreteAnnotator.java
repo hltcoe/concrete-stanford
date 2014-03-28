@@ -31,21 +31,17 @@ public class AgigaConcreteAnnotator {
     }
 		
     //private Communication comm;
-    private UUID sectionSegmentationId;
-    private List<UUID> sectionIds;
+    private String sectionSegmentationId;
+    private List<String> sectionIds;
     private AgigaDocument agigaDoc;
     private int agigaSentPtr = -1;
     private int sectionPtr = -1;
     // need to reference this in building corefs
     private List<Tokenization> tokenizations;
 
-    public static String uuidStr(UUID id) {
-        return id == null ? "null" : new java.util.UUID(id.getHigh(), id.getLow()).toString();
-    }
-
     public synchronized void convertCommunication(Communication comm,
-                                                  UUID sectionSegmentationId,
-                                                  UUID sectionId, // relevant sections (look inside for #sentences)
+                                                  String sectionSegmentationId,
+                                                  String sectionId, // relevant sections (look inside for #sentences)
                                                   AgigaDocument agigaDoc) {
 
         if(sectionIds.size() == 0) {
@@ -53,7 +49,7 @@ public class AgigaConcreteAnnotator {
         }
         if(debug){
             System.err.println("[AgigaConcreteAnnotator debug]");
-            System.err.println("sectionSegmentationId = " + uuidStr(sectionSegmentationId));
+            System.err.println("sectionSegmentationId = " + sectionSegmentationId);
         }
         this.timestamp = Calendar.getInstance().getTimeInMillis() / 1000;
         this.sectionSegmentationId = sectionSegmentationId;
@@ -83,7 +79,7 @@ public class AgigaConcreteAnnotator {
             }
             break;
         }
-        if(remove < 0) throw new RuntimeException("couldn't find SectionSegmentation with UUID=" + this.sectionSegmentationId);
+        if(remove < 0) throw new RuntimeException("couldn't find SectionSegmentation with String=" + this.sectionSegmentationId);
         if(this.tokenizations.size() != this.agigaDoc.getSents().size()) {
             throw new RuntimeException("#agigaSents=" + agigaDoc.getSents().size() + ", #tokenizations=" + tokenizations.size());
         }
@@ -106,9 +102,9 @@ public class AgigaConcreteAnnotator {
         assert n > 0 : "n="+n;
 
         // add them from source
-        UUID target = this.sectionIds.get(this.sectionPtr);
+        String target = this.sectionIds.get(this.sectionPtr);
         if(debug)
-            System.err.println("[f2] target=" + uuidStr(target));
+            System.err.println("[f2] target=" + target);
         for(Section section : in.getSectionList()) {
             if(debug)
                 System.err.printf("sectionPtr=%d sect.uuid=%s\n", sectionPtr, section.getUuid());
@@ -119,7 +115,7 @@ public class AgigaConcreteAnnotator {
                     target = this.sectionPtr < this.sectionIds.size()
                         ? this.sectionIds.get(this.sectionPtr)
                         : null;
-                    System.err.println("[f2] target=" + uuidStr(target));
+                    System.err.println("[f2] target=" + target);
                 }
             }
         }
