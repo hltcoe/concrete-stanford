@@ -98,10 +98,13 @@ public class InMemoryAnnoPipeline {
     public AgigaDocument annotate(Annotation annotation) throws IOException {
         return annotate(pipeline, annotation);
     }
+    public AgigaDocument annotateCoref(Annotation annotation) throws IOException {
+        return annotateCoref(pipeline, annotation);
+    }
 
     public static AgigaDocument annotate(StanfordCoreNLP pipeline, Annotation annotation) throws IOException {
         for(String stage : documentLevelStages){
-            if(debug) System.err.println("DEBUG: annotation stage = " + stage);
+            if(true || debug) System.err.println("DEBUG: annotation stage = " + stage);
             // if(stage.equals("dcoref")){
             //     fixNullDependencyGraphs(annotation);
             // }
@@ -114,6 +117,7 @@ public class InMemoryAnnoPipeline {
                 System.err.println("Error annotating " + stage);
             }
         }
+        System.out.println("Local processing annotation keys :: " + annotation.keySet().toString());
         // Convert to an XML document.
         Document xmlDoc = stanfordToXML(pipeline, annotation);        
         AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc);
@@ -124,6 +128,31 @@ public class InMemoryAnnoPipeline {
         }
         return agigaDoc;
     }
+
+    public static AgigaDocument annotateCoref(StanfordCoreNLP pipeline, Annotation annotation) throws IOException {
+        String stage = "dcoref";
+        System.err.println("DEBUG: annotation stage = " + stage);
+        fixNullDependencyGraphs(annotation);
+        try{
+            (StanfordCoreNLP.getExistingAnnotator(stage)).annotate(annotation);
+        } catch(Exception e){
+            System.err.println("Error annotating " + stage);
+            System.err.println(stage + " error is \n\t" + e.getMessage());
+            System.err.println("Stack trace: ");
+            e.printStackTrace();
+        }
+        System.out.println("annotation keys :: " + annotation.keySet().toString());
+        // Convert to an XML document.
+        Document xmlDoc = stanfordToXML(pipeline, annotation);        
+        AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc);
+        if(debug){
+            System.err.println("agigaDoc has " + agigaDoc.getSents().size() + " sentences");
+            System.err.println("annotation has " + annotation.get(SentencesAnnotation.class).size());
+            System.err.println("annotation has " + annotation.get(SentencesAnnotation.class));
+        }
+        return agigaDoc;
+    }
+
 
     /**
      * sentences with no dependency structure have null values for the various
@@ -260,6 +289,62 @@ public class InMemoryAnnoPipeline {
         }
         return xmlDoc;
     }
+
+    /**
+     * NOTICE: Copied and modified version from edu.jhu.annotation.GigawordAnnotator.
+     * 
+     * Create the XML document, using the base StanfordCoreNLP default and
+     * adding custom dependency representations (to include root elements)
+     * 
+     * @param anno Document to be output as XML
+     * @throws IOException
+     */
+    public static Document corefToXML(StanfordCoreNLP pipeline, Annotation anno) {
+        Document xmlDoc = XMLOutputter.annotationToDoc(anno, pipeline);        
+
+        Element root = xmlDoc.getRootElement();
+        Element docElem = (Element) root.getChild(0);
+        
+        // The document element will be a <document/> tag, but must be a <DOC/>.
+        docElem.setLocalName("DOC");
+        
+        // Add empty id and type attributes to the <DOC>.
+        docElem.addAttribute(new Attribute("id", Integer.toString(docCounter++)));
+        docElem.addAttribute(new Attribute("type", "NONE"));
+        
+        // Add an empty id attribute to each sentence. 
+        Elements sents = docElem.getFirstChildElement("sentences").getChildElements("sentence");
+        for (int i = 0; i < sents.size(); i++) {
+            Element thisSent = sents.get(i);
+            thisSent.addAttribute(new Attribute("id", Integer.toString(i)));
+        }
+        
+        // rename coreference parent tag to "coreferences"
+        Element corefElem = docElem.getFirstChildElement("coreference");
+        // because StanfordCoreNLP.annotationToDoc() only appends the coref
+        // element if it is nonempty (per Ben's request)
+        if (corefElem == null) {
+            Element corefInfo = new Element("coreferences", null);
+            docElem.appendChild(corefInfo);
+        } else {
+            corefElem.setLocalName("coreferences");
+        }
+
+        for (CoreMap sentence : anno.get(SentencesAnnotation.class)) {
+            try {
+                fillInParseAnnotations(false, sentence, sentence.get(TreeAnnotation.class));
+            } catch (Exception e) {
+                if (debug) {
+                    System.err.println("Error filling in parse annotation for sentence " + sentence);
+                }
+            }
+
+        }
+
+
+        return xmlDoc;
+    }
+
 
     /**
      * NOTICE: Copied from edu.jhu.annotation.GigawordAnnotator.

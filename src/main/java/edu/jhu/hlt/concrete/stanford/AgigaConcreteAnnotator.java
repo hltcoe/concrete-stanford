@@ -66,6 +66,18 @@ public class AgigaConcreteAnnotator {
         addSentenceSegmentation(section, agigaDoc, tokenizations);
     }
 	
+    public synchronized void convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations){
+        EntityMentionSet ems = new EntityMentionSet().setUuid(UUIDGenerator.make()).setMetadata(metadata());
+        List<Entity> elist = new LinkedList<Entity>();
+        for(AgigaCoref coref : agigaDoc.getCorefs()) {
+            Entity e = AgigaConverter.convertCoref(ems, coref, agigaDoc, tokenizations);
+            elist.add(e);
+        }
+        in.addToEntityMentionSets(ems);
+        in.addToEntitySets(new EntitySet().setUuid(UUIDGenerator.make()).setMetadata(metadata()).setEntityList(elist));
+    }
+
+
     // get appropriate section segmentation, and change it
     private void flushCommunication(Communication in, boolean transferCorefs) {
         SectionSegmentation newSS = null;

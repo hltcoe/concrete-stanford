@@ -134,6 +134,7 @@ public class StanfordAgigaPipe {
         System.out.println("\tid   = "+ comm.getId());
         System.out.println("\tuuid = " + comm.getUuid());
         System.out.println("\ttype = " + comm.getType());
+        System.out.println("\tfull = " + commText);
         for(SectionSegmentation sectionSegmentation : comm.getSectionSegmentations()){
             //TODO: get section and sentence segmentation info from metadata
             List<Section> sections = sectionSegmentation.getSectionList();
@@ -178,6 +179,7 @@ public class StanfordAgigaPipe {
                 processSection(section, a, documentAnnotation, tokenizations);
             }
             // 3) Third, do coref; cross-reference against sectionUUIDs
+            processCoref(comm, documentAnnotation, tokenizations);
         }
     }
 
@@ -201,6 +203,15 @@ public class StanfordAgigaPipe {
         }
     }
 
+    public AgigaDocument annotateCoref(Annotation annotation) {
+        try {
+            return pipeline.annotateCoref(annotation);
+        } catch(IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
     /**
      * Ensures that there is actually something to process for 
      * the current section. Note, this will not halt computation: 
@@ -220,46 +231,77 @@ public class StanfordAgigaPipe {
     /**
      * Convert tokenized sentences (<code>sentAnno</code>) into a document Annotation.<br/>
      *
-     * @param sentences
-     * @return
      */
-    public void sentencesToSection(CoreMap sentAnno, Annotation document) {
-        if (sentAnno == null) {
-            System.err.println("encountering null sentAnno");
+    public void sentencesToSection(CoreMap sectAnno, Annotation document) {
+        if (sectAnno == null) {
+            System.err.println("encountering null annotated section");
             return;
         }
 
         List<CoreMap> docSents = document.get(SentencesAnnotation.class);
-        docSents.add(sentAnno);
-        document.set(SentencesAnnotation.class, docSents);
-        
         List<CoreLabel> docTokens = document.get(TokensAnnotation.class);
         System.err.println("converting list of CoreMap sentences to Annotations, starting at token offset " + globalTokenOffset);
          
-        List<CoreLabel> sentTokens = sentAnno.get(TokensAnnotation.class);
-        docTokens.addAll(sentTokens);
-        int tokenEnd = globalTokenOffset + sentTokens.size();
-        sentAnno.set(TokenBeginAnnotation.class, globalTokenOffset);
-        sentAnno.set(TokenEndAnnotation.class, tokenEnd);
-        sentAnno.set(SentenceIndexAnnotation.class, sentenceCount++);
-        globalTokenOffset = tokenEnd;
-        document.set(TokensAnnotation.class, docTokens);
-        
-        for (CoreLabel token : docTokens) {
-            //note that character offsets are global
-            String tokenText = token.get(TextAnnotation.class);
-            token.set(CharacterOffsetBeginAnnotation.class, charOffset);
-            charOffset += tokenText.length();
-            token.set(CharacterOffsetEndAnnotation.class, charOffset);
-            charOffset++; // Skip space
+        List<CoreMap> sentAnnos = sectAnno.get(SentencesAnnotation.class);
+        int maxCharEnding = -1;
+        for(CoreMap sentAnno : sentAnnos) {
+            List<CoreLabel> sentTokens = sentAnno.get(TokensAnnotation.class);
+            int tokenEnd = globalTokenOffset + sentTokens.size();
+            sentAnno.set(TokenBeginAnnotation.class, globalTokenOffset);
+            sentAnno.set(TokenEndAnnotation.class, tokenEnd);
+            sentAnno.set(SentenceIndexAnnotation.class, sentenceCount++);
+            System.out.println("SENTENCEINDEXANNO = " + sentAnno.get(SentenceIndexAnnotation.class));
+            globalTokenOffset = tokenEnd;
+
+            for (CoreLabel token : sentTokens) {
+                //note that character offsets are global
+                String tokenText = token.get(TextAnnotation.class);
+                token.set(CharacterOffsetBeginAnnotation.class, charOffset);
+                charOffset += tokenText.length();
+                token.set(CharacterOffsetEndAnnotation.class, charOffset);
+                charOffset++; // Skip space
+            }
+            sentAnno.set(TokensAnnotation.class, sentTokens);
+
+            sentAnno.set(CharacterOffsetBeginAnnotation.class,
+                         sentTokens.get(0).get(CharacterOffsetBeginAnnotation.class));
+            sentAnno.set(CharacterOffsetEndAnnotation.class,
+                         sentTokens.get(sentTokens.size() - 1).get(CharacterOffsetEndAnnotation.class));
+
+            System.out.print("docTokens.size before = " + docTokens.size());
+            docTokens.addAll(sentTokens);
+            System.out.print("\t after = " + docTokens.size());
+            document.set(TokensAnnotation.class, docTokens);
+            System.out.println("\t retrieved = " + document.get(TokensAnnotation.class).size());
+            docSents.add(sentAnno);
+            if(sentAnno.get(CharacterOffsetEndAnnotation.class) > maxCharEnding)
+                maxCharEnding = sentAnno.get(CharacterOffsetEndAnnotation.class);
         }
-        List<CoreLabel> sentenceTokens = sentAnno.get(TokensAnnotation.class);
-        sentAnno.set(CharacterOffsetBeginAnnotation.class,
-                     sentenceTokens.get(0).get(CharacterOffsetBeginAnnotation.class));
-        sentAnno.set(CharacterOffsetEndAnnotation.class,
-                     sentenceTokens.get(sentenceTokens.size() - 1).get(CharacterOffsetEndAnnotation.class));
+        document.set(SentencesAnnotation.class, docSents);
+        Integer oldDocCharE = document.get(CharacterOffsetEndAnnotation.class);
+        if(oldDocCharE != null && maxCharEnding < oldDocCharE)
+            throw new RuntimeException("The max char ending for this section (" + maxCharEnding + ") is less than the current document char ending ( " + oldDocCharE + ")");
+        document.set(CharacterOffsetEndAnnotation.class, maxCharEnding);
 
     }
+
+    public void transferAnnotations(Annotation section, Annotation document) {
+        List<CoreMap> sectionSents  =  section.get(SentencesAnnotation.class);
+        ArrayList<CoreMap> documentSents = (ArrayList<CoreMap>)document.get(SentencesAnnotation.class);
+        System.out.println("\t******Document sents*********");
+        for(CoreMap sectSent : sectionSents){
+            int idx = sectSent.get(SentenceIndexAnnotation.class)-1;
+            System.out.println("My index is " + idx +" (" + sectSent.get(SentenceIndexAnnotation.class) + "), and can access up to " + documentSents.size() + " sentences globally");
+            CoreMap dSent = documentSents.get(idx);
+            dSent.set(TreeAnnotation.class, sectSent.get(TreeAnnotation.class));
+            System.out.println(dSent.get(TreeAnnotation.class));
+            System.out.println(dSent.get(TreeAnnotation.class).getLeaves());
+            System.out.println(sectSent.get(TokensAnnotation.class));
+            System.out.println(idx + " --> "+ dSent.get(TokensAnnotation.class));
+        }
+        //tree = sentence.get(TreeCoreAnnotations.TreeAnnotation.class);
+    }
+
 
     /**
      * Given a particular section ({@code section}) from a communication,
@@ -271,18 +313,53 @@ public class StanfordAgigaPipe {
                                Annotation sentenceSplitText,
                                Annotation docAnnotation,
                                List<Tokenization> tokenizations){
-        ////proposed
-        // validateSectionBuffer(sectionBuffer);
-        // Annotation annotation = sentencesToSection(sectionBuffer);
-        // annotation = annotate(annotation);
-        // pushAnnotationsToSection(annotation, section);
-
         sentencesToSection(sentenceSplitText, docAnnotation);
+        System.out.println("after sentencesToSection, before annotating");
+        for(CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class)){
+            System.out.println(cm.get(SentenceIndexAnnotation.class));
+        }
         AgigaDocument agigaDoc = annotate(sentenceSplitText);
+        System.out.println("after annotating");
+        for(CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class)){
+            System.out.println(cm.get(SentenceIndexAnnotation.class));
+        }
+        transferAnnotations(sentenceSplitText, docAnnotation);
         AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(debug);
         agigaToConcrete.convertSection(section, agigaDoc, tokenizations);
     }
-	
+
+    public void processCoref(Communication comm,
+                             Annotation docAnnotation,
+                             List<Tokenization> tokenizations){
+        AgigaDocument agigaDoc = annotateCoref(docAnnotation);
+        AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(debug);
+        agigaToConcrete.convertCoref(comm, agigaDoc, tokenizations);
+    }
+
+    public void writeCommunication(Communication communication) throws IOException, TException{
+        ThriftIO.writeFile(outputFile, communication);
+    }
+
+
+    /**
+     * convert a tree t to its token representation
+     * 
+     * @param t
+     * @return
+     * @throws IOException
+     */
+    protected String getText(Tree t) throws IOException {
+        StringBuffer sb = new StringBuffer();
+        if (t == null) {
+            return null;
+        }
+        for (Tree tt : t.getLeaves()) {
+            sb.append(tt.value());
+            sb.append(" ");
+        }
+        return sb.toString().trim();
+    }
+
     /* This method contains code for transforming lists of Stanford's CoreLabels into 
      * Concrete tokenizations.  We might want to use it if we get rid of agiga. 
      */
@@ -363,31 +440,4 @@ public class StanfordAgigaPipe {
 		
     // 	return tokenization;
     // }
-
-
-
-    //TODO: NOT YET IMPLEMENTED
-    public void writeCommunication(Communication communication) throws IOException, TException{
-        ThriftIO.writeFile(outputFile, communication);
-    }
-
-
-    /**
-     * convert a tree t to its token representation
-     * 
-     * @param t
-     * @return
-     * @throws IOException
-     */
-    protected String getText(Tree t) throws IOException {
-        StringBuffer sb = new StringBuffer();
-        if (t == null) {
-            return null;
-        }
-        for (Tree tt : t.getLeaves()) {
-            sb.append(tt.value());
-            sb.append(" ");
-        }
-        return sb.toString().trim();
-    }
 }
