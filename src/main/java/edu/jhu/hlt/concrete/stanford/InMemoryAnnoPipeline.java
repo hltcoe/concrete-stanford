@@ -52,7 +52,7 @@ public class InMemoryAnnoPipeline {
 
   private static final boolean do_deps = true;
   // Document counter.
-  private static int docCounter;
+  private int docCounter;
 
   private PTBTokenizerAnnotator ptbTokenizer;
   // private POSTaggerAnnotator posTagger;
@@ -99,7 +99,7 @@ public class InMemoryAnnoPipeline {
     return annotateCoref(pipeline, annotation);
   }
 
-  public static AgigaDocument annotate(StanfordCoreNLP pipeline, Annotation annotation) throws IOException {
+  public AgigaDocument annotate(StanfordCoreNLP pipeline, Annotation annotation) throws IOException {
     for (String stage : documentLevelStages) {
       logger.debug("DEBUG: annotation stage = " + stage);
       // if(stage.equals("dcoref")){
@@ -117,7 +117,7 @@ public class InMemoryAnnoPipeline {
     
     logger.debug("Local processing annotation keys :: " + annotation.keySet().toString());
     // Convert to an XML document.
-    Document xmlDoc = stanfordToXML(pipeline, annotation);
+    Document xmlDoc = this.stanfordToXML(pipeline, annotation);
     AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc);
 
     logger.debug("agigaDoc has " + agigaDoc.getSents().size() + " sentences");
@@ -127,22 +127,20 @@ public class InMemoryAnnoPipeline {
     return agigaDoc;
   }
 
-  public static AgigaDocument annotateCoref(StanfordCoreNLP pipeline, Annotation annotation) throws IOException {
+  public AgigaDocument annotateCoref(StanfordCoreNLP pipeline, Annotation annotation) throws IOException {
     String stage = "dcoref";
     logger.debug("DEBUG: annotation stage = " + stage);
     fixNullDependencyGraphs(annotation);
     try {
       (StanfordCoreNLP.getExistingAnnotator(stage)).annotate(annotation);
     } catch (Exception e) {
-      logger.debug("Error annotating " + stage);
-      logger.debug(stage + " error is \n\t" + e.getMessage());
-      logger.debug("Stack trace: ");
-      e.printStackTrace();
+      logger.debug("Error annotating: {}", stage);
+      logger.debug(e.getMessage(), e);
     }
     
     logger.debug("annotation keys :: " + annotation.keySet().toString());
     // Convert to an XML document.
-    Document xmlDoc = stanfordToXML(pipeline, annotation);
+    Document xmlDoc = this.stanfordToXML(pipeline, annotation);
     AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc);
     logger.debug("agigaDoc has " + agigaDoc.getSents().size() + " sentences");
     logger.debug("annotation has " + annotation.get(SentencesAnnotation.class).size());
@@ -204,7 +202,7 @@ public class InMemoryAnnoPipeline {
    *          Document to be output as XML
    * @throws IOException
    */
-  public static Document stanfordToXML(StanfordCoreNLP pipeline, Annotation anno) {
+  public Document stanfordToXML(StanfordCoreNLP pipeline, Annotation anno) {
     Document xmlDoc = XMLOutputter.annotationToDoc(anno, pipeline);
 
     Element root = xmlDoc.getRootElement();
@@ -289,7 +287,7 @@ public class InMemoryAnnoPipeline {
    *          Document to be output as XML
    * @throws IOException
    */
-  public static Document corefToXML(StanfordCoreNLP pipeline, Annotation anno) {
+  public Document corefToXML(StanfordCoreNLP pipeline, Annotation anno) {
     Document xmlDoc = XMLOutputter.annotationToDoc(anno, pipeline);
 
     Element root = xmlDoc.getRootElement();
