@@ -113,7 +113,7 @@ public class InMemoryAnnoPipeline {
       }
     }
     
-    logger.info("Local processing annotation keys :: " + annotation.keySet().toString());
+    logger.debug("Local processing annotation keys :: " + annotation.keySet().toString());
     // Convert to an XML document.
     Document xmlDoc = stanfordToXML(pipeline, annotation);
     AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc);
@@ -137,7 +137,8 @@ public class InMemoryAnnoPipeline {
       logger.debug("Stack trace: ");
       e.printStackTrace();
     }
-    logger.info("annotation keys :: " + annotation.keySet().toString());
+    
+    logger.debug("annotation keys :: " + annotation.keySet().toString());
     // Convert to an XML document.
     Document xmlDoc = stanfordToXML(pipeline, annotation);
     AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc);
@@ -173,7 +174,7 @@ public class InMemoryAnnoPipeline {
     ser.write(xmlDoc);
     ser.flush();
 
-    logger.info(baos.toString("UTF-8"));
+    logger.debug(baos.toString("UTF-8"));
 
     AgigaPrefs agigaPrefs = new AgigaPrefs();
     agigaPrefs.setAll(true);

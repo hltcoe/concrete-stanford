@@ -137,32 +137,29 @@ public class StanfordAgigaPipe {
     String commText = comm.getText();
     List<Annotation> finishedAnnotations = new ArrayList<Annotation>();
 
-    logger.info("Communication stats:");
-    logger.info("\tid   = " + comm.getId());
-    logger.info("\tuuid = " + comm.getUuid());
-    logger.info("\ttype = " + comm.getType());
-    logger.info("\tfull = " + commText);
+    logger.info("Annotating communication: {}", comm.getId());
+    logger.debug("\tuuid = " + comm.getUuid());
+    logger.debug("\ttype = " + comm.getType());
+    logger.debug("\tfull = " + commText);
     for (SectionSegmentation sectionSegmentation : comm.getSectionSegmentations()) {
       // TODO: get section and sentence segmentation info from metadata
       List<Section> sections = sectionSegmentation.getSectionList();
       List<String> sectionUUIDs = new ArrayList<String>();
-      List<Integer> numberOfSentences = new ArrayList<Integer>();
+      // List<Integer> numberOfSentences = new ArrayList<Integer>();
       List<Tokenization> tokenizations = new ArrayList<Tokenization>();
       Annotation documentAnnotation = getSeededDocumentAnnotation();
-      logger.info("documentAnnotation = " + documentAnnotation);
-      String sectionSegmentationUUID = sectionSegmentation.getUuid();
-      logger.info("SectionSegmentation uuid = " + sectionSegmentation.getUuid());
+      logger.debug("documentAnnotation = " + documentAnnotation);
+      logger.info("Annotating SectionSegmentation: {}", sectionSegmentation.getUuid());
       for (Section section : sections) {
         TextSpan sts = section.getTextSpan();
         // 1) First *perform* the tokenization & sentence splits
         // Note we do this first, even before checking the content-type
         String sectionText = commText.substring(sts.getStart(), sts.getEnding());
         Annotation a = pipeline.splitAndTokenizeText(sectionText);
-        logger.info("Section....");
-        logger.info("\tuuid = " + section.getUuid());
-        logger.info("\ttext = " + sectionText);
-        System.out.print("\tkind = ");
-        logger.info(section.getKind() + " in annotateNames: " + annotateNames);
+        logger.info("Annotating Section: {}", section.getUuid());
+        logger.debug("\ttext = " + sectionText);
+        logger.debug("\tkind = ");
+        logger.debug(section.getKind() + " in annotateNames: " + annotateNames);
         if (!annotateNames.contains(section.getKind())) {
           // We MUST update the character offset
           charOffset += sectionText.length();
@@ -238,7 +235,7 @@ public class StanfordAgigaPipe {
    */
   public void sentencesToSection(CoreMap sectAnno, Annotation document) {
     if (sectAnno == null) {
-      logger.debug("encountering null annotated section");
+      logger.warn("Encountered null annotated section. Skipping.");
       return;
     }
 
@@ -254,7 +251,7 @@ public class StanfordAgigaPipe {
       sentAnno.set(TokenBeginAnnotation.class, globalTokenOffset);
       sentAnno.set(TokenEndAnnotation.class, tokenEnd);
       sentAnno.set(SentenceIndexAnnotation.class, sentenceCount++);
-      logger.info("SENTENCEINDEXANNO = " + sentAnno.get(SentenceIndexAnnotation.class));
+      logger.debug("SENTENCEINDEXANNO = " + sentAnno.get(SentenceIndexAnnotation.class));
       globalTokenOffset = tokenEnd;
 
       for (CoreLabel token : sentTokens) {
@@ -270,11 +267,11 @@ public class StanfordAgigaPipe {
       sentAnno.set(CharacterOffsetBeginAnnotation.class, sentTokens.get(0).get(CharacterOffsetBeginAnnotation.class));
       sentAnno.set(CharacterOffsetEndAnnotation.class, sentTokens.get(sentTokens.size() - 1).get(CharacterOffsetEndAnnotation.class));
 
-      logger.info("docTokens.size before = " + docTokens.size());
+      logger.debug("docTokens.size before = " + docTokens.size());
       docTokens.addAll(sentTokens);
-      logger.info("\t after = " + docTokens.size());
+      logger.debug("\t after = " + docTokens.size());
       document.set(TokensAnnotation.class, docTokens);
-      logger.info("\t retrieved = " + document.get(TokensAnnotation.class).size());
+      logger.debug("\t retrieved = " + document.get(TokensAnnotation.class).size());
       docSents.add(sentAnno);
       if (sentAnno.get(CharacterOffsetEndAnnotation.class) > maxCharEnding)
         maxCharEnding = sentAnno.get(CharacterOffsetEndAnnotation.class);
@@ -291,17 +288,17 @@ public class StanfordAgigaPipe {
   public void transferAnnotations(Annotation section, Annotation document) {
     List<CoreMap> sectionSents = section.get(SentencesAnnotation.class);
     ArrayList<CoreMap> documentSents = (ArrayList<CoreMap>) document.get(SentencesAnnotation.class);
-    logger.info("\t******Document sents*********");
+    logger.debug("\t******Document sents*********");
     for (CoreMap sectSent : sectionSents) {
       int idx = sectSent.get(SentenceIndexAnnotation.class) - 1;
-      logger.info("My index is " + idx + " (" + sectSent.get(SentenceIndexAnnotation.class) + "), and can access up to " + documentSents.size()
+      logger.debug("My index is " + idx + " (" + sectSent.get(SentenceIndexAnnotation.class) + "), and can access up to " + documentSents.size()
           + " sentences globally");
       CoreMap dSent = documentSents.get(idx);
       dSent.set(TreeAnnotation.class, sectSent.get(TreeAnnotation.class));
-      logger.info(dSent.get(TreeAnnotation.class).toString());
-      logger.info(dSent.get(TreeAnnotation.class).getLeaves().toString());
-      logger.info(sectSent.get(TokensAnnotation.class).toString());
-      logger.info(idx + " --> " + dSent.get(TokensAnnotation.class));
+      logger.debug(dSent.get(TreeAnnotation.class).toString());
+      logger.debug(dSent.get(TreeAnnotation.class).getLeaves().toString());
+      logger.debug(sectSent.get(TokensAnnotation.class).toString());
+      logger.debug(idx + " --> " + dSent.get(TokensAnnotation.class));
     }
     // tree = sentence.get(TreeCoreAnnotations.TreeAnnotation.class);
   }
@@ -312,15 +309,16 @@ public class StanfordAgigaPipe {
    */
   public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, List<Tokenization> tokenizations) {
     sentencesToSection(sentenceSplitText, docAnnotation);
-    logger.info("after sentencesToSection, before annotating");
+    logger.debug("after sentencesToSection, before annotating");
     for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class)) {
-      logger.info(cm.get(SentenceIndexAnnotation.class).toString());
+      logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
     }
     AgigaDocument agigaDoc = annotate(sentenceSplitText);
-    logger.info("after annotating");
+    logger.debug("after annotating");
     for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class)) {
-      logger.info(cm.get(SentenceIndexAnnotation.class).toString());
+      logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
     }
+    
     transferAnnotations(sentenceSplitText, docAnnotation);
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator();
     agigaToConcrete.convertSection(section, agigaDoc, tokenizations);

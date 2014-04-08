@@ -22,6 +22,7 @@ public class AgigaConcreteAnnotator {
   
   private static final Logger logger = LoggerFactory.getLogger(AgigaConcreteAnnotator.class);
 
+  private boolean debug = false;
   private long timestamp;
 
   public AgigaConcreteAnnotator() {
@@ -167,6 +168,7 @@ public class AgigaConcreteAnnotator {
     AgigaSentence asent = ad.getSents().get(sentPtr[0]++);
     // tokenization has all the annotations
     Tokenization tok = AgigaConverter.convertTokenization(asent);
+    tokenizations.add(tok);
     return tok;
   }
 
