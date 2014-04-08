@@ -72,7 +72,9 @@ public class InMemoryAnnoPipeline {
     logger.debug("Using annotators " + annotatorList);
 
     props.put("annotators", annotatorList);
+    logger.info("Loading models and resources.");
     pipeline = new StanfordCoreNLP(props);
+    logger.info("Done.");
   }
 
   /**

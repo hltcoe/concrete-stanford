@@ -1,6 +1,9 @@
 package edu.jhu.hlt.concrete.stanford;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -12,6 +15,8 @@ import org.slf4j.LoggerFactory;
 
 import edu.jhu.agiga.AgigaDocument;
 import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.concrete.EntityMentionSet;
+import edu.jhu.hlt.concrete.EntitySet;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.SectionKind;
 import edu.jhu.hlt.concrete.SectionSegmentation;
@@ -57,8 +62,19 @@ public class StanfordAgigaPipe {
   private int globalTokenOffset = 0;
 
   public static void main(String[] args) throws TException, IOException {
+    // this is silly, but needed for stanford logging disable.
+    PrintStream err = System.err;
+    
+    System.setErr(new PrintStream(new OutputStream() {
+      public void write(int b) { }
+    }));
+    
     StanfordAgigaPipe sap = new StanfordAgigaPipe(args);
+    logger.info("Beginning annotation.");
     sap.go();
+    logger.info("Finished.");
+    
+    System.setErr(err);
   }
 
   public StanfordAgigaPipe(String[] args) {
@@ -68,6 +84,7 @@ public class StanfordAgigaPipe {
       logger.info(usage);
       System.exit(1);
     }
+    
     pipeline = new InMemoryAnnoPipeline();
   }
 
@@ -135,7 +152,7 @@ public class StanfordAgigaPipe {
     sentenceCount = 1;
 
     String commText = comm.getText();
-    List<Annotation> finishedAnnotations = new ArrayList<Annotation>();
+    // List<Annotation> finishedAnnotations = new ArrayList<Annotation>();
 
     logger.info("Annotating communication: {}", comm.getId());
     logger.debug("\tuuid = " + comm.getUuid());
@@ -181,9 +198,12 @@ public class StanfordAgigaPipe {
         }
         sectionUUIDs.add(section.getUuid());
         // 2) Second, perform the other localized processing
+        logger.info("Additional processing on section: {}", section.getUuid());
         processSection(section, a, documentAnnotation, tokenizations);
       }
+      
       // 3) Third, do coref; cross-reference against sectionUUIDs
+      logger.info("Running coref.");
       processCoref(comm, documentAnnotation, tokenizations);
     }
   }
@@ -327,7 +347,9 @@ public class StanfordAgigaPipe {
   public void processCoref(Communication comm, Annotation docAnnotation, List<Tokenization> tokenizations) {
     AgigaDocument agigaDoc = annotateCoref(docAnnotation);
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator();
-    agigaToConcrete.convertCoref(comm, agigaDoc, tokenizations);
+    SimpleEntry<EntityMentionSet, EntitySet> tuple = agigaToConcrete.convertCoref(comm, agigaDoc, tokenizations); 
+    comm.addToEntityMentionSets(tuple.getKey());
+    comm.addToEntitySets(tuple.getValue());
   }
 
   public void writeCommunication(Communication communication) throws IOException, TException {

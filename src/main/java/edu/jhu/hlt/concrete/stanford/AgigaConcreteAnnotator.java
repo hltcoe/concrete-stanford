@@ -10,6 +10,9 @@ import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
+import java.util.AbstractMap.SimpleEntry;
+
+import javax.xml.crypto.dsig.keyinfo.KeyValue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +24,6 @@ import org.slf4j.LoggerFactory;
 public class AgigaConcreteAnnotator {
   
   private static final Logger logger = LoggerFactory.getLogger(AgigaConcreteAnnotator.class);
-
-  private boolean debug = false;
   private long timestamp;
 
   public AgigaConcreteAnnotator() {
@@ -36,7 +37,7 @@ public class AgigaConcreteAnnotator {
   private String sectionSegmentationId;
   private List<String> sectionIds;
   private AgigaDocument agigaDoc;
-  private int agigaSentPtr = -1;
+  // private int agigaSentPtr = -1;
   private int sectionPtr = -1;
   // need to reference this in building corefs
   private List<Tokenization> tokenizations;
@@ -52,30 +53,37 @@ public class AgigaConcreteAnnotator {
     logger.debug("[AgigaConcreteAnnotator debug]");
     logger.debug("sectionSegmentationId = " + sectionSegmentationId);
     
-    this.timestamp = Calendar.getInstance().getTimeInMillis() / 1000;
+    this.timestamp = System.currentTimeMillis() / 1000;
     this.sectionSegmentationId = sectionSegmentationId;
     this.agigaDoc = agigaDoc;
-    this.agigaSentPtr = 0;
+    // this.agigaSentPtr = 0;
     this.sectionPtr = 0;
     this.tokenizations = new ArrayList<Tokenization>();
     flushCommunication(comm, false);
   }
 
   public synchronized void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations) {
-    this.timestamp = Calendar.getInstance().getTimeInMillis() / 1000;
+    this.timestamp = System.currentTimeMillis() / 1000;
     SentenceSegmentation ss = addSentenceSegmentation(section, agigaDoc, tokenizations);
     section.addToSentenceSegmentation(ss);
   }
 
-  public synchronized void convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations) {
-    EntityMentionSet ems = new EntityMentionSet().setUuid(UUIDGenerator.make()).setMetadata(metadata());
+  public synchronized SimpleEntry<EntityMentionSet, EntitySet> convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations) {
+    EntityMentionSet ems = new EntityMentionSet()
+      .setUuid(UUIDGenerator.make())
+      .setMetadata(metadata());
     List<Entity> elist = new LinkedList<Entity>();
     for (AgigaCoref coref : agigaDoc.getCorefs()) {
       Entity e = AgigaConverter.convertCoref(ems, coref, agigaDoc, tokenizations);
       elist.add(e);
     }
-    in.addToEntityMentionSets(ems);
-    in.addToEntitySets(new EntitySet().setUuid(UUIDGenerator.make()).setMetadata(metadata()).setEntityList(elist));
+    
+    EntitySet es = new EntitySet()
+      .setUuid(UUIDGenerator.make())
+      .setMetadata(metadata())
+      .setEntityList(elist);
+    
+    return new SimpleEntry<EntityMentionSet, EntitySet>(ems, es);
   }
 
   // get appropriate section segmentation, and change it
@@ -158,10 +166,6 @@ public class AgigaConcreteAnnotator {
     }
   }
 
-//  private void addSentences(SentenceSegmentation in) {
-//    addSentences(in, this.agigaDoc, this.tokenizations);
-//  }
-
   // add a Tokenization
   public Tokenization createTokenization(AgigaDocument ad, int[] sentPtr, List<Tokenization> tokenizations) {
     logger.debug("f5");
@@ -171,8 +175,4 @@ public class AgigaConcreteAnnotator {
     tokenizations.add(tok);
     return tok;
   }
-
-//  private Sentence createTokenization() {
-//    return createTokenization(this.agigaDoc, new int[] { this.agigaSentPtr }, this.tokenizations);
-//  }
 }
