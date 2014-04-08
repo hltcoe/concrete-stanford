@@ -71,7 +71,7 @@ public class StanfordAgigaPipe {
     
     StanfordAgigaPipe sap = new StanfordAgigaPipe(args);
     logger.info("Beginning annotation.");
-    sap.go();
+    sap.runFile();
     logger.info("Finished.");
     
     System.setErr(err);
@@ -120,11 +120,19 @@ public class StanfordAgigaPipe {
       annotateNames.add(SectionKind.PASSAGE);
   }
 
-  public void go() throws TException, IOException {
+  public void runFile() throws TException, IOException {
     Communication communication = ThriftIO.readFile(inputFile);
-    runPipelineOnCommunicationSectionsAndSentences(communication);
-    logger.debug(communication.toString());
-    writeCommunication(communication);
+    
+    Communication withAnnotations = this.process(communication);
+    writeCommunication(withAnnotations);
+  }
+  
+  public Communication process(Communication c) throws TException, IOException {
+    // cp will be heavily mutated here.
+    Communication cp = new Communication(c);
+    
+    runPipelineOnCommunicationSectionsAndSentences(cp);
+    return cp;
   }
 
   /**
