@@ -29,7 +29,7 @@ public class AgigaConcreteAnnotator {
     private AnnotationMetadata metadata() {
         return new AnnotationMetadata().setTool("anno-pipeline-v2").setTimestamp(timestamp);
     }
-		
+
     //private Communication comm;
     private String sectionSegmentationId;
     private List<String> sectionIds;
@@ -65,7 +65,7 @@ public class AgigaConcreteAnnotator {
         this.timestamp = Calendar.getInstance().getTimeInMillis() / 1000;
         addSentenceSegmentation(section, agigaDoc, tokenizations);
     }
-	
+
     public synchronized void convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations){
         EntityMentionSet ems = new EntityMentionSet().setUuid(UUIDGenerator.make()).setMetadata(metadata());
         List<Entity> elist = new LinkedList<Entity>();
@@ -141,6 +141,7 @@ public class AgigaConcreteAnnotator {
             System.err.println("f3");
         //create a sentence segmentation
         SentenceSegmentation ss = new SentenceSegmentation().setUuid(UUIDGenerator.make()).setMetadata(metadata());
+        ss.sectionId = in.getUuid();
         addSentences(ss, ad, tokenizations);
         in.addToSentenceSegmentation(ss);
     }
@@ -166,7 +167,7 @@ public class AgigaConcreteAnnotator {
         if(debug) System.err.println("f5");
         AgigaSentence asent = ad.getSents().get(sentPtr[0]++);
         // tokenization has all the annotations
-        Tokenization tok = AgigaConverter.convertTokenization(asent);	
+        Tokenization tok = AgigaConverter.convertTokenization(asent);
         tokenizations.add(tok);
         Sentence newS = new Sentence().setUuid(UUIDGenerator.make());
         newS.addToTokenizationList(tok);
@@ -176,4 +177,3 @@ public class AgigaConcreteAnnotator {
         return createTokenization(this.agigaDoc, new int[]{this.agigaSentPtr}, this.tokenizations );
     }
 }
-
