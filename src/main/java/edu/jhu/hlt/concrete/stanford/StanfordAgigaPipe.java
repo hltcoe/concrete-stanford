@@ -22,6 +22,8 @@ import edu.jhu.hlt.concrete.SectionKind;
 import edu.jhu.hlt.concrete.SectionSegmentation;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Tokenization;
+import edu.jhu.hlt.concrete.util.ConcreteException;
+import edu.jhu.hlt.concrete.util.SuperCommunication;
 import edu.jhu.hlt.concrete.util.ThriftIO;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
@@ -52,16 +54,22 @@ public class StanfordAgigaPipe {
   private boolean tokenize = true;
   private boolean parse = false;
 
-  private String inputFile = null;
-  private String outputFile = null;
   private InMemoryAnnoPipeline pipeline;
-
   private Set<SectionKind> annotateNames;
 
   private int charOffset = 0;
   private int globalTokenOffset = 0;
 
-  public static void main(String[] args) throws TException, IOException {
+  public static void main(String[] args) throws TException, IOException, ConcreteException {
+    if (args.length != 2) {
+      logger.info("Usage: {} <input-concrete-file-with-section-segmentations> <output-file-name>", StanfordAgigaPipe.class.toString());
+      System.exit(1);
+    }
+    
+    final String inputPath = args[0];
+    final String outputPath = args[1];
+    final Communication communication = ThriftIO.readFile(inputPath);
+    
     // this is silly, but needed for stanford logging disable.
     PrintStream err = System.err;
     
@@ -69,65 +77,70 @@ public class StanfordAgigaPipe {
       public void write(int b) { }
     }));
     
-    StanfordAgigaPipe sap = new StanfordAgigaPipe(args);
+    StanfordAgigaPipe sap = new StanfordAgigaPipe();
     logger.info("Beginning annotation.");
-    sap.runFile();
+    Communication annotated = sap.process(communication);
     logger.info("Finished.");
-    
     System.setErr(err);
+    
+    new SuperCommunication(annotated).writeToFile(outputPath, true);
   }
 
-  public StanfordAgigaPipe(String[] args) {
+//  public StanfordAgigaPipe(String[] args) {
+//    annotateNames = new HashSet<SectionKind>();
+//    parseArgs(args);
+//    if (inputFile == null || outputFile == null) {
+//      logger.info(usage);
+//      System.exit(1);
+//    }
+//    
+//    pipeline = new InMemoryAnnoPipeline();
+//  }
+  
+  public StanfordAgigaPipe() {
     annotateNames = new HashSet<SectionKind>();
-    parseArgs(args);
-    if (inputFile == null || outputFile == null) {
-      logger.info(usage);
-      System.exit(1);
-    }
-    
+    annotateNames.add(SectionKind.PASSAGE);
     pipeline = new InMemoryAnnoPipeline();
   }
 
-  public void parseArgs(String[] args) {
-    int i = 0;
-    boolean userAddedAnnotations = false;
-    try {
-      while (i < args.length) {
-        if (args[i].equals("--annotate-sections")) {
-          String[] toanno = args[++i].split(",");
-          for (String t : toanno)
-            annotateNames.add(SectionKind.valueOf(t));
-          userAddedAnnotations = true;
-        }
-        // if(args[i].equals("--aggregate-by-first-section-number"))
-        // aggregateSectionsByFirst = args[++i].equals("t");
-        else if (args[i].equals("--input"))
-          inputFile = args[++i];
-        else if (args[i].equals("--output"))
-          outputFile = args[++i];
-        else {
-          logger.debug("Invalid option: " + args[i]);
-          logger.debug(usage);
-          System.exit(1);
-        }
-        i++;
-      }
-    } catch (Exception e) {
-      logger.debug(usage);
-      System.exit(1);
-    }
-    if (!userAddedAnnotations)
-      annotateNames.add(SectionKind.PASSAGE);
-  }
+//  public void parseArgs(String[] args) {
+//    int i = 0;
+//    boolean userAddedAnnotations = false;
+//    try {
+//      while (i < args.length) {
+//        if (args[i].equals("--annotate-sections")) {
+//          String[] toanno = args[++i].split(",");
+//          for (String t : toanno)
+//            annotateNames.add(SectionKind.valueOf(t));
+//          userAddedAnnotations = true;
+//        }
+//        // if(args[i].equals("--aggregate-by-first-section-number"))
+//        // aggregateSectionsByFirst = args[++i].equals("t");
+//        else if (args[i].equals("--input"))
+//          inputFile = args[++i];
+//        else if (args[i].equals("--output"))
+//          outputFile = args[++i];
+//        else {
+//          logger.debug("Invalid option: " + args[i]);
+//          logger.debug(usage);
+//          System.exit(1);
+//        }
+//        i++;
+//      }
+//    } catch (Exception e) {
+//      logger.debug(usage);
+//      System.exit(1);
+//    }
+//    if (!userAddedAnnotations)
+//      annotateNames.add(SectionKind.PASSAGE);
+//  }
 
-  public void runFile() throws TException, IOException {
-    Communication communication = ThriftIO.readFile(inputFile);
-    
-    Communication withAnnotations = this.process(communication);
-    writeCommunication(withAnnotations);
-  }
-  
   public Communication process(Communication c) throws TException, IOException {
+    if (!c.isSetText())
+      throw new IllegalArgumentException("Expecting Communication Text, but was empty or none.");
+    if (c.getSectionSegmentations().size() == 0)
+      throw new IllegalArgumentException("Expecting Communication SectionSegmentations, but found none.");
+    
     // cp will be heavily mutated here.
     Communication cp = new Communication(c);
     
@@ -151,10 +164,6 @@ public class StanfordAgigaPipe {
    * it can (i.e., all but coref resolution), and then doing the global processing (coref).
    */
   public void runPipelineOnCommunicationSectionsAndSentences(Communication comm) {
-    if (!comm.isSetText())
-      throw new IllegalArgumentException("Expecting Communication Text.");
-    if (comm.getSectionSegmentations().size() == 0)
-      throw new IllegalArgumentException("Expecting Communication SectionSegmentations.");
 
     // if called multiple times, reset the sentence count
     sentenceCount = 1;
@@ -332,8 +341,9 @@ public class StanfordAgigaPipe {
   }
 
   /**
-   * Given a particular section ({@code section}) from a communication, further locally process {@code sentenceSplitText}; add those new annotations to an
-   * aggregating {@code docAnnotation} to use for later global processing.
+   * Given a particular section {@link Section} from a {@link Communication}, further locally process 
+   * {@link Annotation}; add those new annotations to an
+   * aggregating {@link Annotation} to use for later global processing.
    */
   public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, List<Tokenization> tokenizations) {
     sentencesToSection(sentenceSplitText, docAnnotation);
@@ -358,10 +368,6 @@ public class StanfordAgigaPipe {
     SimpleEntry<EntityMentionSet, EntitySet> tuple = agigaToConcrete.convertCoref(comm, agigaDoc, tokenizations); 
     comm.addToEntityMentionSets(tuple.getKey());
     comm.addToEntitySets(tuple.getValue());
-  }
-
-  public void writeCommunication(Communication communication) throws IOException, TException {
-    ThriftIO.writeFile(outputFile, communication);
   }
 
   /**
