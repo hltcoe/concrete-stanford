@@ -5,9 +5,8 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -55,7 +54,7 @@ public class StanfordAgigaPipe {
   private boolean parse = false;
 
   private InMemoryAnnoPipeline pipeline;
-  private Set<SectionKind> annotateNames;
+  private EnumSet<SectionKind> annotateNames;
 
   private int charOffset = 0;
   private int globalTokenOffset = 0;
@@ -98,9 +97,16 @@ public class StanfordAgigaPipe {
 //  }
   
   public StanfordAgigaPipe() {
-    annotateNames = new HashSet<SectionKind>();
+    annotateNames = EnumSet.noneOf(SectionKind.class);
     annotateNames.add(SectionKind.PASSAGE);
+    annotateNames.add(SectionKind.OTHER);
     pipeline = new InMemoryAnnoPipeline();
+  }
+  
+  public StanfordAgigaPipe(EnumSet<SectionKind> typesToAnnotate) {
+    this.annotateNames = EnumSet.noneOf(SectionKind.class);
+    this.annotateNames.addAll(typesToAnnotate);
+    this.pipeline = new InMemoryAnnoPipeline();
   }
 
 //  public void parseArgs(String[] args) {
@@ -135,11 +141,16 @@ public class StanfordAgigaPipe {
 //      annotateNames.add(SectionKind.PASSAGE);
 //  }
 
-  public Communication process(Communication c) throws TException, IOException {
+  public Communication process(Communication c) throws TException, IOException, ConcreteException {
     if (!c.isSetText())
-      throw new IllegalArgumentException("Expecting Communication Text, but was empty or none.");
-    if (c.getSectionSegmentations().size() == 0)
-      throw new IllegalArgumentException("Expecting Communication SectionSegmentations, but found none.");
+      throw new ConcreteException("Expecting Communication Text, but was empty or none.");
+    else if (!c.isSetSectionSegmentations() || c.getSectionSegmentationsSize() == 0)
+      throw new ConcreteException("Expecting Section Segmentations, but there weren't any.");
+    else {
+      SectionSegmentation ss = c.getSectionSegmentationsIterator().next();
+      if (!ss.isSetSectionList() || ss.getSectionListSize() == 0)
+        throw new ConcreteException("Expecting Sections, but there weren't any.");
+    }
     
     // cp will be heavily mutated here.
     Communication cp = new Communication(c);

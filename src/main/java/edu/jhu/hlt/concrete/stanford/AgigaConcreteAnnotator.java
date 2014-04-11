@@ -1,21 +1,29 @@
 package edu.jhu.hlt.concrete.stanford;
 
-import edu.jhu.hlt.concrete.*;
-import edu.jhu.hlt.concrete.util.*;
-import edu.jhu.hlt.concrete.agiga.AgigaConverter;
-import edu.jhu.agiga.*;
-
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
-import java.util.AbstractMap.SimpleEntry;
-
-import javax.xml.crypto.dsig.keyinfo.KeyValue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import edu.jhu.agiga.AgigaCoref;
+import edu.jhu.agiga.AgigaDocument;
+import edu.jhu.agiga.AgigaSentence;
+import edu.jhu.hlt.concrete.AnnotationMetadata;
+import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.concrete.Entity;
+import edu.jhu.hlt.concrete.EntityMentionSet;
+import edu.jhu.hlt.concrete.EntitySet;
+import edu.jhu.hlt.concrete.Section;
+import edu.jhu.hlt.concrete.SectionSegmentation;
+import edu.jhu.hlt.concrete.Sentence;
+import edu.jhu.hlt.concrete.SentenceSegmentation;
+import edu.jhu.hlt.concrete.Tokenization;
+import edu.jhu.hlt.concrete.agiga.AgigaConverter;
+import edu.jhu.hlt.concrete.util.UUIDGenerator;
 
 /**
  * given a Communication (with Sections and Sentences added) and Stanford's annotations via an AgigaDocument, add these annotations and return a new
@@ -24,12 +32,12 @@ import org.slf4j.LoggerFactory;
 public class AgigaConcreteAnnotator {
   
   private static final Logger logger = LoggerFactory.getLogger(AgigaConcreteAnnotator.class);
-  private long timestamp;
+  private long timestamp = System.currentTimeMillis() / 1000;
 
   public AgigaConcreteAnnotator() {
   }
 
-  private AnnotationMetadata metadata() {
+  public AnnotationMetadata metadata() {
     return new AnnotationMetadata().setTool("anno-pipeline-v2").setTimestamp(timestamp);
   }
 
