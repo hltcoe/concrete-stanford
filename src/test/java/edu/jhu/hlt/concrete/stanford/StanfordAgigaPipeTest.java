@@ -77,9 +77,9 @@ public class StanfordAgigaPipeTest {
     assertTrue(sc.hasSections());
     
     Communication nc = this.pipe.process(this.testComm);
-    Serialization.toBytes(nc);
     assertTrue(nc.isSetEntityMentionSets());
     assertTrue(nc.isSetEntitySets());
+    new SuperCommunication(nc).writeToFile("src/test/resources/post-stanford.concrete", true);
   }
   
 //  @Test
