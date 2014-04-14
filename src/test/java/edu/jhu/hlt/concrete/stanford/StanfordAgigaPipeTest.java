@@ -4,8 +4,12 @@
 package edu.jhu.hlt.concrete.stanford;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.EnumSet;
 import java.util.UUID;
 
@@ -31,7 +35,9 @@ import edu.jhu.hlt.concrete.util.SuperCommunication;
  */
 public class StanfordAgigaPipeTest {
 
+  String dataPath ="src/test/resources/test-out-v.0.1.2.concrete";
   StanfordAgigaPipe pipe;
+  Communication testComm;
   
   /**
    * @throws java.lang.Exception
@@ -43,6 +49,10 @@ public class StanfordAgigaPipeTest {
     runOverThese.add(SectionKind.PASSAGE);
     
     pipe = new StanfordAgigaPipe(runOverThese);
+    Path p = Paths.get(dataPath);
+    if (!Files.exists(p))
+      fail("You need to make sure that this file exists: " + dataPath);
+    this.testComm = Serialization.fromBytes(Files.readAllBytes(p));
   }
 
   /**
@@ -62,32 +72,29 @@ public class StanfordAgigaPipeTest {
    */
   @Test
   public void processNonPassages() throws AsphaltException, TException, InvalidInputException, IOException, ConcreteException {
-    Communication c = new Communication("test_id", UUID.randomUUID().toString(), CommunicationType.NEWS);
-    c.setText("Hello world! Sample text here.");
-    SectionSegmentation ss = new SingleSectionSegmenter().annotateDiff(c);
-    c.addToSectionSegmentations(ss);
-    SuperCommunication sc = new SuperCommunication(c);
+    SuperCommunication sc = new SuperCommunication(this.testComm);
     assertTrue(sc.hasSectionSegmentations());
     assertTrue(sc.hasSections());
     
-    Communication nc = this.pipe.process(c);
-    assertTrue(nc.isSetEntityMentionSets());
-    assertTrue(nc.isSetEntitySets());
-  }
-  
-  @Test
-  public void processBadMessage() throws Exception {
-    Communication c = new Communication();
-    c.id = "10505_corpus_x";
-    c.uuid = UUID.randomUUID().toString();
-    c.type = CommunicationType.BLOG;
-    c.text = "Hello world! Testing this out.";
-    SectionSegmentation ss = new SingleSectionSegmenter().annotateDiff(c);
-    c.addToSectionSegmentations(ss);
-    
-    Communication nc = this.pipe.process(c);
+    Communication nc = this.pipe.process(this.testComm);
     Serialization.toBytes(nc);
     assertTrue(nc.isSetEntityMentionSets());
     assertTrue(nc.isSetEntitySets());
   }
+  
+//  @Test
+//  public void processBadMessage() throws Exception {
+//    Communication c = new Communication();
+//    c.id = "10505_corpus_x";
+//    c.uuid = UUID.randomUUID().toString();
+//    c.type = CommunicationType.BLOG;
+//    c.text = "Hello world! Testing this out.";
+//    SectionSegmentation ss = new SingleSectionSegmenter().annotateDiff(c);
+//    c.addToSectionSegmentations(ss);
+//    
+//    Communication nc = this.pipe.process(c);
+//    Serialization.toBytes(nc);
+//    assertTrue(nc.isSetEntityMentionSets());
+//    assertTrue(nc.isSetEntitySets());
+//  }
 }
