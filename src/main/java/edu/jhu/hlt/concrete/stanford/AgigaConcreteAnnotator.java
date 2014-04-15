@@ -163,24 +163,28 @@ public class AgigaConcreteAnnotator {
   private void addSentences(SentenceSegmentation in, AgigaDocument ad, List<Tokenization> tokenizations) {
     logger.debug("f4");
     int n = ad.getSents().size();
-    int[] arr = new int[] { 0 };
+    int charOffset = 0;
+    int sentPtr = 0;
     assert n > 0 : "n=" + n;
     for (int i = 0; i < n; i++) {
-      Sentence st = new Sentence()
-        .setUuid(UUID.randomUUID().toString());
-      Tokenization t = createTokenization(ad, arr, tokenizations);
-      st.addToTokenizationList(t);
-      in.addToSentenceList(st);
+        AgigaSentence asent = ad.getSents().get(sentPtr++);
+        Sentence st = AgigaConverter.convertSentence(asent, charOffset, tokenizations);
+        charOffset += AgigaConverter.flattenText(asent).length() + 1;
+      // Sentence st = new Sentence()
+      //   .setUuid(UUID.randomUUID().toString());
+      // Tokenization t = createTokenization(ad, arr, tokenizations);
+      // st.addToTokenizationList(t);
+        in.addToSentenceList(st);
     }
   }
 
   // add a Tokenization
-  public Tokenization createTokenization(AgigaDocument ad, int[] sentPtr, List<Tokenization> tokenizations) {
-    logger.debug("f5");
-    AgigaSentence asent = ad.getSents().get(sentPtr[0]++);
-    // tokenization has all the annotations
-    Tokenization tok = AgigaConverter.convertTokenization(asent);
-    tokenizations.add(tok);
-    return tok;
-  }
+  // public Tokenization createTokenization(AgigaDocument ad, int[] sentPtr, List<Tokenization> tokenizations) {
+  //   logger.debug("f5");
+  //   AgigaSentence asent = ad.getSents().get(sentPtr[0]++);
+  //   // tokenization has all the annotations
+  //   Tokenization tok = AgigaConverter.convertTokenization(asent);
+  //   tokenizations.add(tok);
+  //   return tok;
+  // }
 }
