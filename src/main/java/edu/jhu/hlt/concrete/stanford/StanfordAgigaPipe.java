@@ -61,7 +61,7 @@ public class StanfordAgigaPipe {
 
   public static void main(String[] args) throws TException, IOException, ConcreteException {
     if (args.length != 2) {
-      logger.info("Usage: {} <input-concrete-file-with-section-segmentations> <output-file-name>", StanfordAgigaPipe.class.toString());
+      System.out.println("Usage: " + StanfordAgigaPipe.class.getSimpleName() + " <input-concrete-file-with-section-segmentations> <output-file-name>");
       System.exit(1);
     }
     
