@@ -169,7 +169,19 @@ public class AgigaConcreteAnnotator {
     for (int i = 0; i < n; i++) {
         AgigaSentence asent = ad.getSents().get(sentPtr++);
         Sentence st = AgigaConverter.convertSentence(asent, charOffset, tokenizations);
-        charOffset += AgigaConverter.flattenText(asent).length() + 1;
+        String sentText = AgigaConverter.flattenText(asent);
+        String docText = AgigaConverter.flattenText(ad);
+        //logger.debug(sentText);
+        int l = sentText.length();
+        int endingOffset;
+        if(l == 0) {
+            logger.error("sentence " + (sentPtr - 1) + " has 0 length!");
+            endingOffset = 0;
+        } else {
+            endingOffset = sentText.charAt(l-1) == '\n' ? 1 : 0;
+        }
+        //logger.debug(docText.substring(charOffset, charOffset + l + endingOffset));
+        charOffset += sentText.length() + endingOffset;
         in.addToSentenceList(st);
     }
   }
