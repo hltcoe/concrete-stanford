@@ -6,7 +6,9 @@ import java.io.PrintStream;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -17,12 +19,11 @@ import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.EntityMentionSet;
 import edu.jhu.hlt.concrete.EntitySet;
 import edu.jhu.hlt.concrete.Section;
-import edu.jhu.hlt.concrete.SectionKind;
 import edu.jhu.hlt.concrete.SectionSegmentation;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Tokenization;
+import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.ConcreteException;
-import edu.jhu.hlt.concrete.util.SuperCommunication;
 import edu.jhu.hlt.concrete.util.ThriftIO;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
@@ -39,9 +40,9 @@ import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.util.CoreMap;
 
 public class StanfordAgigaPipe {
-  
+
   private static final Logger logger = LoggerFactory.getLogger(StanfordAgigaPipe.class);
-  
+
   static final String usage = "You must specify an input path: java edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe --input path/to/input/file --output path/to/output/file\n"
       + "  Optional arguments: \n"
       + "       --annotate-sections <comma-separated-list of type names> (default: PASSAGE)\n"
@@ -54,7 +55,7 @@ public class StanfordAgigaPipe {
   private boolean parse = false;
 
   private InMemoryAnnoPipeline pipeline;
-  private EnumSet<SectionKind> annotateNames;
+  private Set<String> annotateNames;
 
   private int charOffset = 0;
   private int globalTokenOffset = 0;
@@ -64,24 +65,24 @@ public class StanfordAgigaPipe {
       System.out.println("Usage: " + StanfordAgigaPipe.class.getSimpleName() + " <input-concrete-file-with-section-segmentations> <output-file-name>");
       System.exit(1);
     }
-    
+
     final String inputPath = args[0];
     final String outputPath = args[1];
     final Communication communication = ThriftIO.readFile(inputPath);
-    
+
     // this is silly, but needed for stanford logging disable.
     PrintStream err = System.err;
-    
+
     System.setErr(new PrintStream(new OutputStream() {
       public void write(int b) { }
     }));
-    
+
     StanfordAgigaPipe sap = new StanfordAgigaPipe();
     logger.info("Beginning annotation.");
     Communication annotated = sap.process(communication);
     logger.info("Finished.");
     System.setErr(err);
-    
+
     new SuperCommunication(annotated).writeToFile(outputPath, true);
   }
 
@@ -92,19 +93,19 @@ public class StanfordAgigaPipe {
 //      logger.info(usage);
 //      System.exit(1);
 //    }
-//    
+//
 //    pipeline = new InMemoryAnnoPipeline();
 //  }
-  
+
   public StanfordAgigaPipe() {
-    annotateNames = EnumSet.noneOf(SectionKind.class);
-    annotateNames.add(SectionKind.PASSAGE);
-    annotateNames.add(SectionKind.OTHER);
+    annotateNames = new HashSet<>();
+    annotateNames.add("Passage");
+    annotateNames.add("Other");
     pipeline = new InMemoryAnnoPipeline();
   }
-  
-  public StanfordAgigaPipe(EnumSet<SectionKind> typesToAnnotate) {
-    this.annotateNames = EnumSet.noneOf(SectionKind.class);
+
+  public StanfordAgigaPipe(Set<String> typesToAnnotate) {
+    this.annotateNames = new HashSet<>();
     this.annotateNames.addAll(typesToAnnotate);
     this.pipeline = new InMemoryAnnoPipeline();
   }
@@ -151,10 +152,10 @@ public class StanfordAgigaPipe {
       if (!ss.isSetSectionList() || ss.getSectionListSize() == 0)
         throw new ConcreteException("Expecting Sections, but there weren't any.");
     }
-    
+
     // cp will be heavily mutated here.
     Communication cp = new Communication(c);
-    
+
     runPipelineOnCommunicationSectionsAndSentences(cp);
     return cp;
   }
@@ -229,7 +230,7 @@ public class StanfordAgigaPipe {
         logger.info("Additional processing on section: {}", section.getUuid());
         processSection(section, a, documentAnnotation, tokenizations);
       }
-      
+
       // 3) Third, do coref; cross-reference against sectionUUIDs
       logger.info("Running coref.");
       processCoref(comm, documentAnnotation, tokenizations);
@@ -245,7 +246,7 @@ public class StanfordAgigaPipe {
    * <li>named entity recognition.</li>
    * </ul>
    * Note that corefence resolution is done only once all contentful sections have been properly annotated.
-   * 
+   *
    */
   public AgigaDocument annotate(Annotation annotation) {
     try {
@@ -279,7 +280,7 @@ public class StanfordAgigaPipe {
 
   /**
    * Convert tokenized sentences (<code>sentAnno</code>) into a document Annotation.<br/>
-   * 
+   *
    */
   public void sentencesToSection(CoreMap sectAnno, Annotation document) {
     if (sectAnno == null) {
@@ -352,7 +353,7 @@ public class StanfordAgigaPipe {
   }
 
   /**
-   * Given a particular section {@link Section} from a {@link Communication}, further locally process 
+   * Given a particular section {@link Section} from a {@link Communication}, further locally process
    * {@link Annotation}; add those new annotations to an
    * aggregating {@link Annotation} to use for later global processing.
    */
@@ -367,7 +368,7 @@ public class StanfordAgigaPipe {
     for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class)) {
       logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
     }
-    
+
     transferAnnotations(sentenceSplitText, docAnnotation);
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator();
     agigaToConcrete.convertSection(section, agigaDoc, tokenizations);
@@ -376,14 +377,14 @@ public class StanfordAgigaPipe {
   public void processCoref(Communication comm, Annotation docAnnotation, List<Tokenization> tokenizations) {
     AgigaDocument agigaDoc = annotateCoref(docAnnotation);
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator();
-    SimpleEntry<EntityMentionSet, EntitySet> tuple = agigaToConcrete.convertCoref(comm, agigaDoc, tokenizations); 
+    SimpleEntry<EntityMentionSet, EntitySet> tuple = agigaToConcrete.convertCoref(comm, agigaDoc, tokenizations);
     comm.addToEntityMentionSets(tuple.getKey());
     comm.addToEntitySets(tuple.getValue());
   }
 
   /**
    * convert a tree t to its token representation
-   * 
+   *
    * @param t
    * @return
    * @throws IOException

@@ -1,4 +1,4 @@
-/**
+/*
  * 
  */
 package edu.jhu.hlt.concrete.stanford;
@@ -10,8 +10,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.EnumSet;
-import java.util.UUID;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.thrift.TException;
 import org.junit.After;
@@ -20,14 +20,10 @@ import org.junit.Test;
 
 import edu.jhu.hlt.asphalt.AsphaltException;
 import edu.jhu.hlt.ballast.InvalidInputException;
-import edu.jhu.hlt.ballast.tools.SingleSectionSegmenter;
 import edu.jhu.hlt.concrete.Communication;
-import edu.jhu.hlt.concrete.CommunicationType;
-import edu.jhu.hlt.concrete.SectionKind;
-import edu.jhu.hlt.concrete.SectionSegmentation;
+import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.Serialization;
-import edu.jhu.hlt.concrete.util.SuperCommunication;
 
 /**
  * @author max
@@ -44,15 +40,15 @@ public class StanfordAgigaPipeTest {
    */
   @Before
   public void setUp() throws Exception {
-    EnumSet<SectionKind> runOverThese = EnumSet.noneOf(SectionKind.class);
-    runOverThese.add(SectionKind.OTHER);
-    runOverThese.add(SectionKind.PASSAGE);
+    Set<String> runOverThese = new HashSet<>();
+    runOverThese.add("Other");
+    runOverThese.add("Passage");
     
     pipe = new StanfordAgigaPipe(runOverThese);
     Path p = Paths.get(dataPath);
     if (!Files.exists(p))
       fail("You need to make sure that this file exists: " + dataPath);
-    this.testComm = Serialization.fromBytes(Files.readAllBytes(p));
+    this.testComm = new Serialization().fromBytes(new Communication(), Files.readAllBytes(p));
   }
 
   /**
