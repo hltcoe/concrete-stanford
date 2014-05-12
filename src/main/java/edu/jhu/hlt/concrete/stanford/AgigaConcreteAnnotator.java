@@ -4,7 +4,6 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,8 +81,12 @@ public class AgigaConcreteAnnotator {
       .setMetadata(metadata());
     List<Entity> elist = new LinkedList<Entity>();
     for (AgigaCoref coref : agigaDoc.getCorefs()) {
-      Entity e = AgigaConverter.convertCoref(ems, coref, agigaDoc, tokenizations);
-      elist.add(e);
+      if (!coref.getMentions().isEmpty()) {
+        Entity e = AgigaConverter.convertCoref(ems, coref, agigaDoc, tokenizations);
+        elist.add(e);
+      } else {
+        logger.warn("There were not any mentions for coref: " + coref.toString());
+      }
     }
     
     EntitySet es = new EntitySet()
