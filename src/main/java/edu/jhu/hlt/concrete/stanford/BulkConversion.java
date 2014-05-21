@@ -41,7 +41,7 @@ public class BulkConversion {
    * @param args
    */
   public static void main(String[] args) {
-    if (args.length != 2) {
+    if (args.length != 3) {
       logger.info("Usage: <path-to-sectioned-comm-list> <path-to-out-dir> <delete-old-dir>");
       System.exit(1);
     }
@@ -57,6 +57,7 @@ public class BulkConversion {
     }
     
     Set<String> pathStringSet = new HashSet<>();
+    logger.info("Reading in concrete file paths.");
     try (Scanner sc = new Scanner(pathList.toFile())) {
       while (sc.hasNextLine())
         pathStringSet.add(sc.nextLine());
@@ -65,10 +66,12 @@ public class BulkConversion {
       logger.error(e.getMessage(), e);
       System.exit(1);
     }
-      
+    
+    logger.info("Completed reading in paths.");  
     Serialization sr = new Serialization();
     Set<Communication> commSet = new HashSet<>(pathStringSet.size());
     
+    logger.info("Loading communications from disk.");
     try {
       for (String ps : pathStringSet) {
         Path cp = Paths.get(ps);
@@ -81,6 +84,7 @@ public class BulkConversion {
       System.exit(1);
     }
     
+    logger.info("Communications loaded.");
     boolean delete = Boolean.parseBoolean(deleteString);
     Path outPath = Paths.get(outDir);
     try {
@@ -97,6 +101,7 @@ public class BulkConversion {
     
     try {
       for (Communication c : commSet) {
+        logger.info("Processing comm: {}", c.getId());
         String outPathStr = outPath.toString() + File.separator + c.getId() + ".concrete";
         Path commOutPath = Paths.get(outPathStr);
         if (!delete && Files.exists(commOutPath)) {
@@ -117,5 +122,7 @@ public class BulkConversion {
       logger.error("Concrete issue.", e);
       System.exit(1);
     }
+    
+    logger.info("Finished.");
   }
 }
