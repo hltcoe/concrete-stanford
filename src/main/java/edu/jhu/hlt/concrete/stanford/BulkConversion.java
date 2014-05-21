@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
 
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,7 +100,14 @@ public class BulkConversion {
     StanfordAgigaPipe pipe = new StanfordAgigaPipe();
     logger.info("Initialization complete.");
     
+    int nComms = commSet.size();
+    int processedComms = 0;
+    StopWatch sw = new StopWatch();
+    sw.start();
+    
+    logger.info("Attempting to process {} communications.", nComms);
     try {
+      logger.info("[{}%] Processed {} comms.", processedComms / nComms, processedComms);
       for (Communication c : commSet) {
         logger.info("Processing comm: {}", c.getId());
         String outPathStr = outPath.toString() + File.separator + c.getId() + ".concrete";
@@ -111,6 +119,7 @@ public class BulkConversion {
         
         Communication converted = pipe.process(c);
         new SuperCommunication(converted).writeToFile(commOutPath, delete);
+        processedComms++;
       }
     } catch (TException e) {
       logger.error("De/serialization issue.", e);
@@ -123,6 +132,10 @@ public class BulkConversion {
       System.exit(1);
     }
     
+    sw.stop();
+    int elapsedSecs = (int)sw.getTime();
     logger.info("Finished.");
+    logger.info("Processed {} comms ({}%) in {} seconds [{} comms/s]", processedComms, 
+        processedComms / nComms, elapsedSecs, processedComms / elapsedSecs);
   }
 }
