@@ -182,7 +182,7 @@ public class StanfordAgigaPipe {
     String commText = comm.getText();
     // List<Annotation> finishedAnnotations = new ArrayList<Annotation>();
 
-    logger.info("Annotating communication: {}", comm.getId());
+    logger.debug("Annotating communication: {}", comm.getId());
     logger.debug("\tuuid = " + comm.getUuid());
     logger.debug("\ttype = " + comm.getType());
     logger.debug("\tfull = " + commText);
@@ -201,7 +201,7 @@ public class StanfordAgigaPipe {
         // Note we do this first, even before checking the content-type
         String sectionText = commText.substring(sts.getStart(), sts.getEnding());
         Annotation a = pipeline.splitAndTokenizeText(sectionText);
-        logger.info("Annotating Section: {}", section.getUuid());
+        logger.debug("Annotating Section: {}", section.getUuid());
         logger.debug("\ttext = " + sectionText);
         logger.debug("\tkind = ");
         logger.debug(section.getKind() + " in annotateNames: " + annotateNames);
@@ -226,12 +226,12 @@ public class StanfordAgigaPipe {
         }
         sectionUUIDs.add(section.getUuid());
         // 2) Second, perform the other localized processing
-        logger.info("Additional processing on section: {}", section.getUuid());
+        logger.debug("Additional processing on section: {}", section.getUuid());
         processSection(section, a, documentAnnotation, tokenizations);
       }
 
       // 3) Third, do coref; cross-reference against sectionUUIDs
-      logger.info("Running coref.");
+      logger.debug("Running coref.");
       processCoref(comm, documentAnnotation, tokenizations);
     }
   }
