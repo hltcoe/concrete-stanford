@@ -88,13 +88,7 @@ public class BulkConversion {
     logger.info("Communications loaded.");
     boolean delete = Boolean.parseBoolean(deleteString);
     Path outPath = Paths.get(outDir);
-    try {
-      if (Files.exists(outPath) && delete)
-        Files.delete(outPath);
-      outPath.toFile().mkdirs();
-    } catch (IOException e) {
-      logger.error("Issue deleting file at: {}", outPath.toString(), e);
-    }
+    outPath.toFile().mkdirs();
     
     logger.info("Initializing Stanford Pipe.");    
     StanfordAgigaPipe pipe = new StanfordAgigaPipe();
