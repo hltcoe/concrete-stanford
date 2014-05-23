@@ -9,15 +9,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Scanner;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.util.concurrent.ConcurrentCommunicationLoader;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.ConcreteException;
@@ -51,41 +55,19 @@ public class BulkConversion {
     String outDir = args[1];
     String deleteString = args[2];
     
-    Path pathList = Paths.get(pathListStr);
-    if (!Files.exists(pathList)) {
-      logger.error("No file found at path: {}", pathList.toString());
-      System.exit(1);
-    }
-    
-    Set<String> pathStringSet = new HashSet<>();
-    logger.info("Reading in concrete file paths.");
-    try (Scanner sc = new Scanner(pathList.toFile())) {
-      while (sc.hasNextLine())
-        pathStringSet.add(sc.nextLine());
+    logger.debug("Loading communications from disk.");
+    List<Future<Communication>> comms = new ArrayList<>();
+    try(ConcurrentCommunicationLoader ccl = new ConcurrentCommunicationLoader(Runtime.getRuntime().availableProcessors())) {
+      comms.addAll(ccl.bulkLoad(pathListStr));
     } catch (FileNotFoundException e) {
-      // shouldn't throw.
-      logger.error(e.getMessage(), e);
+      logger.error("No file found at path: {}", pathListStr);
+      System.exit(1);
+    } catch (Exception e1) {
+      logger.error("Issue closing bulk loader.", e1);
       System.exit(1);
     }
-    
-    logger.info("Completed reading in paths.");  
-    Serialization sr = new Serialization();
-    Set<Communication> commSet = new HashSet<>(pathStringSet.size());
-    
-    logger.info("Loading communications from disk.");
-    try {
-      for (String ps : pathStringSet) {
-        Path cp = Paths.get(ps);
-        byte[] commBytes = Files.readAllBytes(cp);
-        commSet.add(sr.fromBytes(new Communication(), commBytes));
-      }
-      
-    } catch (IOException | ConcreteException e) {
-      logger.error("Error reading in concrete files.", e);
-      System.exit(1);
-    }
-    
-    logger.info("Communications loaded.");
+
+    logger.debug("Communications loaded.");
     boolean delete = Boolean.parseBoolean(deleteString);
     Path outPath = Paths.get(outDir);
     outPath.toFile().mkdirs();
@@ -94,7 +76,7 @@ public class BulkConversion {
     StanfordAgigaPipe pipe = new StanfordAgigaPipe();
     logger.info("Initialization complete.");
     
-    int nComms = commSet.size();
+    int nComms = comms.size();
     int processedComms = 0;
     StopWatch sw = new StopWatch();
     sw.start();
@@ -102,7 +84,8 @@ public class BulkConversion {
     logger.info("Attempting to process {} communications.", nComms);
     try {
       logger.info("[{}%] Processed {} comms.", processedComms / nComms, processedComms);
-      for (Communication c : commSet) {
+      for (Future<Communication> cf : comms) {
+        Communication c = cf.get();
         logger.info("Processing comm: {}", c.getId());
         String outPathStr = outPath.toString() + File.separator + c.getId() + ".concrete";
         Path commOutPath = Paths.get(outPathStr);
@@ -124,6 +107,10 @@ public class BulkConversion {
     } catch (ConcreteException e) {
       logger.error("Concrete issue.", e);
       System.exit(1);
+    } catch (InterruptedException e) {
+      logger.error("InterruptedException:", e);
+    } catch (ExecutionException e) {
+      logger.error("ExecutionException:", e);
     }
     
     sw.stop();
