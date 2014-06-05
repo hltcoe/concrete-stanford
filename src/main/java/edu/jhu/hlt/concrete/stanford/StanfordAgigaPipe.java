@@ -194,7 +194,7 @@ public class StanfordAgigaPipe {
       List<Tokenization> tokenizations = new ArrayList<Tokenization>();
       Annotation documentAnnotation = getSeededDocumentAnnotation();
       logger.debug("documentAnnotation = " + documentAnnotation);
-      logger.info("Annotating SectionSegmentation: {}", sectionSegmentation.getUuid());
+      logger.debug("Annotating SectionSegmentation: {}", sectionSegmentation.getUuid());
       for (Section section : sections) {
         TextSpan sts = section.getTextSpan();
         // 1) First *perform* the tokenization & sentence splits
