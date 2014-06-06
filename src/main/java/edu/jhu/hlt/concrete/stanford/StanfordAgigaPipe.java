@@ -207,7 +207,9 @@ public class StanfordAgigaPipe {
         logger.debug(section.getKind() + " in annotateNames: " + annotateNames);
         if (!annotateNames.contains(section.getKind())) {
           // We MUST update the character offset
+          System.out.print("no good section: from " + charOffset + " to ");
           charOffset += sectionText.length();
+          System.out.println(charOffset);
           // NOTE: It's possible we want to account for sentences in non-contentful sections
           // If that's the case, then we need to update the globalToken and sentence offset
           // variables correctly.
@@ -279,6 +281,8 @@ public class StanfordAgigaPipe {
 
   /**
    * Convert tokenized sentences (<code>sentAnno</code>) into a document Annotation.<br/>
+   * The global indexers {@code charOffset} and {@code globalTokenOffset} are updated
+   * here.
    *
    */
   public void sentencesToSection(CoreMap sectAnno, Annotation document) {
@@ -305,9 +309,11 @@ public class StanfordAgigaPipe {
       for (CoreLabel token : sentTokens) {
         // note that character offsets are global
         String tokenText = token.get(TextAnnotation.class);
+        System.out.print("tokenText " + tokenText + " goes from " + charOffset + " to " );
         token.set(CharacterOffsetBeginAnnotation.class, charOffset);
         charOffset += tokenText.length();
         token.set(CharacterOffsetEndAnnotation.class, charOffset);
+        System.out.println(charOffset);
         charOffset++; // Skip space
       }
       sentAnno.set(TokensAnnotation.class, sentTokens);
@@ -357,6 +363,7 @@ public class StanfordAgigaPipe {
    * aggregating {@link Annotation} to use for later global processing.
    */
   public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, List<Tokenization> tokenizations) {
+    int priorCharOffset = charOffset;
     sentencesToSection(sentenceSplitText, docAnnotation);
     logger.debug("after sentencesToSection, before annotating");
     for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class)) {
@@ -370,7 +377,10 @@ public class StanfordAgigaPipe {
 
     transferAnnotations(sentenceSplitText, docAnnotation);
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator();
-    agigaToConcrete.convertSection(section, agigaDoc, tokenizations);
+    // pass in sentOffset = 0 to reflect the fact that we're *locally* treating each
+    // newly processed section as its own document
+    // however, the character offsets *must* be global!
+    agigaToConcrete.convertSection(section, agigaDoc, tokenizations, 0, priorCharOffset);
   }
 
   public void processCoref(Communication comm, Annotation docAnnotation, List<Tokenization> tokenizations) {
