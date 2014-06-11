@@ -49,9 +49,9 @@ public class StanfordAgigaPipe {
 
   private int sentenceCount = 1; // for flat files, no document structure
 
-  private boolean aggregateSectionsByFirst = false;
-  private boolean tokenize = true;
-  private boolean parse = false;
+  // private boolean aggregateSectionsByFirst = false;
+  // private boolean tokenize = true;
+  // private boolean parse = false;
 
   private InMemoryAnnoPipeline pipeline;
   private Set<String> annotateNames;
