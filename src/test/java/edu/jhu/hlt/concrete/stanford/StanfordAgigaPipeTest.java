@@ -18,7 +18,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import edu.jhu.hlt.asphalt.AsphaltException;
 import edu.jhu.hlt.ballast.InvalidInputException;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
@@ -67,7 +66,7 @@ public class StanfordAgigaPipeTest {
    * @throws IOException 
    */
   @Test
-  public void processNonPassages() throws AsphaltException, TException, InvalidInputException, IOException, ConcreteException {
+  public void processNonPassages() throws TException, InvalidInputException, IOException, ConcreteException {
     SuperCommunication sc = new SuperCommunication(this.testComm);
     assertTrue(sc.hasSectionSegmentations());
     assertTrue(sc.hasSections());
