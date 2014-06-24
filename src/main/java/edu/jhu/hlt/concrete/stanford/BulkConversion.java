@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang3.time.StopWatch;
+import org.apache.commons.lang.time.StopWatch;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -21,6 +21,7 @@ import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.SectionSegmentation;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Tokenization;
+import edu.jhu.hlt.concrete.UUID;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.ThriftIO;
@@ -189,7 +190,7 @@ public class StanfordAgigaPipe {
     for (SectionSegmentation sectionSegmentation : comm.getSectionSegmentations()) {
       // TODO: get section and sentence segmentation info from metadata
       List<Section> sections = sectionSegmentation.getSectionList();
-      List<String> sectionUUIDs = new ArrayList<String>();
+      List<UUID> sectionUUIDs = new ArrayList<>();
       // List<Integer> numberOfSentences = new ArrayList<Integer>();
       List<Tokenization> tokenizations = new ArrayList<Tokenization>();
       Annotation documentAnnotation = getSeededDocumentAnnotation();
@@ -224,6 +225,7 @@ public class StanfordAgigaPipe {
 
           continue;
         }
+        
         sectionUUIDs.add(section.getUuid());
         // 2) Second, perform the other localized processing
         logger.debug("Additional processing on section: {}", section.getUuid());

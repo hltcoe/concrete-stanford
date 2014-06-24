@@ -9,14 +9,9 @@
 
   <name>anno-pipeline-2</name>
 
-  <!-- <parent> -->
-  <!--   <groupId>edu.jhu.parent</groupId> -->
-  <!--   <artifactId>parent</artifactId> -->
-  <!--   <version>1.0.0</version> -->
-  <!-- </parent> -->
-
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <concrete.version>3.0.1-SNAPSHOT</concrete.version>
   </properties>
 
   <build>
@@ -73,12 +68,12 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-core</artifactId>
-      <version>2.0.7-SNAPSHOT</version>
+      <version>${concrete.version}</version>
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-util</artifactId>
-      <version>2.0.7-SNAPSHOT</version>
+      <version>${concrete.version}</version>
     </dependency>
     <!-- change these dependencies -->
 

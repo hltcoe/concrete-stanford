@@ -20,7 +20,7 @@ import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.SentenceSegmentation;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.agiga.AgigaConverter;
-import edu.jhu.hlt.concrete.util.UUIDGenerator;
+import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
 
 /**
  * given a Communication (with Sections and Sentences added) and Stanford's annotations via an AgigaDocument, add these annotations and return a new
@@ -29,6 +29,8 @@ import edu.jhu.hlt.concrete.util.UUIDGenerator;
 public class AgigaConcreteAnnotator {
   
   private static final Logger logger = LoggerFactory.getLogger(AgigaConcreteAnnotator.class);
+  private final ConcreteUUIDFactory idFactory = new ConcreteUUIDFactory();
+  private final AgigaConverter ag = new AgigaConverter();
 
   public AnnotationMetadata metadata() {
     return new AnnotationMetadata()
@@ -43,12 +45,12 @@ public class AgigaConcreteAnnotator {
 
   public SimpleEntry<EntityMentionSet, EntitySet> convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations) {
     EntityMentionSet ems = new EntityMentionSet()
-      .setUuid(UUIDGenerator.make())
+      .setUuid(this.idFactory.getConcreteUUID())
       .setMetadata(metadata());
     List<Entity> elist = new LinkedList<Entity>();
     for (AgigaCoref coref : agigaDoc.getCorefs()) {
       if (!coref.getMentions().isEmpty()) {
-        Entity e = AgigaConverter.convertCoref(ems, coref, agigaDoc, tokenizations);
+        Entity e = this.ag.convertCoref(ems, coref, agigaDoc, tokenizations);
         elist.add(e);
       } else {
         logger.warn("There were not any mentions for coref: " + coref.toString());
@@ -56,7 +58,7 @@ public class AgigaConcreteAnnotator {
     }
     
     EntitySet es = new EntitySet()
-      .setUuid(UUIDGenerator.make())
+      .setUuid(this.idFactory.getConcreteUUID())
       .setMetadata(metadata())
       .setEntityList(elist);
     
@@ -67,7 +69,7 @@ public class AgigaConcreteAnnotator {
   public SentenceSegmentation addSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations) {
     logger.debug("f3");
     // create a sentence segmentation
-    SentenceSegmentation ss = new SentenceSegmentation().setUuid(UUIDGenerator.make()).setMetadata(metadata());
+    SentenceSegmentation ss = new SentenceSegmentation().setUuid(this.idFactory.getConcreteUUID()).setMetadata(metadata());
     ss.sectionId = in.getUuid();
     addSentences(ss, ad, tokenizations);
     // in.addToSentenceSegmentation(ss);
@@ -83,8 +85,8 @@ public class AgigaConcreteAnnotator {
     assert n > 0 : "n=" + n;
     for (int i = 0; i < n; i++) {
         AgigaSentence asent = ad.getSents().get(sentPtr++);
-        Sentence st = AgigaConverter.convertSentence(asent, charOffset, tokenizations);
-        String sentText = AgigaConverter.flattenText(asent);
+        Sentence st = this.ag.convertSentence(asent, charOffset, tokenizations);
+        String sentText = this.ag.flattenText(asent);
         // String docText = AgigaConverter.flattenText(ad);
         //logger.debug(sentText);
         int l = sentText.length();
