@@ -75,6 +75,14 @@
       <artifactId>concrete-util</artifactId>
       <version>${concrete.version}</version>
     </dependency>
+    <dependency>
+      <groupId>edu.jhu.hlt</groupId>
+      <artifactId>concrete-util</artifactId>
+      <scope>test</scope>
+      <type>test-jar</type>
+      <version>${concrete.version}</version>
+    </dependency>
+
     <!-- change these dependencies -->
 
     <dependency>

@@ -4,12 +4,8 @@
 package edu.jhu.hlt.concrete.stanford;
 
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,11 +14,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import edu.jhu.hlt.asphalt.AsphaltException;
 import edu.jhu.hlt.ballast.InvalidInputException;
+import edu.jhu.hlt.ballast.tools.SingleSectionSegmenter;
 import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.concrete.ConcreteFactory;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.ConcreteException;
-import edu.jhu.hlt.concrete.util.Serialization;
 
 /**
  * @author max
@@ -43,11 +41,10 @@ public class StanfordAgigaPipeTest {
     runOverThese.add("Other");
     runOverThese.add("Passage");
     
-    pipe = new StanfordAgigaPipe(runOverThese);
-    Path p = Paths.get(dataPath);
-    if (!Files.exists(p))
-      fail("You need to make sure that this file exists: " + dataPath);
-    this.testComm = new Serialization().fromBytes(new Communication(), Files.readAllBytes(p));
+    this.pipe = new StanfordAgigaPipe(runOverThese);
+    Communication c = new ConcreteFactory().randomCommunication();
+    this.testComm = new SingleSectionSegmenter().annotate(c); 
+    // new Serialization().fromBytes(new Communication(), Files.readAllBytes(p));
   }
 
   /**
