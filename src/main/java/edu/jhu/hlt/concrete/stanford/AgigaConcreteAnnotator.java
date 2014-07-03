@@ -30,7 +30,7 @@ public class AgigaConcreteAnnotator {
   
   private static final Logger logger = LoggerFactory.getLogger(AgigaConcreteAnnotator.class);
   private final ConcreteUUIDFactory idFactory = new ConcreteUUIDFactory();
-  private final AgigaConverter ag = new AgigaConverter();
+  private final AgigaConverter ag = new AgigaConverter(true);
 
   public AnnotationMetadata metadata() {
     return new AnnotationMetadata()
