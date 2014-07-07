@@ -30,7 +30,9 @@ public class AgigaConcreteAnnotator {
   
   private static final Logger logger = LoggerFactory.getLogger(AgigaConcreteAnnotator.class);
   private final ConcreteUUIDFactory idFactory = new ConcreteUUIDFactory();
-  private final AgigaConverter ag = new AgigaConverter();
+  // Since we're converting from raw (pretokenized) text, we don't want
+  // the agiga converter to add TextSpan fields.
+  private final AgigaConverter ag = new AgigaConverter(false);
 
   public AnnotationMetadata metadata() {
     return new AnnotationMetadata()
@@ -39,7 +41,7 @@ public class AgigaConcreteAnnotator {
   }
 
   public void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations) {
-    SentenceSegmentation ss = addSentenceSegmentation(section, agigaDoc, tokenizations);
+    SentenceSegmentation ss = addSentenceSegmentation(section, agigaDoc, tokenizations, 0, 0);
     section.addToSentenceSegmentation(ss);
   }
 
@@ -66,48 +68,46 @@ public class AgigaConcreteAnnotator {
   }
 
   // add SentenceSegmentation to the section
-    public SentenceSegmentation addSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int sentOffset, int charOffset) {
+  public SentenceSegmentation addSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int sentOffset, int charOffset) {
     logger.debug("f3");
     // create a sentence segmentation
     SentenceSegmentation ss = new SentenceSegmentation().setUuid(this.idFactory.getConcreteUUID()).setMetadata(metadata());
     ss.sectionId = in.getUuid();
-    addSentences(ss, ad, tokenizations, sentOffset, charOffset);
+    addSentences(ss, ad, tokenizations);
     // in.addToSentenceSegmentation(ss);
     return ss;
   }
 
   // add all Sentences
-  /**
-   * returns the final charOffset
-   */
-  private int addSentences(SentenceSegmentation in, AgigaDocument ad, List<Tokenization> tokenizations, int sentOffset, int givenCharOffset) {
+  private void addSentences(SentenceSegmentation in, AgigaDocument ad, List<Tokenization> tokenizations) {
     logger.debug("f4");
     final int n = ad.getSents().size();
-    int sentPtr = sentOffset;
-    int charOffset = givenCharOffset;
-    int tempCO = 0;
+    int sentPtr = 0;
+    //int tempCO = 0;
     assert n > 0 : "n=" + n;
     for (int i = 0; i < n; i++) {
         AgigaSentence asent = ad.getSents().get(sentPtr++);
-        Sentence st = this.ag.convertSentence(asent, charOffset, tokenizations);
+        //the second argument is the estimated character provenance offset. 
+        //We're not filling the optional textSpan fields, so the exact parameter
+        //value doesn't matter.
+        Sentence st = this.ag.convertSentence(asent, 0, tokenizations);
         String sentText = this.ag.flattenText(asent);
-        // String docText = AgigaConverter.flattenText(ad);
-        //logger.debug(sentText);
-        int sentTextLen = sentText.length();
-        int endingOffset;
-        if(sentTextLen == 0) {
-            logger.error("sentence " + (sentPtr - 1) + " has 0 length!");
-            endingOffset = 0;
-        } else {
-            endingOffset = sentText.charAt(sentTextLen - 1) == '\n' ? 1 : 0;
-        }
-        System.out.println("[f4, charOffset check]: start = " + charOffset + ", end = " + (charOffset + sentTextLen + endingOffset));
-        System.out.println("\t[[" + docText + "]]");
-        System.out.println("\ttext = <<" + docText.substring(tempCO, tempCO + sentTextLen + endingOffset) + ">>");
-        charOffset += sentTextLen + endingOffset;
-        tempCO += sentTextLen + endingOffset;
+        // // String docText = AgigaConverter.flattenText(ad);
+        logger.debug(sentText);
+        // int sentTextLen = sentText.length();
+        // int endingOffset;
+        // if(sentTextLen == 0) {
+        //     logger.error("sentence " + (sentPtr - 1) + " has 0 length!");
+        //     endingOffset = 0;
+        // } else {
+        //     endingOffset = sentText.charAt(sentTextLen - 1) == '\n' ? 1 : 0;
+        // }
+        // System.out.println("[f4, charOffset check]: start = " + charOffset + ", end = " + (charOffset + sentTextLen + endingOffset));
+        // System.out.println("\t[[" + docText + "]]");
+        // System.out.println("\ttext = <<" + docText.substring(tempCO, tempCO + sentTextLen + endingOffset) + ">>");
+        // charOffset += sentTextLen + endingOffset;
+        // tempCO += sentTextLen + endingOffset;
         in.addToSentenceList(st);
     }
-    return charOffset;
   }
 }

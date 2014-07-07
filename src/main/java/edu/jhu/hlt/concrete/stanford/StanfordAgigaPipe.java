@@ -382,7 +382,7 @@ public class StanfordAgigaPipe {
     // pass in sentOffset = 0 to reflect the fact that we're *locally* treating each
     // newly processed section as its own document
     // however, the character offsets *must* be global!
-    agigaToConcrete.convertSection(section, agigaDoc, tokenizations, 0, priorCharOffset);
+    agigaToConcrete.convertSection(section, agigaDoc, tokenizations);
   }
 
   public void processCoref(Communication comm, Annotation docAnnotation, List<Tokenization> tokenizations) {
