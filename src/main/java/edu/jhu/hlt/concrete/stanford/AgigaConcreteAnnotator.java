@@ -67,14 +67,11 @@ public class AgigaConcreteAnnotator {
     section.addToSentenceSegmentation(ss);
   }
 
-  // add SentenceSegmentation to the section
   public SentenceSegmentation addSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int sentOffset, int charOffset) {
     logger.debug("f3");
-    // create a sentence segmentation
     SentenceSegmentation ss = new SentenceSegmentation().setUuid(this.idFactory.getConcreteUUID()).setMetadata(metadata());
     ss.sectionId = in.getUuid();
     addSentences(ss, ad, tokenizations);
-    // in.addToSentenceSegmentation(ss);
     return ss;
   }
 
