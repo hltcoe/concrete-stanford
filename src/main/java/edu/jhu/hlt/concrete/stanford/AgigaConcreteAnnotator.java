@@ -80,7 +80,6 @@ public class AgigaConcreteAnnotator {
     logger.debug("f4");
     final int n = ad.getSents().size();
     int sentPtr = 0;
-    //int tempCO = 0;
     assert n > 0 : "n=" + n;
     for (int i = 0; i < n; i++) {
         AgigaSentence asent = ad.getSents().get(sentPtr++);
@@ -89,21 +88,7 @@ public class AgigaConcreteAnnotator {
         //value doesn't matter.
         Sentence st = this.ag.convertSentence(asent, 0, tokenizations);
         String sentText = this.ag.flattenText(asent);
-        // // String docText = AgigaConverter.flattenText(ad);
         logger.debug(sentText);
-        // int sentTextLen = sentText.length();
-        // int endingOffset;
-        // if(sentTextLen == 0) {
-        //     logger.error("sentence " + (sentPtr - 1) + " has 0 length!");
-        //     endingOffset = 0;
-        // } else {
-        //     endingOffset = sentText.charAt(sentTextLen - 1) == '\n' ? 1 : 0;
-        // }
-        // System.out.println("[f4, charOffset check]: start = " + charOffset + ", end = " + (charOffset + sentTextLen + endingOffset));
-        // System.out.println("\t[[" + docText + "]]");
-        // System.out.println("\ttext = <<" + docText.substring(tempCO, tempCO + sentTextLen + endingOffset) + ">>");
-        // charOffset += sentTextLen + endingOffset;
-        // tempCO += sentTextLen + endingOffset;
         in.addToSentenceList(st);
     }
   }
