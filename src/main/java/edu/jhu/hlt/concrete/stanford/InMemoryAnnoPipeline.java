@@ -101,17 +101,14 @@ public class InMemoryAnnoPipeline {
 
   public AgigaDocument annotate(StanfordCoreNLP pipeline, Annotation annotation) throws IOException {
     for (String stage : documentLevelStages) {
-      logger.debug("DEBUG: annotation stage = " + stage);
-      // if(stage.equals("dcoref")){
-      // fixNullDependencyGraphs(annotation);
-      // }
+      logger.debug("Annotation stage: {}", stage);
       try {
         (StanfordCoreNLP.getExistingAnnotator(stage)).annotate(annotation);
         if (stage.equals("parse")) {
           fixNullDependencyGraphs(annotation);
         }
       } catch (Exception e) {
-        logger.warn("Error annotating " + stage);
+        logger.warn("Error annotating stage: {}" + stage);
       }
     }
     
