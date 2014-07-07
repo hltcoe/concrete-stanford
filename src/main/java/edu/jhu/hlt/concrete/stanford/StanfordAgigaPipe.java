@@ -379,9 +379,6 @@ public class StanfordAgigaPipe {
 
     transferAnnotations(sentenceSplitText, docAnnotation);
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator();
-    // pass in sentOffset = 0 to reflect the fact that we're *locally* treating each
-    // newly processed section as its own document
-    // however, the character offsets *must* be global!
     agigaToConcrete.convertSection(section, agigaDoc, tokenizations);
   }
 
