@@ -40,11 +40,6 @@ public class AgigaConcreteAnnotator {
       .setTimestamp(System.currentTimeMillis() / 1000);
   }
 
-  public void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations) {
-    SentenceSegmentation ss = addSentenceSegmentation(section, agigaDoc, tokenizations, 0, 0);
-    section.addToSentenceSegmentation(ss);
-  }
-
   public SimpleEntry<EntityMentionSet, EntitySet> convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations) {
     EntityMentionSet ems = new EntityMentionSet()
       .setUuid(this.idFactory.getConcreteUUID())
@@ -65,6 +60,11 @@ public class AgigaConcreteAnnotator {
       .setEntityList(elist);
     
     return new SimpleEntry<EntityMentionSet, EntitySet>(ems, es);
+  }
+
+  public void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations) {
+    SentenceSegmentation ss = addSentenceSegmentation(section, agigaDoc, tokenizations, 0, 0);
+    section.addToSentenceSegmentation(ss);
   }
 
   // add SentenceSegmentation to the section
