@@ -63,11 +63,11 @@ public class AgigaConcreteAnnotator {
   }
 
   public void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations) {
-    SentenceSegmentation ss = addSentenceSegmentation(section, agigaDoc, tokenizations, 0, 0);
+    SentenceSegmentation ss = createSentenceSegmentation(section, agigaDoc, tokenizations, 0, 0);
     section.addToSentenceSegmentation(ss);
   }
 
-  public SentenceSegmentation addSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int sentOffset, int charOffset) {
+  public SentenceSegmentation createSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int sentOffset, int charOffset) {
     logger.debug("f3");
     SentenceSegmentation ss = new SentenceSegmentation().setUuid(this.idFactory.getConcreteUUID()).setMetadata(metadata());
     ss.sectionId = in.getUuid();
