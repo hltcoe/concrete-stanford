@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.thrift.TException;
@@ -21,7 +22,10 @@ import edu.jhu.hlt.ballast.tools.SingleSectionSegmenter;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.SectionSegmentation;
+import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
+import edu.jhu.hlt.concrete.Tokenization;
+import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
@@ -33,21 +37,49 @@ import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
 public class StanfordAgigaPipeTest {
 
   String dataPath ="src/test/resources/test-out-v.0.1.2.concrete";
-  StanfordAgigaPipe pipe;
+
   Communication testComm;
+
+  static Set<String> runOverThese = new HashSet<>();
+  static {
+      runOverThese.add("Other");
+      runOverThese.add("Passage");
+  }
+  static StanfordAgigaPipe pipe = new StanfordAgigaPipe(runOverThese);
+  static Communication shakeHandComm = new Communication().setId("sample_communication")
+      .setType("article");
+  static Communication processedShakeHandComm;
+  static void createShakeHandComm() throws Exception{
+      ConcreteUUIDFactory cuf = new ConcreteUUIDFactory();
+      String text = "The man ran to shake the U.S. \nPresident's hand. ";
+      shakeHandComm.setText(text).setUuid(cuf.getConcreteUUID());
+      Section section = new Section().setUuid(cuf.getConcreteUUID())
+          .setTextSpan(new TextSpan().setStart(0).setEnding(text.length()))
+          .setKind("Passage");
+      SectionSegmentation ss = new SectionSegmentation().setUuid(cuf.getConcreteUUID());
+      ss.addToSectionList(section);
+      shakeHandComm.addToSectionSegmentations(ss);
+      StanfordAgigaPipeTest.processedShakeHandComm = pipe.process(shakeHandComm);
+  }
+    static {
+        try {
+            createShakeHandComm();
+        } catch(Exception e){
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
   
   /**
    * @throws java.lang.Exception
    */
   @Before
   public void setUp() throws Exception {
-    Set<String> runOverThese = new HashSet<>();
-    runOverThese.add("Other");
-    runOverThese.add("Passage");
     
-    this.pipe = new StanfordAgigaPipe(runOverThese);
-    Communication c = new ConcreteFactory().randomCommunication();
-    this.testComm = new SingleSectionSegmenter().annotate(c); 
+    // this.pipe = new StanfordAgigaPipe(runOverThese);
+    // Communication c = new ConcreteFactory().randomCommunication();
+    // this.testComm = new SingleSectionSegmenter().annotate(c); 
+
     // new Serialization().fromBytes(new Communication(), Files.readAllBytes(p));
   }
 
@@ -67,17 +99,31 @@ public class StanfordAgigaPipeTest {
    * @throws IOException 
    */
     //@Test
-  public void processNonPassages() throws TException, InvalidInputException, IOException, ConcreteException {
-    SuperCommunication sc = new SuperCommunication(this.testComm);
-    assertTrue(sc.hasSectionSegmentations());
-    assertTrue(sc.hasSections());
+  // public void processNonPassages() throws TException, InvalidInputException, IOException, ConcreteException {
+  //   SuperCommunication sc = new SuperCommunication(this.testComm);
+  //   assertTrue(sc.hasSectionSegmentations());
+  //   assertTrue(sc.hasSections());
     
-    Communication nc = this.pipe.process(this.testComm);
-    assertTrue(nc.isSetEntityMentionSets());
-    assertTrue(nc.isSetEntitySets());
-    new SuperCommunication(nc).writeToFile("src/test/resources/post-stanford.concrete", true);
-  }
+  //   Communication nc = this.pipe.process(this.testComm);
+  //   assertTrue(nc.isSetEntityMentionSets());
+  //   assertTrue(nc.isSetEntitySets());
+  //   new SuperCommunication(nc).writeToFile("src/test/resources/post-stanford.concrete", true);
+  // }
   
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testShake1_numSents() throws TException, InvalidInputException, IOException, ConcreteException {
+      Section nsect = StanfordAgigaPipeTest.processedShakeHandComm.getSectionSegmentations().get(0).getSectionList().get(0);
+      List<Sentence> nSentList = nsect.getSentenceSegmentation().get(0).getSentenceList();
+      assertTrue(nSentList.size() == 1);
+  }
 
   /**
    * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
@@ -88,26 +134,97 @@ public class StanfordAgigaPipeTest {
    * @throws IOException 
    */
   @Test
-  public void processSample() throws TException, InvalidInputException, IOException, ConcreteException {
-      ConcreteUUIDFactory cuf = new ConcreteUUIDFactory();
-      String text = "The man ran quickly toward the front line to shake the U.S. \n" +
-          "President's hand. The man, Mr. Foo Bar, shared many interests \n" + 
-          "with the leader --- their favorite author was J.D. Salinger.\n " +
-          "Another similarity was that blue was their favorite colour.";
-      Communication sample = new Communication().setId("sample_communication")
-          .setUuid(cuf.getConcreteUUID())
-          .setType("article")
-          .setText(text);
-      Section section = new Section().setUuid(cuf.getConcreteUUID())
-          .setTextSpan(new TextSpan().setStart(0).setEnding(text.length()))
-          .setKind("Passage");
-      SectionSegmentation ss = new SectionSegmentation().setUuid(cuf.getConcreteUUID());
-      ss.addToSectionList(section);
-      sample.addToSectionSegmentations(ss);
-      
-      Communication nc = this.pipe.process(sample);
-      new SuperCommunication(nc).writeToFile("src/test/resources/sample_para_processed.concrete", true);
+  public void testShake1_sentOffsets() throws TException, InvalidInputException, IOException, ConcreteException {
+      Section nsect = StanfordAgigaPipeTest.processedShakeHandComm.getSectionSegmentations().get(0).getSectionList().get(0);
+      List<Sentence> nSentList = nsect.getSentenceSegmentation().get(0).getSentenceList();
+      assertTrue(nSentList.size() == 1);
+      Sentence nsent = nSentList.get(0);
+      assertTrue(nsent.getTextSpan().getStart() == 0);
+      assertTrue(nsent.getTextSpan().getEnding() == 49);
   }
+
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testShake1_numTokens() throws TException, InvalidInputException, IOException, ConcreteException {
+      Section nsect = StanfordAgigaPipeTest.processedShakeHandComm.getSectionSegmentations().get(0).getSectionList().get(0);
+      List<Sentence> nSentList = nsect.getSentenceSegmentation().get(0).getSentenceList();
+      Sentence nsent = nSentList.get(0);
+      Tokenization ntokenization = nsent.getTokenizationList().get(0);
+      String[] stokens = {"The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "."};
+      StringBuilder actualTokensSB = new StringBuilder();
+      for(Token tok : ntokenization.getTokenList().getTokens()){
+          actualTokensSB.append("("+tok.text+", " + tok.tokenIndex+") ");
+      }
+      assertTrue("Expected tokens length = " + stokens.length + ";" + 
+                 "Actual   tokens length = " + ntokenization.getTokenList().getTokens().size()+ "; " + 
+                 "Actual tokens = " + actualTokensSB.toString(), 
+                 ntokenization.getTokenList().getTokens().size() == stokens.length);
+  }
+
+/**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+//  @Test
+  public void testShake1() throws TException, InvalidInputException, IOException, ConcreteException {
+      Section nsect = StanfordAgigaPipeTest.processedShakeHandComm.getSectionSegmentations().get(0).getSectionList().get(0);
+      List<Sentence> nSentList = nsect.getSentenceSegmentation().get(0).getSentenceList();
+      Sentence nsent = nSentList.get(0);
+      Tokenization ntokenization = nsent.getTokenizationList().get(0);
+      String[] stokens = {"The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "."};
+      System.out.println(stokens.length);
+      System.out.println(ntokenization.getTokenList().getTokens().size());
+      assertTrue(ntokenization.getTokenList().getTokens().size() == stokens.length);
+      int tokIdx = 0;
+      for(Token token : ntokenization.getTokenList().getTokens()){
+          //assertTrue(token.tokenIndex == tokIdx);
+          //assertTrue(token.text == stokens[tokIdx]);
+          TextSpan tts = token.getTextSpan();
+          //assertTrue(tts.getStart() == 
+      }
+  }
+
+
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+    //@Test
+  // public void processSample() throws TException, InvalidInputException, IOException, ConcreteException {
+  //     ConcreteUUIDFactory cuf = new ConcreteUUIDFactory();
+  //     String text = "The man ran quickly toward the front line to shake the U.S. \n" +
+  //         "President's hand. The man, Mr. Foo Bar, shared many interests \n" + 
+  //         "with the leader --- their favorite author was J.D. Salinger.\n " +
+  //         "Another similarity was that blue was their favorite colour.";
+  //     Communication sample = new Communication().setId("sample_communication")
+  //         .setUuid(cuf.getConcreteUUID())
+  //         .setType("article")
+  //         .setText(text);
+  //     Section section = new Section().setUuid(cuf.getConcreteUUID())
+  //         .setTextSpan(new TextSpan().setStart(0).setEnding(text.length()))
+  //         .setKind("Passage");
+  //     SectionSegmentation ss = new SectionSegmentation().setUuid(cuf.getConcreteUUID());
+  //     ss.addToSectionList(section);
+  //     sample.addToSectionSegmentations(ss);
+      
+  //     Communication nc = this.pipe.process(sample);
+  //     new SuperCommunication(nc).writeToFile("src/test/resources/sample_para_processed.concrete", true);
+  // }
 
 //  @Test
 //  public void processBadMessage() throws Exception {
