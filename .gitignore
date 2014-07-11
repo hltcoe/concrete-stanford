@@ -6,4 +6,6 @@ target/
 .project
 .settings/
 src/test/resources/post-stanford.concrete
+src/test/resources/sample_para_processed.concrete
+
 
