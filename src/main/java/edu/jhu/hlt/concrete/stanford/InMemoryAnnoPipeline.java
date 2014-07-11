@@ -26,6 +26,7 @@ import edu.stanford.nlp.pipeline.Annotator;
 import edu.stanford.nlp.pipeline.PTBTokenizerAnnotator;
 import edu.stanford.nlp.pipeline.ParserAnnotatorUtils;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.pipeline.WhitespaceTokenizerAnnotator;
 import edu.stanford.nlp.pipeline.WordsToSentencesAnnotator;
 import edu.stanford.nlp.pipeline.XMLOutputter;
 import edu.stanford.nlp.semgraph.SemanticGraph;
@@ -37,6 +38,21 @@ import edu.stanford.nlp.trees.GrammaticalStructureFactory;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.util.CoreMap;
+
+import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.SentenceIndexAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.TokenBeginAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.TokenEndAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
+import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.trees.Tree;
+import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
+import edu.stanford.nlp.util.CoreMap;
+
 
 /**
  * An in-memory version of the Annotated Gigaword pipeline, using only the Stanford CORE NLP tools.
@@ -54,18 +70,40 @@ public class InMemoryAnnoPipeline {
   // Document counter.
   private int docCounter;
 
+  private PTBTokenizerAnnotator ptbTokenizerUnofficial;
   private PTBTokenizerAnnotator ptbTokenizer;
-  // private POSTaggerAnnotator posTagger;
   private WordsToSentencesAnnotator words2SentencesAnnotator;
   // NOTE: we're only using this for its annotationToDoc method
   private StanfordCoreNLP pipeline;
   private static GrammaticalStructureFactory gsf = new EnglishGrammaticalStructureFactory();
   private static String[] documentLevelStages = { "pos", "lemma", "parse", "ner" };
 
+  private static String firstPassTokArgs = "" + 
+      "invertible=true," + //default
+      "tokenizeNLs=true," + //override
+      "ptb3Escaping=false," + //override
+      "americanize=false," + //override
+      "normalizeSpace=false," + //override
+      "normalizeAmpersandEntity=false," + //override
+      "normalizeCurrency=false," + //override
+      "normalizeFractions=false," + //override
+      "normalizeParentheses=false," + //override
+      "normalizeOtherBrackets=false," + //override
+      "asciiQuotes=false," + //default
+      "latexQuotes=false," + //override
+      "unicodeQuotes=false," + //default
+      "ptb3Ellipsis=false," + //override 
+      "unicodeEllipsis=false," + //default
+      "ptb3Dashes=false," + //override
+      "splitAssimilations=true," + //default: Note that the docs say "keepAssimilations," but if you look at the source, it's actually "split"
+      "escapeForwardSlashAsterisk=false," + //override
+      "untokenizable=noneKeep," + //override
+      "strictTreebank3=false"; //default
+
   public InMemoryAnnoPipeline() {
     docCounter = 0;
     ptbTokenizer = new PTBTokenizerAnnotator();
-    // posTagger = new POSTaggerAnnotator();
+    ptbTokenizerUnofficial = new PTBTokenizerAnnotator(true, firstPassTokArgs);
     words2SentencesAnnotator = new WordsToSentencesAnnotator();
     Properties props = new Properties();
     String annotatorList = "tokenize, ssplit, pos, lemma, parse, ner";
@@ -78,7 +116,8 @@ public class InMemoryAnnoPipeline {
   }
 
   /**
-   * This only performs tokenization and sentence-splitting on a block of text. Part-of-speech tagging is handled elsewhere.
+   * This only performs tokenization and sentence-splitting on a block of text. 
+   * Part-of-speech tagging is handled elsewhere.
    * 
    * @param text
    *          A block of text; perhaps multiple sentences.
@@ -90,6 +129,35 @@ public class InMemoryAnnoPipeline {
     words2SentencesAnnotator.annotate(sentence);
     return sentence;
   }
+
+  /**
+   * Get as non-destructive a PTB tokenization and sentence splitting as possible.
+   * 
+   * @param text
+   *          A block of text; perhaps multiple sentences.
+   * @return An annotation object containing the tokenized and sentence-split text.
+   */
+  public Annotation splitAndTokenizeTextNonDestructive(String text) {
+    Annotation sentence = new Annotation(text);
+    ptbTokenizerUnofficial.annotate(sentence);
+    words2SentencesAnnotator.annotate(sentence);
+    // List<CoreMap> sentAnnos = sentence.get(SentencesAnnotation.class);
+    // for (CoreMap sentAnno : sentAnnos) {
+    //   List<CoreLabel> sentTokens = sentAnno.get(TokensAnnotation.class);
+    //   System.out.println("SENTENCEINDEXANNO = " + sentAnno.get(SentenceIndexAnnotation.class));
+
+    //   for (CoreLabel token : sentTokens) {
+    //     // note that character offsets are global
+    //     String tokenText = token.get(TextAnnotation.class);
+    //     System.out.println("token:<<" + tokenText + ">>");
+    //     System.out.println("\toriginal:[[" + token.originalText() + "]]");
+    //     System.out.println("\tbefore:<<" + token.before() + ">>");
+    //     System.out.println("\tafter:<<" + token.after() + ">>");
+    //   }
+    // }
+    return sentence;
+  }
+
 
   public AgigaDocument annotate(Annotation annotation) throws IOException {
     return annotate(pipeline, annotation);
