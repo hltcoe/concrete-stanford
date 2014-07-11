@@ -231,7 +231,7 @@ public class StanfordAgigaPipe {
         sectionUUIDs.add(section.getUuid());
         // 2) Second, perform the other localized processing
         logger.debug("Additional processing on section: {}", section.getUuid());
-        System.out.println(sectionText);
+        System.out.println(">> SectionText=["+sectionText+"]");
         processSection(section, sectionAnnotation, documentAnnotation, tokenizations);
       }
 
@@ -304,6 +304,8 @@ public class StanfordAgigaPipe {
         token.set(CharacterOffsetEndAnnotation.class, charOffset);
         logger.debug(debugtext + charOffset);
         logger.debug("\toriginal:[[" + token.originalText() + "]]");
+        logger.debug("\tbefore:<<" + token.before() + ">>");
+        logger.debug("\tafter:<<" + token.after() + ">>");
         charOffset++; // Skip space
       }
       sentAnno.set(TokensAnnotation.class, sentTokens);

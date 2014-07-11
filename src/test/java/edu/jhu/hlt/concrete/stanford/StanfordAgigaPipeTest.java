@@ -19,8 +19,12 @@ import edu.jhu.hlt.asphalt.AsphaltException;
 import edu.jhu.hlt.ballast.InvalidInputException;
 import edu.jhu.hlt.ballast.tools.SingleSectionSegmenter;
 import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.concrete.Section;
+import edu.jhu.hlt.concrete.SectionSegmentation;
+import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.ConcreteException;
+import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
 
 /**
  * @author max
@@ -62,7 +66,7 @@ public class StanfordAgigaPipeTest {
    * @throws ConcreteException 
    * @throws IOException 
    */
-  @Test
+    //@Test
   public void processNonPassages() throws TException, InvalidInputException, IOException, ConcreteException {
     SuperCommunication sc = new SuperCommunication(this.testComm);
     assertTrue(sc.hasSectionSegmentations());
@@ -74,6 +78,37 @@ public class StanfordAgigaPipeTest {
     new SuperCommunication(nc).writeToFile("src/test/resources/post-stanford.concrete", true);
   }
   
+
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void processSample() throws TException, InvalidInputException, IOException, ConcreteException {
+      ConcreteUUIDFactory cuf = new ConcreteUUIDFactory();
+      String text = "The man ran quickly toward the front line to shake the U.S. \n" +
+          "President's hand. The man, Mr. Foo Bar, shared many interests \n" + 
+          "with the leader --- their favorite author was J.D. Salinger.\n " +
+          "Another similarity was that blue was their favorite colour.";
+      Communication sample = new Communication().setId("sample_communication")
+          .setUuid(cuf.getConcreteUUID())
+          .setType("article")
+          .setText(text);
+      Section section = new Section().setUuid(cuf.getConcreteUUID())
+          .setTextSpan(new TextSpan().setStart(0).setEnding(text.length()))
+          .setKind("Passage");
+      SectionSegmentation ss = new SectionSegmentation().setUuid(cuf.getConcreteUUID());
+      ss.addToSectionList(section);
+      sample.addToSectionSegmentations(ss);
+      
+      Communication nc = this.pipe.process(sample);
+      new SuperCommunication(nc).writeToFile("src/test/resources/sample_para_processed.concrete", true);
+  }
+
 //  @Test
 //  public void processBadMessage() throws Exception {
 //    Communication c = new Communication();
