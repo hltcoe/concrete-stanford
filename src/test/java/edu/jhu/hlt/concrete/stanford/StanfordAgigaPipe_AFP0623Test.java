@@ -235,170 +235,38 @@ public class StanfordAgigaPipe_AFP0623Test {
       }
   }
 
-
-//   /**
-//    * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-//    * @throws TException 
-//    * @throws AsphaltException 
-//    * @throws InvalidInputException 
-//    * @throws ConcreteException 
-//    * @throws IOException 
-//    */
-//   @Test
-//   public void testAFP0623_sentOffsets() throws TException, InvalidInputException, IOException, ConcreteException {
-      // "Protest over arrest of Sri Lanka reporter linked to Fonseka\n" + 
-      // "Sri Lankan media groups Thursday protested against the arrest of a reporter " +
-      // "close to Sarath Fonseka, the detained ex-army chief who tried to unseat the" +
-      // "president in recent elections.\n\n" +
-      // "The groups issued a joint statement demanding the release of Ruwan Weerakoon, a" + 
-      // "reporter with the Nation newspaper, who was arrested this week.\n\n" + 
-      // "\"We request the Inspector General of Police to disclose the reasons behind the" +
-      // "arrest and detention of Ruwan Weerakoon and make arrangements for him to receive" +
-      // "legal aid immediately,\" the statement added.\n\n" + 
-      // "Weerakoon maintained close contact with Fonseka when the general led the" + 
-      // "military during the final phase of last year's war against Tamil Tiger rebels.\n\n" + 
-      // "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation" +
-      // "Tigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out" + 
-      // "and contested the presidency in January's elections.\n\n" + 
-      // "Fonseka was arrested soon after losing the poll and appeared in front of a court" + 
-      // "martial this week. The case was adjourned.\n\n" + 
-      // "Local and international rights groups have accused Rajapakse of cracking down on" + 
-      // "dissent, a charge the government has denied.";
-//       Section nsect = StanfordAgigaPipeTest.processedShakeHandComm.getSectionSegmentations().get(0).getSectionList().get(0);
-//       List<Sentence> nSentList = nsect.getSentenceSegmentation().get(0).getSentenceList();
-//       assertTrue(nSentList.size() == 1);
-//       Sentence nsent = nSentList.get(0);
-//       assertTrue("Beginning char should be 0, but is " + nsent.getTextSpan().getStart(),
-//                  nsent.getTextSpan().getStart() == 0);
-//       assertTrue("Ending char should be 48, but is " + nsent.getTextSpan().getEnding(), 
-//                  nsent.getTextSpan().getEnding() == 48);
-//   }
-
-//   /**
-//    * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-//    * @throws TException 
-//    * @throws AsphaltException 
-//    * @throws InvalidInputException 
-//    * @throws ConcreteException 
-//    * @throws IOException 
-//    */
-//   @Test
-//   public void testAFP0623_sentText() throws TException, InvalidInputException, IOException, ConcreteException {
-//       Section nsect = StanfordAgigaPipeTest.processedShakeHandComm.getSectionSegmentations().get(0).getSectionList().get(0);
-//       Sentence nsent = nsect.getSentenceSegmentation().get(0).getSentenceList().get(0);
-//       TextSpan tts = nsent.getTextSpan();
-//       String pulledText = StanfordAgigaPipeTest.processedShakeHandComm.getText()
-//           .substring(tts.getStart(), tts.getEnding());
-//       assertTrue(pulledText.equals(StanfordAgigaPipeTest.shakeHandText.trim()));
-//   }
-
-//   /**
-//    * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-//    * @throws TException 
-//    * @throws AsphaltException 
-//    * @throws InvalidInputException 
-//    * @throws ConcreteException 
-//    * @throws IOException 
-//    */
-//   @Test
-//   public void testAFP0623_numTokens() throws TException, InvalidInputException, IOException, ConcreteException {
-//       Section nsect = StanfordAgigaPipeTest.processedShakeHandComm.getSectionSegmentations().get(0).getSectionList().get(0);
-//       List<Sentence> nSentList = nsect.getSentenceSegmentation().get(0).getSentenceList();
-//       Sentence nsent = nSentList.get(0);
-//       Tokenization ntokenization = nsent.getTokenizationList().get(0);
-//       String[] stokens = {"The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "."};
-//       StringBuilder actualTokensSB = new StringBuilder();
-//       for(Token tok : ntokenization.getTokenList().getTokens()){
-//           actualTokensSB.append("("+tok.text+", " + tok.tokenIndex+") ");
-//       }
-//       assertTrue("Expected tokens length = " + stokens.length + ";" + 
-//                  "Actual   tokens length = " + ntokenization.getTokenList().getTokens().size()+ "; " + 
-//                  "Actual tokens = " + actualTokensSB.toString(), 
-//                  ntokenization.getTokenList().getTokens().size() == stokens.length);
-//   }
-
-//   /**
-//    * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-//    * @throws TException 
-//    * @throws AsphaltException 
-//    * @throws InvalidInputException 
-//    * @throws ConcreteException 
-//    * @throws IOException 
-//    */
-//   @Test
-//   public void testAFP0623_verifyTokens() throws TException, InvalidInputException, IOException, ConcreteException {
-//       Section nsect = StanfordAgigaPipeTest.processedShakeHandComm.getSectionSegmentations().get(0).getSectionList().get(0);
-//       List<Sentence> nSentList = nsect.getSentenceSegmentation().get(0).getSentenceList();
-//       Sentence nsent = nSentList.get(0);
-//       Tokenization ntokenization = nsent.getTokenizationList().get(0);
-//       String[] stokens = {"The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "."};
-//       String docText = StanfordAgigaPipeTest.processedShakeHandComm.getText();
-//       int tokIdx = 0;
-//       for(Token token : ntokenization.getTokenList().getTokens()){
-//           assertTrue("tokIdx = " + tokIdx + "; token.tokenIndex = " + token.tokenIndex,
-//                      token.tokenIndex == tokIdx);
-//           assertTrue("expected = [" + stokens[tokIdx] +
-//                      "]; token.text = [" + token.text + "]",
-//                      token.text.equals(stokens[tokIdx]));
-//           tokIdx++;
-//       }
-//   }
-
-//   /**
-//    * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-//    * @throws TException 
-//    * @throws AsphaltException 
-//    * @throws InvalidInputException 
-//    * @throws ConcreteException 
-//    * @throws IOException 
-//    */
-//   @Test
-//   public void testAFP0623_verifyTokensToFull() throws TException, InvalidInputException, IOException, ConcreteException {
-//       Section nsect = StanfordAgigaPipeTest.processedShakeHandComm.getSectionSegmentations().get(0).getSectionList().get(0);
-//       List<Sentence> nSentList = nsect.getSentenceSegmentation().get(0).getSentenceList();
-//       Sentence nsent = nSentList.get(0);
-//       Tokenization ntokenization = nsent.getTokenizationList().get(0);
-//       String[] stokens = {"The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "."};
-//       String docText = StanfordAgigaPipeTest.processedShakeHandComm.getText();
-//       int tokIdx = 0;
-//       for(Token token : ntokenization.getTokenList().getTokens()){
-//           StringBuilder sb = new StringBuilder();
-//           TextSpan tts = token.getTextSpan();
-//           String substr = docText.substring(tts.getStart(), tts.getEnding());
-//           assertTrue("expected = ["+ stokens[tokIdx] + "];" +
-//                      "docText("+ tts +") = [" + substr + "]",
-//                      stokens[tokIdx].equals(substr));
-//           tokIdx++;
-//       }
-//   }
-
-
-// /**
-//    * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-//    * @throws TException 
-//    * @throws AsphaltException 
-//    * @throws InvalidInputException 
-//    * @throws ConcreteException 
-//    * @throws IOException 
-//    */
-//   @Test
-//   public void testAFP0623_verifyTokenSpans() throws TException, InvalidInputException, IOException, ConcreteException {
-//       Section nsect = StanfordAgigaPipeTest.processedShakeHandComm.getSectionSegmentations().get(0).getSectionList().get(0);
-//       List<Sentence> nSentList = nsect.getSentenceSegmentation().get(0).getSentenceList();
-//       Sentence nsent = nSentList.get(0);
-//       Tokenization ntokenization = nsent.getTokenizationList().get(0);
-//       String[] stokens = {"The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "."};
-//       int[] start = {0, 4,  8, 12, 15, 21, 25, 31, 40, 43, 47};
-//       int[] end   = {3, 7, 11, 14, 20, 24, 29, 40, 42, 47, 48};
-//       int tokIdx = 0;
-//       for(Token token : ntokenization.getTokenList().getTokens()){
-//           TextSpan tts = token.getTextSpan();
-//           assertTrue(token.text + "(" + tokIdx +") starts at " + tts.getStart() +"; it should start at " +start[tokIdx], 
-//                      tts.getStart() == start[tokIdx]);
-//           assertTrue(token.text + "(" + tokIdx +") starts at " + tts.getEnding() +"; it should start at " +end[tokIdx], 
-//                      tts.getEnding() == end[tokIdx]);
-//           tokIdx++;
-//       }
-//   }
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testAFP0623_verifyTokensToFull() throws TException, InvalidInputException, IOException, ConcreteException {
+      String docText = StanfordAgigaPipe_AFP0623Test.processedComm.getProcessedContent();
+      int numEq = 0;
+      int numTot = 0;
+      for(Section nsect : StanfordAgigaPipe_AFP0623Test.processedComm.getSectionSegmentations().get(0).getSectionList()){
+          if(nsect.getSentenceSegmentation() == null) continue;
+          for(Sentence nsent : nsect.getSentenceSegmentation().get(0).getSentenceList()){
+              for(Token token : nsent.getTokenizationList().get(0).getTokenList().getTokens()){
+                  TextSpan tts = token.getTextSpan();
+                  String substr = docText.substring(tts.getStart(), tts.getEnding());
+                  boolean areEq = token.getText().equals(substr);
+                  if(!areEq) {
+                      logger.warn("expected = ["+ token.getText() + "];" +
+                                  "docText("+ tts +") = [" + substr + "]");
+                  } else {
+                      numEq++;
+                  }
+                  numTot++;
+              }
+          }
+      }
+      double fracPassing = ((double)numEq/(double)numTot);
+      assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing >= 0.8);
+  }
 
 }

@@ -245,6 +245,31 @@ public class StanfordAgigaPipeTest {
       List<Sentence> nSentList = nsect.getSentenceSegmentation().get(0).getSentenceList();
       Sentence nsent = nSentList.get(0);
       Tokenization ntokenization = nsent.getTokenizationList().get(0);
+      String docText = StanfordAgigaPipeTest.processedShakeHandComm.getText();
+      for(Token token : ntokenization.getTokenList().getTokens()){
+          StringBuilder sb = new StringBuilder();
+          TextSpan tts = token.getTextSpan();
+          String substr = docText.substring(tts.getStart(), tts.getEnding());
+          assertTrue("expected = ["+ token.getText() + "];" +
+                     "docText("+ tts +") = [" + substr + "]",
+                     token.getText().equals(substr));
+      }
+  }
+
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testShake1_verifyTokensToFullSeeded() throws TException, InvalidInputException, IOException, ConcreteException {
+      Section nsect = StanfordAgigaPipeTest.processedShakeHandComm.getSectionSegmentations().get(0).getSectionList().get(0);
+      List<Sentence> nSentList = nsect.getSentenceSegmentation().get(0).getSentenceList();
+      Sentence nsent = nSentList.get(0);
+      Tokenization ntokenization = nsent.getTokenizationList().get(0);
       String[] stokens = {"The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "."};
       String docText = StanfordAgigaPipeTest.processedShakeHandComm.getText();
       int tokIdx = 0;
