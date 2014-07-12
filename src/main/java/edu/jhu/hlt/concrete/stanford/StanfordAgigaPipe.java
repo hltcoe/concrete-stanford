@@ -354,12 +354,17 @@ public class StanfordAgigaPipe {
       if(usingOriginalCharOffsets()){
           //this is because for "xx yy", xx.after == " " AND yy.before == " "
           int beforeLength = token.before().length() - 1;
+          logger.debug("["+token.before()+", " + token.before().length()+ "] " + 
+                       "["+token.originalText() + "]"+
+                       " ["+ token.after()+", " + token.after().length() + "] :: "+ 
+                       charOffset + " --> " );
           if(beforeLength > 0) {
               charOffset += beforeLength;
           }
           token.set(CharacterOffsetBeginAnnotation.class, charOffset);
           charOffset += token.originalText().length();
           token.set(CharacterOffsetEndAnnotation.class, charOffset);
+          System.out.println(charOffset);
           charOffset += token.after().length();
       } else {
           token.set(CharacterOffsetBeginAnnotation.class, charOffset);

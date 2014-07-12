@@ -15,6 +15,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import concrete.util.data.ConcreteFactory;
 import edu.jhu.hlt.asphalt.AsphaltException;
 import edu.jhu.hlt.ballast.InvalidInputException;
@@ -35,6 +38,8 @@ import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
  *
  */
 public class StanfordAgigaPipeTest {
+
+  private static final Logger logger = LoggerFactory.getLogger(StanfordAgigaPipeTest.class);
 
   String dataPath ="src/test/resources/test-out-v.0.1.2.concrete";
 
@@ -168,6 +173,32 @@ public class StanfordAgigaPipeTest {
                  ntokenization.getTokenList().getTokens().size() == stokens.length);
   }
 
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testShake1_verifyTokens() throws TException, InvalidInputException, IOException, ConcreteException {
+      Section nsect = StanfordAgigaPipeTest.processedShakeHandComm.getSectionSegmentations().get(0).getSectionList().get(0);
+      List<Sentence> nSentList = nsect.getSentenceSegmentation().get(0).getSentenceList();
+      Sentence nsent = nSentList.get(0);
+      Tokenization ntokenization = nsent.getTokenizationList().get(0);
+      String[] stokens = {"The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "."};
+      int tokIdx = 0;
+      for(Token token : ntokenization.getTokenList().getTokens()){
+          assertTrue("tokIdx = " + tokIdx + "; token.tokenIndex = " + token.tokenIndex,
+                     token.tokenIndex == tokIdx);
+          assertTrue("expected = [" + stokens[tokIdx] +
+                     "]; token.text = [" + token.text + "]",
+                     token.text.equals(stokens[tokIdx]));
+          tokIdx++;
+      }
+  }
+
 /**
    * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
    * @throws TException 
@@ -176,22 +207,23 @@ public class StanfordAgigaPipeTest {
    * @throws ConcreteException 
    * @throws IOException 
    */
-//  @Test
-  public void testShake1() throws TException, InvalidInputException, IOException, ConcreteException {
+  @Test
+  public void testShake1_verifyTokenSpans() throws TException, InvalidInputException, IOException, ConcreteException {
       Section nsect = StanfordAgigaPipeTest.processedShakeHandComm.getSectionSegmentations().get(0).getSectionList().get(0);
       List<Sentence> nSentList = nsect.getSentenceSegmentation().get(0).getSentenceList();
       Sentence nsent = nSentList.get(0);
       Tokenization ntokenization = nsent.getTokenizationList().get(0);
       String[] stokens = {"The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "."};
-      System.out.println(stokens.length);
-      System.out.println(ntokenization.getTokenList().getTokens().size());
-      assertTrue(ntokenization.getTokenList().getTokens().size() == stokens.length);
+      int[] start = {0, 4, 8, 12, 15, 21, 25, 32, 41, 44, 48};
+      int[] end = {3, 7, 11, 14, 20, 24, 29, 41, 43, 48, 49};
       int tokIdx = 0;
       for(Token token : ntokenization.getTokenList().getTokens()){
-          //assertTrue(token.tokenIndex == tokIdx);
-          //assertTrue(token.text == stokens[tokIdx]);
           TextSpan tts = token.getTextSpan();
-          //assertTrue(tts.getStart() == 
+          assertTrue(token.text + "(" + tokIdx +") starts at " + tts.getStart() +"; it should start at " +start[tokIdx], 
+                     tts.getStart() == start[tokIdx]);
+          assertTrue(token.text + "(" + tokIdx +") starts at " + tts.getEnding() +"; it should start at " +end[tokIdx], 
+                     tts.getEnding() == end[tokIdx]);
+          tokIdx++;
       }
   }
 
