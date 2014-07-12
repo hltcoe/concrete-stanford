@@ -42,8 +42,6 @@ public class StanfordAgigaPipe_AFP0623Test {
 
   private static final Logger logger = LoggerFactory.getLogger(StanfordAgigaPipe_AFP0623Test.class);
 
-  String dataPath ="src/test/resources/test-out-v.0.1.2.concrete";
-
   Communication testComm;
 
   static String afp0623Text = "" +
@@ -98,7 +96,8 @@ public class StanfordAgigaPipe_AFP0623Test {
       String theirs = StanfordAgigaPipe_AFP0623Test.processedComm.getProcessedContent();
       int iterlen = mine.length() < theirs.length() ? mine.length() : theirs.length();
       for(int i = 0; i < iterlen; i++){
-          assertTrue(i + " : me => <" + mine.substring(i, i+1) + ">, them => <" + theirs.substring(i,i+1)+ "> ::: " + (mine.substring(i,i+1).equals(theirs.substring(i,i+1))),
+          assertTrue(i + " : me => <" + mine.substring(i, i+1) + ">, them => <" + 
+                     theirs.substring(i,i+1)+ "> ::: " + (mine.substring(i,i+1).equals(theirs.substring(i,i+1))),
                      mine.substring(i,i+1).equals(theirs.substring(i,i+1)));
       }
   }
