@@ -200,8 +200,7 @@ public class StanfordAgigaPipe {
 
     // if called multiple times, reset the sentence count
     sentenceCount = 1;
-
-    String commText = comm.getText();
+    String commText = comm.getProcessedContent() != null ? comm.getProcessedContent() : comm.getText();
     // List<Annotation> finishedAnnotations = new ArrayList<Annotation>();
 
     logger.debug("Annotating communication: {}", comm.getId());
