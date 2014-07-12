@@ -229,17 +229,23 @@ public class StanfordAgigaPipe {
         if (!annotateNames.contains(section.getKind())) {
           // We MUST update the character offset
           System.out.print("no good section: from " + charOffset + " to ");
-          charOffset += sectionText.length();
-          System.out.println(charOffset);
           // NOTE: It's possible we want to account for sentences in non-contentful sections
           // If that's the case, then we need to update the globalToken and sentence offset
           // variables correctly.
-          if (sectionAnnotation == null)
+          if (sectionAnnotation == null) {
+              System.out.println(charOffset);
             continue;
+          }
 
-          // List<CoreLabel> sentTokens = a.get(TokensAnnotation.class);
-          // int tokenEnd = tokenOffset + sentTokens.size();
-          // sentAnno.set(SentenceIndexAnnotation.class, sentIndex);
+          //Note that we need to update the global character offset...
+          List<CoreLabel> sentTokens = sectionAnnotation.get(TokensAnnotation.class);
+          for(CoreLabel badToken : sentTokens) { 
+              updateCharOffsetSetToken(badToken, false);
+          }
+          System.out.println(charOffset);
+          System.out.println("\t"+  sectionText);
+          //int tokenEnd = tokenOffset + sentTokens.size();
+          //sentAnno.set(SentenceIndexAnnotation.class, sentIndex);
           // sentIndex++;
           // sentenceCount++;
           // tokenOffset = tokenEnd;
@@ -319,9 +325,10 @@ public class StanfordAgigaPipe {
       for (CoreLabel token : sentTokens) {
         // note that character offsets are global
         String tokenText = token.get(TextAnnotation.class);
-        String debugtext = "tokenText " + tokenText + " goes from " + charOffset + " to ";
         updateCharOffsetSetToken(token, isFirst);
-        logger.debug(debugtext + charOffset);
+        logger.debug("this token goes from " +
+                     token.get(CharacterOffsetBeginAnnotation.class) + " to " +
+                     token.get(CharacterOffsetEndAnnotation.class));
         logger.debug("\toriginal:[[" + token.originalText() + "]]");
         logger.debug("\tbefore:<<" + token.before() + ">>");
         logger.debug("\tafter:<<" + token.after() + ">>");
@@ -356,18 +363,18 @@ public class StanfordAgigaPipe {
 
   public void updateCharOffsetSetToken(CoreLabel token, boolean isFirst){
       if(usingOriginalCharOffsets()){
-          //this is because when we have text like "foo bar", foo.after == " " AND bar.before == " "
-          int beforeLength = token.before().length() - 1;
-          logger.debug("["+token.before()+", " + token.before().length()+ "] " + 
-                       "["+token.originalText() + "]"+
-                       " ["+ token.after()+", " + token.after().length() + "] :: "+ 
-                       charOffset + " --> " );
           if(isFirst){
-              if(beforeLength > 0) {
-                  charOffset += beforeLength;
-              }
-              token.set(CharacterOffsetBeginAnnotation.class, charOffset);
+              //this is because when we have text like "foo bar", foo.after == " " AND bar.before == " "
+              int beforeLength = token.before().length();
+              //if(beforeLength > 0) {
+              charOffset += beforeLength;
+              //}
           }
+          logger.debug("["+token.before()+", " + token.before().length()+ "] " + 
+                           "["+token.originalText() + "]"+
+                           " ["+ token.after()+", " + token.after().length() + "] :: "+ 
+                           charOffset + " --> " );
+          token.set(CharacterOffsetBeginAnnotation.class, charOffset);
           charOffset += token.originalText().length();
           token.set(CharacterOffsetEndAnnotation.class, charOffset);
           logger.debug((""+charOffset));

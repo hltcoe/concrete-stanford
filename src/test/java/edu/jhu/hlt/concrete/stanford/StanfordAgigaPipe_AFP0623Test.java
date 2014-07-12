@@ -47,24 +47,24 @@ public class StanfordAgigaPipe_AFP0623Test {
   Communication testComm;
 
   static String afp0623Text = "" +
-      "Protest over arrest of Sri Lanka reporter linked to Fonseka\n" + 
-      "Sri Lankan media groups Thursday protested against the arrest of a reporter " +
-      "close to Sarath Fonseka, the detained ex-army chief who tried to unseat the" +
-      "president in recent elections.\n\n" +
-      "The groups issued a joint statement demanding the release of Ruwan Weerakoon, a" + 
-      "reporter with the Nation newspaper, who was arrested this week.\n\n" + 
-      "\"We request the Inspector General of Police to disclose the reasons behind the" +
-      "arrest and detention of Ruwan Weerakoon and make arrangements for him to receive" +
-      "legal aid immediately,\" the statement added.\n\n" + 
-      "Weerakoon maintained close contact with Fonseka when the general led the" + 
-      "military during the final phase of last year's war against Tamil Tiger rebels.\n\n" + 
-      "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation" +
-      "Tigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out" + 
-      "and contested the presidency in January's elections.\n\n" + 
-      "Fonseka was arrested soon after losing the poll and appeared in front of a court" + 
-      "martial this week. The case was adjourned.\n\n" + 
-      "Local and international rights groups have accused Rajapakse of cracking down on" + 
-      "dissent, a charge the government has denied.";
+      "Protest over arrest of Sri Lanka reporter linked to Fonseka" + 
+      "\nSri Lankan media groups Thursday protested against the arrest of a reporter\n" +
+      "close to Sarath Fonseka, the detained ex-army chief who tried to unseat the\n" +
+      "president in recent elections.\n" +
+      "\nThe groups issued a joint statement demanding the release of Ruwan Weerakoon, a\n" + 
+      "reporter with the Nation newspaper, who was arrested this week.\n" + 
+      "\n\"We request the Inspector General of Police to disclose the reasons behind the\n" +
+      "arrest and detention of Ruwan Weerakoon and make arrangements for him to receive\n" +
+      "legal aid immediately,\" the statement added.\n" + 
+      "\nWeerakoon maintained close contact with Fonseka when the general led the\n" + 
+      "military during the final phase of last year's war against Tamil Tiger rebels.\n" + 
+      "\nFonseka was an ally of President Mahinda Rajapakse when the rebel Liberation\n" +
+      "Tigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out\n" + 
+      "and contested the presidency in January's elections.\n" + 
+      "\nFonseka was arrested soon after losing the poll and appeared in front of a court\n" + 
+      "martial this week. The case was adjourned.\n" + 
+      "\nLocal and international rights groups have accused Rajapakse of cracking down on\n" + 
+      "dissent, a charge the government has denied.\n";
   static Set<String> runOverThese = new HashSet<>();
   static {
       runOverThese.add("Other");
@@ -93,8 +93,44 @@ public class StanfordAgigaPipe_AFP0623Test {
    * @throws IOException 
    */
   @Test
+  public void testAFP0623_textCharByChar() throws TException, InvalidInputException, IOException, ConcreteException {
+      String mine = StanfordAgigaPipe_AFP0623Test.afp0623Text;
+      String theirs = StanfordAgigaPipe_AFP0623Test.processedComm.getProcessedContent();
+      int iterlen = mine.length() < theirs.length() ? mine.length() : theirs.length();
+      for(int i = 0; i < iterlen; i++){
+          assertTrue(i + " : me => <" + mine.substring(i, i+1) + ">, them => <" + theirs.substring(i,i+1)+ "> ::: " + (mine.substring(i,i+1).equals(theirs.substring(i,i+1))),
+                     mine.substring(i,i+1).equals(theirs.substring(i,i+1)));
+      }
+  }
+
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testAFP0623_textLen() throws TException, InvalidInputException, IOException, ConcreteException {
+      String mine = StanfordAgigaPipe_AFP0623Test.afp0623Text;
+      String theirs = StanfordAgigaPipe_AFP0623Test.processedComm.getProcessedContent();
+      assertTrue(mine.length() + " vs. " + theirs.length(), mine.length() == theirs.length());
+  }
+
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
   public void testAFP0623_text() throws TException, InvalidInputException, IOException, ConcreteException {
-      assertTrue(StanfordAgigaPipeTest.processedShakeHandComm.getText().equals(StanfordAgigaPipeTest.shakeHandText));
+      String mine = StanfordAgigaPipe_AFP0623Test.afp0623Text;
+      String theirs = StanfordAgigaPipe_AFP0623Test.processedComm.getProcessedContent();
+      assertTrue(mine.equals(theirs));
   }
 
   /**
@@ -133,6 +169,72 @@ public class StanfordAgigaPipe_AFP0623Test {
                  numSents == 8);
   }
 
+/**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testAFP0623_firstSentSpan() throws TException, InvalidInputException, IOException, ConcreteException {
+      int begin = 60;
+      int end = 242;
+      Sentence sent = StanfordAgigaPipe_AFP0623Test.processedComm.getSectionSegmentations().get(0).getSectionList().get(1).getSentenceSegmentation().get(0).getSentenceList().get(0);
+      TextSpan tts = sent.getTextSpan();
+      assertTrue("start should be " + begin+ ", but is " + tts.getStart(),
+                 begin == tts.getStart());
+      assertTrue("end should be " + end+ ", but is " + tts.getEnding(),
+                 end == tts.getEnding());
+  }
+
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testAFP0623_sentText() throws TException, InvalidInputException, IOException, ConcreteException {
+      String[] sentences = {
+          "Sri Lankan media groups Thursday protested against the arrest of a reporter\n" +
+          "close to Sarath Fonseka, the detained ex-army chief who tried to unseat the\n" +
+          "president in recent elections.",
+          "The groups issued a joint statement demanding the release of Ruwan Weerakoon, a\n" +
+          "reporter with the Nation newspaper, who was arrested this week.",
+          "\"We request the Inspector General of Police to disclose the reasons behind the\n" +
+          "arrest and detention of Ruwan Weerakoon and make arrangements for him to receive\n" +
+          "legal aid immediately,\" the statement added.",
+          "Weerakoon maintained close contact with Fonseka when the general led the\n" +
+          "military during the final phase of last year's war against Tamil Tiger rebels.",
+          "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation\n" +
+          "Tigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out\n" + 
+          "and contested the presidency in January's elections.",
+          "Fonseka was arrested soon after losing the poll and appeared in front of a court\n" + 
+          "martial this week.",
+          "The case was adjourned.",
+          "Local and international rights groups have accused Rajapakse of cracking down on\n" +
+          "dissent, a charge the government has denied."};
+      int sentIdx = 0;
+      for(Section sect : StanfordAgigaPipe_AFP0623Test.processedComm.getSectionSegmentations().get(0).getSectionList()){
+          if(sect.getSentenceSegmentation() != null) {
+              for(Sentence sent : sect.getSentenceSegmentation().get(0).getSentenceList()){
+                  TextSpan tts = sent.getTextSpan();
+                  String grabbed = StanfordAgigaPipe_AFP0623Test.afp0623Text.substring(tts.getStart(),
+                                                                                       tts.getEnding()).trim();
+                  // System.out.println("SentId = " + sentIdx + ", grabbing [[" + grabbed + "]], should be looking at <<" + sentences[sentIdx] + ">> .... " + grabbed.equals(sentences[sentIdx]));
+
+                  assertTrue("SentId = " + sentIdx + ", grabbing [[" + grabbed + "]], should be looking at <<" + sentences[sentIdx] + ">>",
+                             grabbed.equals(sentences[sentIdx]));
+                  sentIdx++;
+              }
+          }
+      }
+  }
+
 
 //   /**
 //    * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
@@ -144,6 +246,24 @@ public class StanfordAgigaPipe_AFP0623Test {
 //    */
 //   @Test
 //   public void testAFP0623_sentOffsets() throws TException, InvalidInputException, IOException, ConcreteException {
+      // "Protest over arrest of Sri Lanka reporter linked to Fonseka\n" + 
+      // "Sri Lankan media groups Thursday protested against the arrest of a reporter " +
+      // "close to Sarath Fonseka, the detained ex-army chief who tried to unseat the" +
+      // "president in recent elections.\n\n" +
+      // "The groups issued a joint statement demanding the release of Ruwan Weerakoon, a" + 
+      // "reporter with the Nation newspaper, who was arrested this week.\n\n" + 
+      // "\"We request the Inspector General of Police to disclose the reasons behind the" +
+      // "arrest and detention of Ruwan Weerakoon and make arrangements for him to receive" +
+      // "legal aid immediately,\" the statement added.\n\n" + 
+      // "Weerakoon maintained close contact with Fonseka when the general led the" + 
+      // "military during the final phase of last year's war against Tamil Tiger rebels.\n\n" + 
+      // "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation" +
+      // "Tigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out" + 
+      // "and contested the presidency in January's elections.\n\n" + 
+      // "Fonseka was arrested soon after losing the poll and appeared in front of a court" + 
+      // "martial this week. The case was adjourned.\n\n" + 
+      // "Local and international rights groups have accused Rajapakse of cracking down on" + 
+      // "dissent, a charge the government has denied.";
 //       Section nsect = StanfordAgigaPipeTest.processedShakeHandComm.getSectionSegmentations().get(0).getSectionList().get(0);
 //       List<Sentence> nSentList = nsect.getSentenceSegmentation().get(0).getSentenceList();
 //       assertTrue(nSentList.size() == 1);
