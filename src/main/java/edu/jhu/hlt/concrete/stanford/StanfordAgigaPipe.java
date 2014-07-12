@@ -228,12 +228,12 @@ public class StanfordAgigaPipe {
         logger.debug(section.getKind() + " in annotateNames: " + annotateNames);
         if (!annotateNames.contains(section.getKind())) {
           // We MUST update the character offset
-          System.out.print("no good section: from " + charOffset + " to ");
+          logger.debug("no good section: from " + charOffset + " to ");
           // NOTE: It's possible we want to account for sentences in non-contentful sections
           // If that's the case, then we need to update the globalToken and sentence offset
           // variables correctly.
           if (sectionAnnotation == null) {
-              System.out.println(charOffset);
+              logger.debug(""+charOffset);
             continue;
           }
 
@@ -242,8 +242,8 @@ public class StanfordAgigaPipe {
           for(CoreLabel badToken : sentTokens) { 
               updateCharOffsetSetToken(badToken, false);
           }
-          System.out.println(charOffset);
-          System.out.println("\t"+  sectionText);
+          logger.debug(""+charOffset);
+          logger.debug("\t"+  sectionText);
           //int tokenEnd = tokenOffset + sentTokens.size();
           //sentAnno.set(SentenceIndexAnnotation.class, sentIndex);
           // sentIndex++;
@@ -257,7 +257,7 @@ public class StanfordAgigaPipe {
         sectionUUIDs.add(section.getUuid());
         // 2) Second, perform the other localized processing
         logger.debug("Additional processing on section: {}", section.getUuid());
-        System.out.println(">> SectionText=["+sectionText+"]");
+        logger.debug(">> SectionText=["+sectionText+"]");
         processSection(section, sectionAnnotation, documentAnnotation, tokenizations);
       }
 
