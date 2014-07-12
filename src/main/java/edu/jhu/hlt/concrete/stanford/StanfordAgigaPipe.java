@@ -307,6 +307,7 @@ public class StanfordAgigaPipe {
 
     List<CoreMap> sentAnnos = sectAnno.get(SentencesAnnotation.class);
     int maxCharEnding = -1;
+    boolean isFirst = true;
     for (CoreMap sentAnno : sentAnnos) {
       List<CoreLabel> sentTokens = sentAnno.get(TokensAnnotation.class);
       int tokenEnd = globalTokenOffset + sentTokens.size();
@@ -320,17 +321,20 @@ public class StanfordAgigaPipe {
         // note that character offsets are global
         String tokenText = token.get(TextAnnotation.class);
         String debugtext = "tokenText " + tokenText + " goes from " + charOffset + " to ";
-        updateCharOffsetSetToken(token);
+        updateCharOffsetSetToken(token, isFirst);
         logger.debug(debugtext + charOffset);
         logger.debug("\toriginal:[[" + token.originalText() + "]]");
         logger.debug("\tbefore:<<" + token.before() + ">>");
         logger.debug("\tafter:<<" + token.after() + ">>");
+        if(isFirst) {
+            isFirst = false;
+        }
       }
       sentAnno.set(TokensAnnotation.class, sentTokens);
       sentAnno.set(CharacterOffsetBeginAnnotation.class, 
                    sentTokens.get(0).get(CharacterOffsetBeginAnnotation.class));
-      sentAnno.set(CharacterOffsetEndAnnotation.class, 
-                   sentTokens.get(sentTokens.size() - 1).get(CharacterOffsetEndAnnotation.class));
+      int endingSentCOff = sentTokens.get(sentTokens.size()-1).get(CharacterOffsetEndAnnotation.class);
+      sentAnno.set(CharacterOffsetEndAnnotation.class, endingSentCOff);
 
       logger.debug("docTokens.size before = " + docTokens.size());
       docTokens.addAll(sentTokens);
@@ -340,6 +344,7 @@ public class StanfordAgigaPipe {
       docSents.add(sentAnno);
       if (sentAnno.get(CharacterOffsetEndAnnotation.class) > maxCharEnding)
         maxCharEnding = sentAnno.get(CharacterOffsetEndAnnotation.class);
+
     }
     document.set(SentencesAnnotation.class, docSents);
     Integer oldDocCharE = document.get(CharacterOffsetEndAnnotation.class);
@@ -350,7 +355,7 @@ public class StanfordAgigaPipe {
 
   }
 
-  public void updateCharOffsetSetToken(CoreLabel token){
+  public void updateCharOffsetSetToken(CoreLabel token, boolean isFirst){
       if(usingOriginalCharOffsets()){
           //this is because when we have text like "foo bar", foo.after == " " AND bar.before == " "
           int beforeLength = token.before().length() - 1;
@@ -358,10 +363,12 @@ public class StanfordAgigaPipe {
                        "["+token.originalText() + "]"+
                        " ["+ token.after()+", " + token.after().length() + "] :: "+ 
                        charOffset + " --> " );
-          if(beforeLength > 0) {
-              charOffset += beforeLength;
+          if(isFirst){
+              if(beforeLength > 0) {
+                  charOffset += beforeLength;
+              }
+              token.set(CharacterOffsetBeginAnnotation.class, charOffset);
           }
-          token.set(CharacterOffsetBeginAnnotation.class, charOffset);
           charOffset += token.originalText().length();
           token.set(CharacterOffsetEndAnnotation.class, charOffset);
           logger.debug((""+charOffset));
