@@ -66,7 +66,7 @@ public class StanfordAgigaPipeTest {
       shakeHandComm.addToSectionSegmentations(ss);
       StanfordAgigaPipeTest.processedShakeHandComm = pipe.process(shakeHandComm);
   }
-    static {
+  static {
         try {
             createShakeHandComm();
         } catch(Exception e){
@@ -80,11 +80,8 @@ public class StanfordAgigaPipeTest {
    */
   @Before
   public void setUp() throws Exception {
-    
-    // this.pipe = new StanfordAgigaPipe(runOverThese);
-    // Communication c = new ConcreteFactory().randomCommunication();
-    // this.testComm = new SingleSectionSegmenter().annotate(c); 
-
+    Communication c = new ConcreteFactory().randomCommunication();
+    this.testComm = new SingleSectionSegmenter().annotate(c); 
     // new Serialization().fromBytes(new Communication(), Files.readAllBytes(p));
   }
 
@@ -103,17 +100,17 @@ public class StanfordAgigaPipeTest {
    * @throws ConcreteException 
    * @throws IOException 
    */
-    //@Test
-  // public void processNonPassages() throws TException, InvalidInputException, IOException, ConcreteException {
-  //   SuperCommunication sc = new SuperCommunication(this.testComm);
-  //   assertTrue(sc.hasSectionSegmentations());
-  //   assertTrue(sc.hasSections());
+    @Test
+  public void processNonPassages() throws TException, InvalidInputException, IOException, ConcreteException {
+    SuperCommunication sc = new SuperCommunication(this.testComm);
+    assertTrue(sc.hasSectionSegmentations());
+    assertTrue(sc.hasSections());
     
-  //   Communication nc = this.pipe.process(this.testComm);
-  //   assertTrue(nc.isSetEntityMentionSets());
-  //   assertTrue(nc.isSetEntitySets());
-  //   new SuperCommunication(nc).writeToFile("src/test/resources/post-stanford.concrete", true);
-  // }
+    Communication nc = StanfordAgigaPipeTest.pipe.process(this.testComm);
+    assertTrue(nc.isSetEntityMentionSets());
+    assertTrue(nc.isSetEntitySets());
+    new SuperCommunication(nc).writeToFile("src/test/resources/post-stanford.concrete", true);
+  }
   
   /**
    * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
