@@ -76,6 +76,7 @@ public class StanfordAgigaPipe_AFP0623Test {
         try {
             afp0623Comm = ThriftIO.readFile("src/test/resources/AFP_ENG_20100318.0623.concrete");
             processedComm = pipe.process(afp0623Comm);
+            new SuperCommunication(processedComm).writeToFile("src/test/resources/AFP_ENG_20100318.0623_processed.concrete", true);
         } catch(Exception e){
             throw new RuntimeException(e.getMessage());
         }
