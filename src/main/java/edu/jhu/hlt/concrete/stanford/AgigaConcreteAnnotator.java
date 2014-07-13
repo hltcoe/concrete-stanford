@@ -30,9 +30,11 @@ public class AgigaConcreteAnnotator {
   
   private static final Logger logger = LoggerFactory.getLogger(AgigaConcreteAnnotator.class);
   private final ConcreteUUIDFactory idFactory = new ConcreteUUIDFactory();
-  // Since we're converting from raw (pretokenized) text, we don't want
-  // the agiga converter to add TextSpan fields.
-  private final AgigaConverter ag = new AgigaConverter(false);
+  private AgigaConverter ag;
+
+  public AgigaConcreteAnnotator(boolean setSpans){
+      ag = new AgigaConverter(setSpans);
+  }
 
   public AnnotationMetadata metadata() {
     return new AnnotationMetadata()
@@ -63,11 +65,11 @@ public class AgigaConcreteAnnotator {
   }
 
   public void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations) {
-    SentenceSegmentation ss = createSentenceSegmentation(section, agigaDoc, tokenizations, 0, 0);
+    SentenceSegmentation ss = createSentenceSegmentation(section, agigaDoc, tokenizations, 0);
     section.addToSentenceSegmentation(ss);
   }
 
-  public SentenceSegmentation createSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int sentOffset, int charOffset) {
+  public SentenceSegmentation createSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int charOffset) {
     logger.debug("f3");
     SentenceSegmentation ss = new SentenceSegmentation().setUuid(this.idFactory.getConcreteUUID()).setMetadata(metadata());
     ss.sectionId = in.getUuid();
@@ -86,7 +88,7 @@ public class AgigaConcreteAnnotator {
         //the second argument is the estimated character provenance offset. 
         //We're not filling the optional textSpan fields, so the exact parameter
         //value doesn't matter.
-        Sentence st = this.ag.convertSentence(asent, 0, tokenizations);
+        Sentence st = this.ag.convertSentence(asent, -1, tokenizations);
         String sentText = this.ag.flattenText(asent);
         logger.debug(sentText);
         in.addToSentenceList(st);
