@@ -98,7 +98,7 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-agiga</artifactId>
-      <version>3.2.2-SNAPSHOT</version>
+      <version>3.3.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
