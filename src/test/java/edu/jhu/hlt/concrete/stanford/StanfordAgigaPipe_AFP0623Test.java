@@ -23,6 +23,7 @@ import edu.jhu.hlt.asphalt.AsphaltException;
 import edu.jhu.hlt.ballast.InvalidInputException;
 import edu.jhu.hlt.ballast.tools.SingleSectionSegmenter;
 import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.concrete.DependencyParse;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.SectionSegmentation;
 import edu.jhu.hlt.concrete.Sentence;
@@ -269,4 +270,47 @@ public class StanfordAgigaPipe_AFP0623Test {
       assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing >= 0.8);
   }
 
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testAFP0623_verifyThreeDepParses() throws TException, InvalidInputException, IOException, ConcreteException {
+      String docText = StanfordAgigaPipe_AFP0623Test.processedComm.getProcessedContent();
+      int expNumDepParses = 3;
+      for(Section nsect : StanfordAgigaPipe_AFP0623Test.processedComm.getSectionSegmentations().get(0).getSectionList()){
+          if(nsect.getSentenceSegmentation() == null) continue;
+          for(Sentence nsent : nsect.getSentenceSegmentation().get(0).getSentenceList()){
+              Tokenization tokenization = nsent.getTokenizationList().get(0);
+              assertTrue(tokenization.getDependencyParseList().size() == expNumDepParses);
+          }
+      }
+  }
+
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testAFP0623_verifyNonEmptyDepParses() throws TException, InvalidInputException, IOException, ConcreteException {
+      String docText = StanfordAgigaPipe_AFP0623Test.processedComm.getProcessedContent();
+      for(Section nsect : StanfordAgigaPipe_AFP0623Test.processedComm.getSectionSegmentations().get(0).getSectionList()){
+          if(nsect.getSentenceSegmentation() == null) continue;
+          for(Sentence nsent : nsect.getSentenceSegmentation().get(0).getSentenceList()){
+              Tokenization tokenization = nsent.getTokenizationList().get(0);
+              for(DependencyParse depParse : tokenization.getDependencyParseList()){
+                  assertTrue("DependencyParse " + depParse.getMetadata().getTool() + " is empty",
+                         depParse.getDependencyList().size() > 0);
+              }
+          }
+      }
+  }
 }
