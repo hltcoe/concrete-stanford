@@ -318,6 +318,7 @@ public class InMemoryAnnoPipeline {
         Element thisSent = sentElems.get(i);
         Elements allDependencyParses = thisSent.getChildElements("dependencies");
         int numDParses = allDependencyParses.size();
+        logger.debug("number of dep parses ::: " + numDParses);
         for (int j = 0; j < numDParses; j++) {
           Element depElem = allDependencyParses.get(j);
           Attribute att = depElem.getAttribute("type");
