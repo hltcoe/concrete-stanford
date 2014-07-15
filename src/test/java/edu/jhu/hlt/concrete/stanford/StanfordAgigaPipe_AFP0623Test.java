@@ -335,4 +335,25 @@ public class StanfordAgigaPipe_AFP0623Test {
       }
       assertTrue(atLeastOne);
   }
+
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * This verifies that there's at least one entity with a canonical name set.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testAFP0623_verifyAllCanonicalNames() throws TException, InvalidInputException, IOException, ConcreteException {
+      Communication comm = StanfordAgigaPipe_AFP0623Test.processedComm;
+      assertTrue(comm.getEntitySets().size() > 0);
+      assertTrue(comm.getEntitySets().get(0).getEntityList().size() > 0);
+      boolean allSet = true;
+      for(Entity entity : comm.getEntitySets().get(0).getEntityList()) {
+          allSet &= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
+      }
+      assertTrue(allSet);
+  }
 }
