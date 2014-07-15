@@ -23,6 +23,7 @@ import edu.jhu.hlt.asphalt.AsphaltException;
 import edu.jhu.hlt.ballast.InvalidInputException;
 import edu.jhu.hlt.ballast.tools.SingleSectionSegmenter;
 import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.concrete.Entity;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.SectionSegmentation;
 import edu.jhu.hlt.concrete.Sentence;
@@ -313,6 +314,79 @@ public class StanfordAgigaPipeTest {
       }
   }
 
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testShake1_verifyNumEntities() throws TException, InvalidInputException, IOException, ConcreteException {
+      Communication comm = StanfordAgigaPipeTest.processedShakeHandComm;
+      assertTrue(comm.getEntitySets().size() > 0);
+      assertTrue("Should be three entities, got " + comm.getEntitySets().get(0).getEntityList().size(),
+                 comm.getEntitySets().get(0).getEntityList().size() == 3);
+  }
+
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testShake1_verifySingletonEntities() throws TException, InvalidInputException, IOException, ConcreteException {
+      Communication comm = StanfordAgigaPipeTest.processedShakeHandComm;
+      for(Entity entity : comm.getEntitySets().get(0).getEntityList()) {
+          assertTrue("" + entity.getCanonicalName() + " is not singleton",
+                     entity.getMentionIdList().size() == 1);
+      }
+  }
+
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testShake1_verifyEntityNames() throws TException, InvalidInputException, IOException, ConcreteException {
+      Communication comm = StanfordAgigaPipeTest.processedShakeHandComm;
+      Set<String> expEnts = new HashSet<String>();
+      expEnts.add("The man");
+      expEnts.add("the U.S. President 's hand");
+      expEnts.add("the U.S. President 's");
+      Set<String> seenEnts = new HashSet<String>();
+      for(Entity entity : comm.getEntitySets().get(0).getEntityList()) {
+          seenEnts.add(entity.getCanonicalName());
+      }
+      assertTrue(seenEnts.equals(expEnts));
+  }
+
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testShake1_verifySomeEntityCanonicalNames() throws TException, InvalidInputException, IOException, ConcreteException {
+      Communication comm = StanfordAgigaPipeTest.processedShakeHandComm;
+      assertTrue(comm.getEntitySets().size() > 0);
+      boolean atLeastOne = false;
+      for(Entity entity : comm.getEntitySets().get(0).getEntityList()) {
+          atLeastOne |= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
+      }
+      assertTrue(atLeastOne);
+  }
 
   /**
    * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
