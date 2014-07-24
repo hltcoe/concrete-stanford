@@ -94,6 +94,7 @@ public class BulkConversion {
         Communication converted = pipe.process(c);
         new SuperCommunication(converted).writeToFile(commOutPath, delete);
         processedComms++;
+        pipe.resetGlobals();
       }
     } catch (TException e) {
       logger.error("De/serialization issue.", e);
