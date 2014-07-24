@@ -25,6 +25,7 @@ import edu.jhu.hlt.ballast.tools.SingleSectionSegmenter;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.DependencyParse;
 import edu.jhu.hlt.concrete.Entity;
+import edu.jhu.hlt.concrete.EntityMention;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.SectionSegmentation;
 import edu.jhu.hlt.concrete.Sentence;
@@ -356,4 +357,55 @@ public class StanfordAgigaPipe_AFP0623Test {
       }
       assertTrue(allSet);
   }
+
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * This verifies that all mentions have an anchor token.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testAFP0623_verifyMentionAnchors() throws TException, InvalidInputException, IOException, ConcreteException {
+      Communication comm = StanfordAgigaPipe_AFP0623Test.processedComm;
+      int numWithout = 0;
+      int total = 0;
+      for(EntityMention em : comm.getEntityMentionSets().get(0).getMentionSet()) {
+          numWithout += (em.getTokens().anchorTokenIndex >= 0 ? 0 : 1);
+          logger.info("token head " + em.getTokens().anchorTokenIndex);
+          logger.info("token head " + em.getTokens().getAnchorTokenIndex());
+          total++;
+      }
+      assertTrue("There were " + numWithout + " entity mentions out of " + total + 
+                 "with no anchor token set",
+                 numWithout == 0);
+  }
+
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * This verifies that all mentions have an anchor token.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+  @Test
+  public void testAFP0623_verifyMentionAnchorsFromSerialized() throws TException, InvalidInputException, IOException, ConcreteException {
+      Communication comm = ThriftIO.readFile("src/test/resources/AFP_ENG_20100318.0623_processed.concrete");
+      int numWithout = 0;
+      int total = 0;
+      for(EntityMention em : comm.getEntityMentionSets().get(0).getMentionSet()) {
+          numWithout += (em.getTokens().anchorTokenIndex >= 0 ? 0 : 1);
+          logger.info("token head " + em.getTokens().anchorTokenIndex);
+          logger.info("token head " + em.getTokens().getAnchorTokenIndex());
+          total++;
+      }
+      assertTrue("There were " + numWithout + " entity mentions out of " + total + 
+                 "with no anchor token set",
+                 numWithout == 0);
+  }
 }
+
