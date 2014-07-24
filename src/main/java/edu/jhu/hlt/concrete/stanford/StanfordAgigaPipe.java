@@ -3,11 +3,17 @@ package edu.jhu.hlt.concrete.stanford;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -81,15 +87,18 @@ public class StanfordAgigaPipe {
 
   private int globalTokenOffset = 0;
 
+  public void resetGlobals() {
+      globalTokenOffset = 0;
+      sentenceCount = 1;
+      charOffset = 0;
+      pipeline.prepForNext();
+  }
+
   public static void main(String[] args) throws TException, IOException, ConcreteException {
     if (args.length != 2) {
       System.out.println("Usage: " + StanfordAgigaPipe.class.getSimpleName() + " <input-concrete-file-with-section-segmentations> <output-file-name>");
       System.exit(1);
     }
-
-    final String inputPath = args[0];
-    final String outputPath = args[1];
-    final Communication communication = ThriftIO.readFile(inputPath);
 
     // this is silly, but needed for stanford logging disable.
     PrintStream err = System.err;
@@ -99,24 +108,30 @@ public class StanfordAgigaPipe {
     }));
 
     StanfordAgigaPipe sap = new StanfordAgigaPipe();
-    logger.info("Beginning annotation.");
-    Communication annotated = sap.process(communication);
-    logger.info("Finished.");
-    System.setErr(err);
 
-    new SuperCommunication(annotated).writeToFile(outputPath, true);
+    final String inputPath = args[0];
+    final String outputPath = args[1];
+    String inputType = Files.probeContentType(Paths.get(inputPath));
+    if(inputType.equals("application/zip")){
+        ZipFile zf = new ZipFile(inputPath);
+        logger.info("Beginning annotation.");
+        List<Communication> processedComms = sap.process(zf);
+        logger.info("Finished.");
+        System.setErr(err);
+        ThriftIO.writeFile(outputPath, processedComms);
+        //new SuperCommunication(annotated).writeToFile(outputPath, true);
+
+    } else {
+        final Communication communication = ThriftIO.readFile(inputPath);
+        logger.info("Beginning annotation.");
+        Communication annotated = sap.process(communication);
+        logger.info("Finished.");
+        System.setErr(err);
+
+        new SuperCommunication(annotated).writeToFile(outputPath, true);
+
+    }
   }
-
-//  public StanfordAgigaPipe(String[] args) {
-//    annotateNames = new HashSet<SectionKind>();
-//    parseArgs(args);
-//    if (inputFile == null || outputFile == null) {
-//      logger.info(usage);
-//      System.exit(1);
-//    }
-//
-//    pipeline = new InMemoryAnnoPipeline();
-//  }
 
   public StanfordAgigaPipe() {
     annotateNames = new HashSet<>();
@@ -163,6 +178,19 @@ public class StanfordAgigaPipe {
 //      annotateNames.add(SectionKind.PASSAGE);
 //  }
 
+  public List<Communication> process(ZipFile zf) throws TException, IOException, ConcreteException {
+      Enumeration<? extends ZipEntry> e = zf.entries();
+      List<Communication> outList = new LinkedList<Communication>();
+      while(e.hasMoreElements()){
+          ZipEntry ze = e.nextElement();
+          final Communication communication = ThriftIO.readFile(zf.getInputStream(ze));
+          final Communication nComm = process(communication);
+          outList.add(nComm);
+      }
+      return outList;
+  }
+
+
   public Communication process(Communication c) throws TException, IOException, ConcreteException {
     if (!c.isSetText())
       throw new ConcreteException("Expecting Communication Text, but was empty or none.");
@@ -176,7 +204,7 @@ public class StanfordAgigaPipe {
 
     // cp will be heavily mutated here.
     Communication cp = new Communication(c);
-
+    resetGlobals();
     runPipelineOnCommunicationSectionsAndSentences(cp);
     return cp;
   }
