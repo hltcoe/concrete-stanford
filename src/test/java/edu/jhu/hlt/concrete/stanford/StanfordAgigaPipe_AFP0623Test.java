@@ -37,7 +37,7 @@ import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
 import edu.jhu.hlt.concrete.util.ThriftIO;
 
 /**
- * @author max
+ * @author fferraro
  *
  */
 public class StanfordAgigaPipe_AFP0623Test {
