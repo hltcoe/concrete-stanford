@@ -374,8 +374,8 @@ public class StanfordAgigaPipe_AFP0623Test {
       int total = 0;
       for(EntityMention em : comm.getEntityMentionSets().get(0).getMentionSet()) {
           numWithout += (em.getTokens().anchorTokenIndex >= 0 ? 0 : 1);
-          logger.info("token head " + em.getTokens().anchorTokenIndex);
-          logger.info("token head " + em.getTokens().getAnchorTokenIndex());
+          logger.info("In memory, token head via member" + em.getTokens().anchorTokenIndex);
+          logger.info("In memory, token head via function " + em.getTokens().getAnchorTokenIndex());
           total++;
       }
       assertTrue("There were " + numWithout + " entity mentions out of " + total + 
@@ -399,8 +399,8 @@ public class StanfordAgigaPipe_AFP0623Test {
       int total = 0;
       for(EntityMention em : comm.getEntityMentionSets().get(0).getMentionSet()) {
           numWithout += (em.getTokens().anchorTokenIndex >= 0 ? 0 : 1);
-          logger.info("token head " + em.getTokens().anchorTokenIndex);
-          logger.info("token head " + em.getTokens().getAnchorTokenIndex());
+          logger.info("Serialized, token head via member" + em.getTokens().anchorTokenIndex);
+          logger.info("Serialized, token head via function" + em.getTokens().getAnchorTokenIndex());
           total++;
       }
       assertTrue("There were " + numWithout + " entity mentions out of " + total + 
