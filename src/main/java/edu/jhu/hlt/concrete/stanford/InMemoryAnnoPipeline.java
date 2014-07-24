@@ -116,6 +116,10 @@ public class InMemoryAnnoPipeline {
     logger.info("Done.");
   }
 
+  public void prepForNext() {
+      docCounter = 0;
+  }
+
   /**
    * This only performs tokenization and sentence-splitting on a block of text. 
    * Part-of-speech tagging is handled elsewhere.
