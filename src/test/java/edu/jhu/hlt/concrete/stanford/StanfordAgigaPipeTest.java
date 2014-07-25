@@ -109,11 +109,35 @@ public class StanfordAgigaPipeTest {
     assertTrue(sc.hasSections());
     
     Communication nc = StanfordAgigaPipeTest.pipe.process(this.testComm);
+    System.out.println("this testcomm = " + this.testComm.getText());
     assertTrue(nc.isSetEntityMentionSets());
     assertTrue(nc.isSetEntitySets());
     new SuperCommunication(nc).writeToFile("src/test/resources/post-stanford.concrete", true);
   }
   
+  /**
+   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * @throws TException 
+   * @throws AsphaltException 
+   * @throws InvalidInputException 
+   * @throws ConcreteException 
+   * @throws IOException 
+   */
+    @Test
+  public void testNoMentions() throws TException, InvalidInputException, IOException, ConcreteException {
+        Communication c = new ConcreteFactory().randomCommunication().setText("gobljsfoewj");
+        Communication c1 = new SingleSectionSegmenter().annotate(c); 
+        SuperCommunication sc = new SuperCommunication(c1);
+        assertTrue(sc.hasSectionSegmentations());
+        assertTrue(sc.hasSections());
+        
+        Communication nc = StanfordAgigaPipeTest.pipe.process(c1);
+        System.out.println("this testcomm = " + this.testComm.getText());
+        assertTrue(nc.isSetEntityMentionSets());
+        assertTrue(nc.isSetEntitySets());
+        new SuperCommunication(nc).writeToFile("src/test/resources/post-stanford_garbage_processed.concrete", true);
+  }
+
   /**
    * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
    * @throws TException 
