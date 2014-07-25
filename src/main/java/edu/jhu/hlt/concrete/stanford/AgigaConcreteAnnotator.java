@@ -1,6 +1,7 @@
 package edu.jhu.hlt.concrete.stanford;
 
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -13,6 +14,7 @@ import edu.jhu.agiga.AgigaSentence;
 import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.Entity;
+import edu.jhu.hlt.concrete.EntityMention;
 import edu.jhu.hlt.concrete.EntityMentionSet;
 import edu.jhu.hlt.concrete.EntitySet;
 import edu.jhu.hlt.concrete.Section;
@@ -55,6 +57,10 @@ public class AgigaConcreteAnnotator {
       } else {
         logger.warn("There were not any mentions for coref: " + coref.toString());
       }
+    }
+
+    if(!ems.isSetMentionSet()) {
+        ems.setMentionSet(new ArrayList<EntityMention>());
     }
 
     EntitySet es = new EntitySet()
