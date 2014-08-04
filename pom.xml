@@ -26,34 +26,21 @@
         </configuration>
         <version>3.1</version>
       </plugin>
-      <!-- fat JAR -->
       <plugin>
-	      <artifactId>maven-assembly-plugin</artifactId>
-	      <version>2.4</version>
-        <configuration>
-	        <descriptorRefs>
-	          <descriptorRef>jar-with-dependencies</descriptorRef>
-	        </descriptorRefs>
-	      </configuration>
-	      <executions>
-	        <execution>
-	          <id>make-assembly</id> <!-- this is used for inheritance merges -->
-	          <phase>package</phase> <!-- bind to the packaging phase -->
-	          <goals>
-              <goal>single</goal>
-	          </goals>
-	        </execution>
-	      </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
+        <artifactId>maven-assembly-plugin</artifactId>
         <version>2.4</version>
+        <configuration>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+        </configuration>
         <executions>
-	        <execution>
+          <execution>
+            <id>make-assembly</id> <!-- this is used for inheritance merges -->
             <goals>
-              <goal>test-jar</goal>
+              <goal>single</goal>
             </goals>
-	        </execution>
+          </execution>
         </executions>
       </plugin>
     </plugins>
@@ -106,4 +93,17 @@
       <version>${ballast.version}</version>
     </dependency>
   </dependencies>
+
+  <distributionManagement>
+    <repository>
+      <id>coe-mvn</id>
+      <name>coe-mvn-releases</name>
+      <url>http://10.162.95.20:8081/artifactory/libs-release-local</url>
+    </repository>
+    <snapshotRepository>
+      <id>coe-mvn</id>
+      <name>coe-mvn-snapshots</name>
+      <url>http://10.162.95.20:8081/artifactory/libs-snapshot-local</url>
+    </snapshotRepository>
+  </distributionManagement>
 </project>
