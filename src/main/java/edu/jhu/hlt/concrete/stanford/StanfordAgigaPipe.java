@@ -436,14 +436,13 @@ public class StanfordAgigaPipe {
       logger.debug(idx + " --> " + dSent.get(TokensAnnotation.class));
     }
   }
-
+  
   /**
    * Given a particular section {@link Section} from a {@link Communication}, further locally process
    * {@link Annotation}; add those new annotations to an
    * aggregating {@link Annotation} to use for later global processing.
    */
   public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, List<Tokenization> tokenizations) {
-    int priorCharOffset = charOffset;
     sentencesToSection(sentenceSplitText, docAnnotation);
     logger.debug("after sentencesToSection, before annotating");
     for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class)) {

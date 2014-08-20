@@ -46,8 +46,12 @@ public class ThriftIO {
     }
 
     public static void writeFile(String outputFile, Communication communication) throws IOException, TException {
+        Path path = Paths.get(outputFile);
+        writeFile(path, communication);
+    }
+
+    public static void writeFile(Path path, Communication communication) throws TException, IOException {
         byte[] bytez = new TSerializer(new TBinaryProtocol.Factory()).serialize(communication);
-        Path path = (new File(outputFile)).toPath();
         Files.write(path, bytez, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
     }
 
