@@ -3,16 +3,16 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>edu.jhu.hlt.concrete</groupId>
-  <artifactId>agiga2</artifactId>
+  <artifactId>concrete-stanford</artifactId>
   <version>3.3.2-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>anno-pipeline-2</name>
+  <name>Concrete Stanford</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <concrete.version>3.3.1</concrete.version>
-    <ballast.version>3.3.1</ballast.version>
+    <concrete.version>3.4.0-SNAPSHOT</concrete.version>
+    <ballast.version>3.4.0-SNAPSHOT</ballast.version>
   </properties>
 
   <build>
@@ -77,11 +77,6 @@
       <classifier>models</classifier>
     </dependency>
 
-    <dependency>
-      <groupId>edu.jhu.agiga</groupId>
-      <artifactId>agiga</artifactId>
-      <version>1.2</version>
-    </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-agiga</artifactId>

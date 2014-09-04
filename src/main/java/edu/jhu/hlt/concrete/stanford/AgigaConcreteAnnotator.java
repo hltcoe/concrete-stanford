@@ -59,8 +59,8 @@ public class AgigaConcreteAnnotator {
       }
     }
 
-    if(!ems.isSetMentionSet()) {
-        ems.setMentionSet(new ArrayList<EntityMention>());
+    if(!ems.isSetMentionList()) {
+        ems.setMentionList(new ArrayList<EntityMention>());
     }
 
     EntitySet es = new EntitySet()
@@ -73,13 +73,13 @@ public class AgigaConcreteAnnotator {
 
   public void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations) {
     SentenceSegmentation ss = createSentenceSegmentation(section, agigaDoc, tokenizations, 0);
-    section.addToSentenceSegmentation(ss);
+    section.addToSentenceSegmentationList(ss);
   }
 
   public SentenceSegmentation createSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int charOffset) {
     logger.debug("f3");
     SentenceSegmentation ss = new SentenceSegmentation().setUuid(this.idFactory.getConcreteUUID()).setMetadata(metadata());
-    ss.setSectionId(in.getUuid());
+    // ss.setSectionId(in.getUuid());
     addSentences(ss, ad, tokenizations);
     if(!ss.isSetSentenceList()) {
         ss.setSentenceList(new ArrayList<Sentence>());

@@ -1,10 +1,7 @@
 package edu.jhu.hlt.concrete.util;
 
-import edu.jhu.hlt.concrete.Communication;
-
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,9 +14,11 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.thrift.TDeserializer;
+import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.TException;
+
+import edu.jhu.hlt.concrete.Communication;
 
 public class ThriftIO {
 

@@ -194,10 +194,10 @@ public class StanfordAgigaPipe {
   public Communication process(Communication c) throws TException, IOException, ConcreteException {
     if (!c.isSetText())
       throw new ConcreteException("Expecting Communication Text, but was empty or none.");
-    else if (!c.isSetSectionSegmentations() || c.getSectionSegmentationsSize() == 0)
+    else if (!c.isSetSectionSegmentationList() || c.getSectionSegmentationListSize() == 0)
       throw new ConcreteException("Expecting Section Segmentations, but there weren't any.");
     else {
-      SectionSegmentation ss = c.getSectionSegmentationsIterator().next();
+      SectionSegmentation ss = c.getSectionSegmentationListIterator().next();
       if (!ss.isSetSectionList() || ss.getSectionListSize() == 0)
         throw new ConcreteException("Expecting Sections, but there weren't any.");
     }
@@ -228,14 +228,14 @@ public class StanfordAgigaPipe {
 
     // if called multiple times, reset the sentence count
     sentenceCount = 1;
-    String commText = comm.getProcessedContent() != null ? comm.getProcessedContent() : comm.getText();
+    String commText = comm.getText() != null ? comm.getText() : comm.getText();
     // List<Annotation> finishedAnnotations = new ArrayList<Annotation>();
 
     logger.debug("Annotating communication: {}", comm.getId());
     logger.debug("\tuuid = " + comm.getUuid());
     logger.debug("\ttype = " + comm.getType());
     logger.debug("\tfull = " + commText);
-    for (SectionSegmentation sectionSegmentation : comm.getSectionSegmentations()) {
+    for (SectionSegmentation sectionSegmentation : comm.getSectionSegmentationList()) {
       // TODO: get section and sentence segmentation info from metadata
       List<Section> sections = sectionSegmentation.getSectionList();
       List<UUID> sectionUUIDs = new ArrayList<>();
@@ -463,8 +463,8 @@ public class StanfordAgigaPipe {
     AgigaDocument agigaDoc = annotateCoref(docAnnotation);
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
     SimpleEntry<EntityMentionSet, EntitySet> tuple = agigaToConcrete.convertCoref(comm, agigaDoc, tokenizations);
-    comm.addToEntityMentionSets(tuple.getKey());
-    comm.addToEntitySets(tuple.getValue());
+    comm.addToEntityMentionSetList(tuple.getKey());
+    comm.addToEntitySetList(tuple.getValue());
   }
 
   /**

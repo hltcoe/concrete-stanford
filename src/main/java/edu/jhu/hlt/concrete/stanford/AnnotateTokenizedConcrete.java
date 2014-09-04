@@ -70,7 +70,7 @@ public class AnnotateTokenizedConcrete {
      * @param comm The concrete communication.
      */
     public void annotateWithStanfordNlp(Communication comm) {
-        SectionSegmentation cSs = comm.getSectionSegmentations().get(0);
+        SectionSegmentation cSs = comm.getSectionSegmentationList().get(0);
         for (Section cSection : cSs.getSectionList()) {
             Annotation sSectionAnno = getSectionAsAnnotation(cSection, comm);
             try {
@@ -117,7 +117,7 @@ public class AnnotateTokenizedConcrete {
      * @return The annotation representing the section.
      */
     private Annotation getSectionAsAnnotation(Section cSection, Communication comm) {
-        SentenceSegmentation cSentSeg = cSection.getSentenceSegmentation().get(0);
+        SentenceSegmentation cSentSeg = cSection.getSentenceSegmentationList().get(0);
         List<Sentence> cSents = cSentSeg.getSentenceList();
         return concreteSentListToAnnotation(cSents, comm);
     }
@@ -144,7 +144,7 @@ public class AnnotateTokenizedConcrete {
      * @return The annotation representing the list of sentences.
      */
     private Annotation concreteSentListToAnnotation(List<Sentence> cSents, Communication comm) {
-        Annotation sSectionAnno = new Annotation(comm.getProcessedContent());
+        Annotation sSectionAnno = new Annotation(comm.getText());
         //Done by constructor: sectionAnno.set(CoreAnnotations.TextAnnotation, null);
 
         List<CoreLabel> sToks = new ArrayList<>();
@@ -155,7 +155,7 @@ public class AnnotateTokenizedConcrete {
             sSents.add(sSent);
         }
 
-        List<CoreMap> sentences = mimicWordsToSentsAnnotator(sSents, comm.getProcessedContent());
+        List<CoreMap> sentences = mimicWordsToSentsAnnotator(sSents, comm.getText());
         
         sSectionAnno.set(CoreAnnotations.TokensAnnotation.class, sToks);
         sSectionAnno.set(CoreAnnotations.SentencesAnnotation.class, sentences);
@@ -173,11 +173,11 @@ public class AnnotateTokenizedConcrete {
         CoreLabelTokenFactory coreLabelTokenFactory = new CoreLabelTokenFactory();
         List<CoreLabel> sSent = new ArrayList<>();
         Tokenization cToks = cSent.getTokenizationList().get(0);
-        for (Token cTok : cToks.getTokenList().getTokens()) {
+        for (Token cTok : cToks.getTokenList().getTokenList()) {
             TextSpan cSpan = cTok.getTextSpan();
             String text = cTok.getText();
             int length = cSpan.getEnding() - cSpan.getStart();
-            CoreLabel sTok = coreLabelTokenFactory.makeToken(text, comm.getProcessedContent(), cSpan.getStart(), length);
+            CoreLabel sTok = coreLabelTokenFactory.makeToken(text, comm.getText(), cSpan.getStart(), length);
             sSent.add(sTok);
         }
         if (log.isDebugEnabled()) {
