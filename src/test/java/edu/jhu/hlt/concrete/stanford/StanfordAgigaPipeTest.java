@@ -1,5 +1,6 @@
 /*
- * 
+ * Copyright 2012-2014 Johns Hopkins University HLTCOE. All rights reserved.
+ * See LICENSE in the project root directory.
  */
 package edu.jhu.hlt.concrete.stanford;
 
@@ -47,7 +48,7 @@ public class StanfordAgigaPipeTest {
   private static final Logger logger = LoggerFactory.getLogger(StanfordAgigaPipeTest.class);
 
   public static final String SHAKE_HAND_TEXT_STRING = "The man ran to shake the U.S. \nPresident's hand. ";
-  public static final String afp0623Text = "" + "Protest over arrest of Sri Lanka reporter linked to Fonseka"
+  public static final String AFP_0623_TEXT = "" + "Protest over arrest of Sri Lanka reporter linked to Fonseka"
       + "\nSri Lankan media groups Thursday protested against the arrest of a reporter\n"
       + "close to Sarath Fonseka, the detained ex-army chief who tried to unseat the\n" + "president in recent elections.\n"
       + "\nThe groups issued a joint statement demanding the release of Ruwan Weerakoon, a\n"
@@ -67,7 +68,7 @@ public class StanfordAgigaPipeTest {
   ConcreteFactory cf = new ConcreteFactory();
 
   Communication randomTestComm;
-  Communication afpTestComm;
+  Communication mapped;
 
   StanfordAgigaPipe pipe;
 
@@ -82,8 +83,7 @@ public class StanfordAgigaPipeTest {
     this.randomTestComm = new SingleSectionSegmenter().annotate(c);
 
     ProxyDocument pdc = new ClojureIngester().proxyDocPathToProxyDoc(this.pathToAFPComm);
-    Communication mapped = pdc.sectionedCommunication(); 
-    this.afpTestComm = this.pipe.process(mapped);
+    this.mapped = pdc.sectionedCommunication(); 
   }
 
   /**
@@ -91,6 +91,7 @@ public class StanfordAgigaPipeTest {
    */
   @After
   public void tearDown() throws Exception {
+    
   }
 
   /**
@@ -133,7 +134,7 @@ public class StanfordAgigaPipeTest {
     assertTrue(sc.hasSections());
 
     Communication nc = this.pipe.process(c1);
-    System.out.println("this testcomm = " + this.randomTestComm.getText());
+    logger.info("this testcomm = " + this.randomTestComm.getText());
     assertTrue(nc.isSetEntityMentionSetList());
     assertTrue(nc.isSetEntitySetList());
     new SuperCommunication(nc).writeToFile("target/post-stanford_garbage_processed.concrete", true);
@@ -253,13 +254,14 @@ public class StanfordAgigaPipeTest {
 
   @Test
   public void processAFPComm() throws Exception {
-    final String theirs = afpTestComm.getText();
+    Communication afpProcessedComm = this.pipe.process(this.mapped);
+    final String processedText = afpProcessedComm.getText();
     
     // Text equality
-    assertEquals("Text should be equal.", afp0623Text, theirs);
+    assertEquals("Text should be equal.", AFP_0623_TEXT, processedText);
     
     // Sections
-    List<Section> nsects = afpTestComm.getSectionSegmentationList().get(0).getSectionList();
+    List<Section> nsects = afpProcessedComm.getSectionSegmentationList().get(0).getSectionList();
     assertEquals("Should have found 8 sections.", 8, nsects.size());
     
     // Sentences
@@ -273,7 +275,7 @@ public class StanfordAgigaPipeTest {
     // First sentence span test
     int begin = 60;
     int end = 242;
-    Sentence sent = afpTestComm.getSectionSegmentationList().get(0).getSectionList().get(1).getSentenceSegmentationList()
+    Sentence sent = afpProcessedComm.getSectionSegmentationList().get(0).getSectionList().get(1).getSentenceSegmentationList()
         .get(0).getSentenceList().get(0);
     TextSpan tts = sent.getTextSpan();
     assertEquals("Start should be " + begin, begin, tts.getStart());
@@ -293,11 +295,11 @@ public class StanfordAgigaPipeTest {
         "Fonseka was arrested soon after losing the poll and appeared in front of a court\n" + "martial this week.", "The case was adjourned.",
         "Local and international rights groups have accused Rajapakse of cracking down on\n" + "dissent, a charge the government has denied." };
     int sentIdx = 0;
-    for (Section sect : afpTestComm.getSectionSegmentationList().get(0).getSectionList()) {
+    for (Section sect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
       if (sect.getSentenceSegmentationList() != null) {
         for (Sentence st : sect.getSentenceSegmentationList().get(0).getSentenceList()) {
           TextSpan span = st.getTextSpan();
-          String grabbed = afp0623Text.substring(span.getStart(), span.getEnding()).trim();
+          String grabbed = AFP_0623_TEXT.substring(span.getStart(), span.getEnding()).trim();
           // System.out.println("SentId = " + sentIdx + ", grabbing [[" + grabbed + "]], should be looking at <<" + sentences[sentIdx] + ">> .... " +
           // grabbed.equals(sentences[sentIdx]));
 
@@ -311,13 +313,13 @@ public class StanfordAgigaPipeTest {
     // Verify tokens
     int numEq = 0;
     int numTot = 0;
-    for (Section nsect : afpTestComm.getSectionSegmentationList().get(0).getSectionList()) {
+    for (Section nsect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
       if (nsect.getSentenceSegmentationList() == null)
         continue;
       for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
         for (Token token : nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
           TextSpan span = token.getTextSpan();
-          String substr = theirs.substring(span.getStart(), span.getEnding());
+          String substr = processedText.substring(span.getStart(), span.getEnding());
           boolean areEq = token.getText().equals(substr);
           if (!areEq) {
             logger.warn("expected = [" + token.getText() + "];" + "docText(" + tts + ") = [" + substr + "]");
@@ -333,7 +335,7 @@ public class StanfordAgigaPipeTest {
     
     // Dependency parses
     int expNumDepParses = 3;
-    for (Section nsect : afpTestComm.getSectionSegmentationList().get(0).getSectionList()) {
+    for (Section nsect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
       if (nsect.getSentenceSegmentationList() == null)
         continue;
       for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
@@ -343,7 +345,7 @@ public class StanfordAgigaPipeTest {
     }
     
     // Verify non-empty dependency parses
-    for (Section nsect : afpTestComm.getSectionSegmentationList().get(0).getSectionList()) {
+    for (Section nsect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
       if (nsect.getSentenceSegmentationList() == null)
         continue;
       for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
@@ -355,17 +357,17 @@ public class StanfordAgigaPipeTest {
     }
     
     // Verify some NEs
-    assertTrue(afpTestComm.getEntitySetList().size() > 0);
-    assertTrue(afpTestComm.getEntitySetList().get(0).getEntityList().size() > 0);
+    assertTrue(afpProcessedComm.getEntitySetList().size() > 0);
+    assertTrue(afpProcessedComm.getEntitySetList().get(0).getEntityList().size() > 0);
     boolean allSet = true;
-    for (Entity entity : afpTestComm.getEntitySetList().get(0).getEntityList()) {
+    for (Entity entity : afpProcessedComm.getEntitySetList().get(0).getEntityList()) {
       allSet &= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
     }
     assertTrue(allSet);
     
     // Verify anchor tokens
     int numWithout = 0;
-    for (EntityMention em : afpTestComm.getEntityMentionSetList().get(0).getMentionList()) {
+    for (EntityMention em : afpProcessedComm.getEntityMentionSetList().get(0).getMentionList()) {
       numWithout += (em.getTokens().anchorTokenIndex >= 0 ? 0 : 1);
       // logger.info("In memory, token head via member" + em.getTokenList().anchorTokenIndex);
       // logger.info("In memory, token head via function " + em.getTokenList().getAnchorTokenIndex());
