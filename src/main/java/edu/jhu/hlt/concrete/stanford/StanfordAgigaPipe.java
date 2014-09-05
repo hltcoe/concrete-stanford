@@ -354,7 +354,7 @@ public class StanfordAgigaPipe {
 
       for (CoreLabel token : sentTokens) {
         // note that character offsets are global
-        String tokenText = token.get(TextAnnotation.class);
+        // String tokenText = token.get(TextAnnotation.class);
         updateCharOffsetSetToken(token, isFirst);
         logger.debug("this token goes from " +
                      token.get(CharacterOffsetBeginAnnotation.class) + " to " +
