@@ -30,6 +30,8 @@ import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.agiga.AgigaAnnotationAdder;
+import edu.jhu.hlt.concrete.util.ConcreteException;
+import edu.jhu.hlt.concrete.util.Serialization;
 import edu.jhu.hlt.concrete.util.ThriftIO;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
@@ -234,9 +236,11 @@ public class AnnotateTokenizedConcrete {
         return FileSystems.newFileSystem(uri, env);
     }
 
-    public static void main(String[] args) throws IOException, TException {
+    public static void main(String[] args) throws IOException, TException, ConcreteException {
         Path inFile = Paths.get(args[0]);
         Path outFile = Paths.get(args[1]);
+        
+        Serialization ser = new Serialization();
         
         AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete();
         try (FileSystem zipfs = getNewZipFileSystem(outFile)) {
@@ -245,7 +249,7 @@ public class AnnotateTokenizedConcrete {
                 while(e.hasMoreElements()){
                     ZipEntry ze = e.nextElement();
                     log.info("Annotating communication: " + ze.getName());
-                    final Communication comm = ThriftIO.readFile(zf.getInputStream(ze));
+                    final Communication comm = ser.fromInputStream(new Communication(), zf.getInputStream(ze));
                     annotator.annotateWithStanfordNlp(comm);
                     ThriftIO.writeFile(zipfs.getPath(ze.getName()), comm);
                 }

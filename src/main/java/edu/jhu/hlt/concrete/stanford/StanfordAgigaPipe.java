@@ -30,6 +30,7 @@ import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.UUID;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.ConcreteException;
+import edu.jhu.hlt.concrete.util.Serialization;
 import edu.jhu.hlt.concrete.util.ThriftIO;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
@@ -122,7 +123,7 @@ public class StanfordAgigaPipe {
         //new SuperCommunication(annotated).writeToFile(outputPath, true);
 
     } else {
-        final Communication communication = ThriftIO.readFile(inputPath);
+        final Communication communication = new Serialization().fromPathString(new Communication(), inputPath);
         logger.info("Beginning annotation.");
         Communication annotated = sap.process(communication);
         logger.info("Finished.");
@@ -181,9 +182,10 @@ public class StanfordAgigaPipe {
   public List<Communication> process(ZipFile zf) throws TException, IOException, ConcreteException {
       Enumeration<? extends ZipEntry> e = zf.entries();
       List<Communication> outList = new LinkedList<Communication>();
+      Serialization ser = new Serialization();
       while(e.hasMoreElements()){
           ZipEntry ze = e.nextElement();
-          final Communication communication = ThriftIO.readFile(zf.getInputStream(ze));
+          final Communication communication = ser.fromInputStream(new Communication(), zf.getInputStream(ze));
           final Communication nComm = process(communication);
           outList.add(nComm);
       }
