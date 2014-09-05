@@ -82,7 +82,8 @@ public class StanfordAgigaPipeTest {
     this.randomTestComm = new SingleSectionSegmenter().annotate(c);
 
     ProxyDocument pdc = new ClojureIngester().proxyDocPathToProxyDoc(this.pathToAFPComm);
-    this.afpTestComm = pdc.sectionedCommunication();
+    Communication mapped = pdc.sectionedCommunication(); 
+    this.afpTestComm = this.pipe.process(mapped);
   }
 
   /**
