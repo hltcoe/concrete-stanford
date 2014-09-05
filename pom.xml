@@ -84,6 +84,11 @@
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
+      <artifactId>gigaword-json-ingest</artifactId>
+      <version>3.3.2-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.jhu.hlt</groupId>
       <artifactId>ballast-tools</artifactId>
       <version>${ballast.version}</version>
     </dependency>
