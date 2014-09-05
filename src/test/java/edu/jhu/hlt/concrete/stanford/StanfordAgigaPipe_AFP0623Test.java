@@ -53,14 +53,10 @@ public class StanfordAgigaPipe_AFP0623Test {
       + "Tigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out\n" + "and contested the presidency in January's elections.\n"
       + "\nFonseka was arrested soon after losing the poll and appeared in front of a court\n" + "martial this week. The case was adjourned.\n"
       + "\nLocal and international rights groups have accused Rajapakse of cracking down on\n" + "dissent, a charge the government has denied.\n";
-  static Set<String> runOverThese = new HashSet<>();
-  static {
-    runOverThese.add("Other");
-    runOverThese.add("Passage");
-  }
-  static final StanfordAgigaPipe pipe = new StanfordAgigaPipe(runOverThese);
-  static Communication afp0623Comm;
-  static Communication processedComm;
+  
+  final StanfordAgigaPipe pipe = new StanfordAgigaPipe();
+  Communication afp0623Comm;
+  Communication processedComm;
 
   static {
     try {

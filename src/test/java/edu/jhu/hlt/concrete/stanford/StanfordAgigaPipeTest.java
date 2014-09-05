@@ -3,7 +3,7 @@
  */
 package edu.jhu.hlt.concrete.stanford;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -43,15 +43,11 @@ public class StanfordAgigaPipeTest {
   private static final Logger logger = LoggerFactory.getLogger(StanfordAgigaPipeTest.class);
   private static final String shakeHandText = "The man ran to shake the U.S. \nPresident's hand. ";
 
-  String dataPath = "src/test/resources/test-out-v.0.1.2.concrete";
-
   ConcreteUUIDFactory cuf = new ConcreteUUIDFactory();
   ConcreteFactory cf = new ConcreteFactory();
 
   Communication testComm;
-  Communication shakeHandComm;
-  Communication processedShakeHandComm;
-  Set<String> runOverThese;
+  
   StanfordAgigaPipe pipe;
   AnnotationMetadata md;
 
@@ -60,25 +56,15 @@ public class StanfordAgigaPipeTest {
    */
   @Before
   public void setUp() throws Exception {
-    this.runOverThese = new HashSet<>();
-    runOverThese.add("Other");
-    runOverThese.add("Passage");
     this.md = new AnnotationMetadata().setConfidence(1.0d).setTool("concrete stanford unit tests").setTimestamp(System.currentTimeMillis());
 
-    this.pipe = new StanfordAgigaPipe(runOverThese);
+    this.pipe = new StanfordAgigaPipe();
 
     Communication c = new ConcreteFactory().randomCommunication();
     this.testComm = new SingleSectionSegmenter().annotate(c);
     // new Serialization().fromBytes(new Communication(), Files.readAllBytes(p));
 
-    shakeHandComm = this.cf.randomCommunication().setText(shakeHandText);
 
-    Section section = new Section().setUuid(cuf.getConcreteUUID()).setTextSpan(new TextSpan().setStart(0).setEnding(shakeHandText.length())).setKind("Passage");
-    SectionSegmentation ss = new SectionSegmentation().setUuid(cuf.getConcreteUUID());
-    ss.addToSectionList(section);
-    shakeHandComm.addToSectionSegmentationList(ss);
-
-    processedShakeHandComm = pipe.process(shakeHandComm);
   }
 
   /**
@@ -144,297 +130,133 @@ public class StanfordAgigaPipeTest {
    * @throws IOException
    */
   @Test
-  public void testShake1_text() throws TException, InvalidInputException, IOException, ConcreteException {
-    assertTrue(this.processedShakeHandComm.getText().equals(StanfordAgigaPipeTest.shakeHandText));
-  }
+  public void processHandshakeCommunication() throws TException, InvalidInputException, IOException, ConcreteException {
+    Communication shakeHandComm = this.cf.randomCommunication().setText(shakeHandText);
+    Section section = new Section().setUuid(cuf.getConcreteUUID()).setTextSpan(new TextSpan().setStart(0).setEnding(shakeHandText.length())).setKind("Passage");
+    SectionSegmentation ss = new SectionSegmentation().setUuid(cuf.getConcreteUUID());
+    ss.addToSectionList(section);
+    shakeHandComm.addToSectionSegmentationList(ss);
 
-  /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-   * 
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
-   * @throws ConcreteException
-   * @throws IOException
-   */
-  @Test
-  public void testShake1_numSents() throws TException, InvalidInputException, IOException, ConcreteException {
-    Section nsect = this.processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
+    Communication processedShakeHandComm = pipe.process(shakeHandComm);    
+    final String docText = processedShakeHandComm.getText();
+    final String[] stokens = { "The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
+    
+    assertTrue(docText.equals(StanfordAgigaPipeTest.shakeHandText));
+    
+    Section nsect = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
     List<Sentence> nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
     assertTrue(nSentList.size() == 1);
-  }
-
-  /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-   * 
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
-   * @throws ConcreteException
-   * @throws IOException
-   */
-  @Test
-  public void testShake1_sentOffsets() throws TException, InvalidInputException, IOException, ConcreteException {
-    Section nsect = this.processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
-    List<Sentence> nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
+    
+    // Test spans
+    nsect = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
+    nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
     assertTrue(nSentList.size() == 1);
     Sentence nsent = nSentList.get(0);
     assertTrue("Beginning char should be 0, but is " + nsent.getTextSpan().getStart(), nsent.getTextSpan().getStart() == 0);
     assertTrue("Ending char should be 48, but is " + nsent.getTextSpan().getEnding(), nsent.getTextSpan().getEnding() == 48);
-  }
-
-  /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-   * 
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
-   * @throws ConcreteException
-   * @throws IOException
-   */
-  @Test
-  public void testShake1_sentText() throws TException, InvalidInputException, IOException, ConcreteException {
-    Section nsect = this.processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
-    Sentence nsent = nsect.getSentenceSegmentationList().get(0).getSentenceList().get(0);
+    
+    nsect = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
+    nsent = nsect.getSentenceSegmentationList().get(0).getSentenceList().get(0);
     TextSpan tts = nsent.getTextSpan();
-    String pulledText = this.processedShakeHandComm.getText().substring(tts.getStart(), tts.getEnding());
-    assertTrue(pulledText.equals(StanfordAgigaPipeTest.shakeHandText.trim()));
-  }
-
-  /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-   * 
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
-   * @throws ConcreteException
-   * @throws IOException
-   */
-  @Test
-  public void testShake1_numTokens() throws TException, InvalidInputException, IOException, ConcreteException {
-    Section nsect = this.processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
-    List<Sentence> nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
-    Sentence nsent = nSentList.get(0);
+    String pulledText = docText.substring(tts.getStart(), tts.getEnding());
+    assertTrue(pulledText.equals(shakeHandText.trim()));
+    
+    // Test # Tokens
+    nsect = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
+    nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
+    nsent = nSentList.get(0);
     Tokenization ntokenization = nsent.getTokenizationList().get(0);
-    String[] stokens = { "The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
+    
     StringBuilder actualTokensSB = new StringBuilder();
     for (Token tok : ntokenization.getTokenList().getTokenList()) {
       actualTokensSB.append("(" + tok.text + ", " + tok.tokenIndex + ") ");
     }
     assertTrue("Expected tokens length = " + stokens.length + ";" + "Actual   tokens length = " + ntokenization.getTokenList().getTokenList().size() + "; "
         + "Actual tokens = " + actualTokensSB.toString(), ntokenization.getTokenList().getTokenList().size() == stokens.length);
-  }
-
-  /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-   * 
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
-   * @throws ConcreteException
-   * @throws IOException
-   */
-  @Test
-  public void testShake1_verifyTokens() throws TException, InvalidInputException, IOException, ConcreteException {
-    Section nsect = this.processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
-    List<Sentence> nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
-    Sentence nsent = nSentList.get(0);
-    Tokenization ntokenization = nsent.getTokenizationList().get(0);
-    String[] stokens = { "The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
-    String docText = this.processedShakeHandComm.getText();
+    
+    // Verify tokens
+    nsect = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
+    nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
+    nsent = nSentList.get(0);
+    ntokenization = nsent.getTokenizationList().get(0);
+    
     int tokIdx = 0;
     for (Token token : ntokenization.getTokenList().getTokenList()) {
       assertTrue("tokIdx = " + tokIdx + "; token.tokenIndex = " + token.tokenIndex, token.tokenIndex == tokIdx);
       assertTrue("expected = [" + stokens[tokIdx] + "]; token.text = [" + token.text + "]", token.text.equals(stokens[tokIdx]));
       tokIdx++;
     }
-  }
-
-  /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-   * 
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
-   * @throws ConcreteException
-   * @throws IOException
-   */
-  @Test
-  public void testShake1_verifyTokensToFull() throws TException, InvalidInputException, IOException, ConcreteException {
-    Section nsect = this.processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
-    List<Sentence> nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
-    Sentence nsent = nSentList.get(0);
-    Tokenization ntokenization = nsent.getTokenizationList().get(0);
-    String docText = this.processedShakeHandComm.getText();
+    
+    // Verify tokens to full
+    nsect = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
+    nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
+    nsent = nSentList.get(0);
+    ntokenization = nsent.getTokenizationList().get(0);
     for (Token token : ntokenization.getTokenList().getTokenList()) {
-      StringBuilder sb = new StringBuilder();
-      TextSpan tts = token.getTextSpan();
+      tts = token.getTextSpan();
       String substr = docText.substring(tts.getStart(), tts.getEnding());
       assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts + ") = [" + substr + "]", token.getText().equals(substr));
     }
-  }
-
-  /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-   * 
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
-   * @throws ConcreteException
-   * @throws IOException
-   */
-  @Test
-  public void testShake1_verifyTokensToFullSeeded() throws TException, InvalidInputException, IOException, ConcreteException {
-    Section nsect = this.processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
-    List<Sentence> nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
-    Sentence nsent = nSentList.get(0);
-    Tokenization ntokenization = nsent.getTokenizationList().get(0);
-    String[] stokens = { "The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
-    String docText = this.processedShakeHandComm.getText();
-    int tokIdx = 0;
+    
+    // Verify tokens to full seeded
+    nsect = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
+    nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
+    nsent = nSentList.get(0);
+    ntokenization = nsent.getTokenizationList().get(0);
+    tokIdx = 0;
     for (Token token : ntokenization.getTokenList().getTokenList()) {
-      StringBuilder sb = new StringBuilder();
-      TextSpan tts = token.getTextSpan();
+      tts = token.getTextSpan();
       String substr = docText.substring(tts.getStart(), tts.getEnding());
       assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts + ") = [" + substr + "]", stokens[tokIdx].equals(substr));
       tokIdx++;
     }
-  }
-
-  /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-   * 
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
-   * @throws ConcreteException
-   * @throws IOException
-   */
-  @Test
-  public void testShake1_verifyTokenSpans() throws TException, InvalidInputException, IOException, ConcreteException {
-    Section nsect = this.processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
-    List<Sentence> nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
-    Sentence nsent = nSentList.get(0);
-    Tokenization ntokenization = nsent.getTokenizationList().get(0);
-    String[] stokens = { "The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
+    
+    // Verify token spans
+    nsect = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
+    nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
+    nsent = nSentList.get(0);
+    ntokenization = nsent.getTokenizationList().get(0);
     int[] start = { 0, 4, 8, 12, 15, 21, 25, 31, 40, 43, 47 };
     int[] end = { 3, 7, 11, 14, 20, 24, 29, 40, 42, 47, 48 };
-    int tokIdx = 0;
+    tokIdx = 0;
     for (Token token : ntokenization.getTokenList().getTokenList()) {
-      TextSpan tts = token.getTextSpan();
+      tts = token.getTextSpan();
       assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx], tts.getStart() == start[tokIdx]);
       assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx], tts.getEnding() == end[tokIdx]);
       tokIdx++;
     }
-  }
-
-  /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-   * 
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
-   * @throws ConcreteException
-   * @throws IOException
-   */
-  @Test
-  public void testShake1_verifyNumEntities() throws TException, InvalidInputException, IOException, ConcreteException {
-    Communication comm = this.processedShakeHandComm;
-    assertTrue(comm.getEntitySetList().size() > 0);
-    assertTrue("Should be three entities, got " + comm.getEntitySetList().get(0).getEntityList().size(),
-        comm.getEntitySetList().get(0).getEntityList().size() == 3);
-  }
-
-  /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-   * 
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
-   * @throws ConcreteException
-   * @throws IOException
-   */
-  @Test
-  public void testShake1_verifySingletonEntities() throws TException, InvalidInputException, IOException, ConcreteException {
-    Communication comm = this.processedShakeHandComm;
-    for (Entity entity : comm.getEntitySetList().get(0).getEntityList()) {
-      assertTrue("" + entity.getCanonicalName() + " is not singleton", entity.getMentionIdList().size() == 1);
+    
+    // Verify # entities
+    assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
+    assertEquals("Should be three entities.", 3,
+        processedShakeHandComm.getEntitySetList().get(0).getEntityList().size());
+    
+    // Verify # Singleton entities
+    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0).getEntityList()) {
+      assertEquals(entity.getCanonicalName() + " is not singleton", 1, entity.getMentionIdList().size());
     }
-  }
-
-  /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-   * 
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
-   * @throws ConcreteException
-   * @throws IOException
-   */
-  @Test
-  public void testShake1_verifyEntityNames() throws TException, InvalidInputException, IOException, ConcreteException {
-    Communication comm = this.processedShakeHandComm;
+    
+    // Verify entity names
     Set<String> expEnts = new HashSet<String>();
     expEnts.add("The man");
     expEnts.add("the U.S. President 's hand");
     expEnts.add("the U.S. President 's");
     Set<String> seenEnts = new HashSet<String>();
-    for (Entity entity : comm.getEntitySetList().get(0).getEntityList()) {
+    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0).getEntityList()) {
       seenEnts.add(entity.getCanonicalName());
     }
     assertTrue(seenEnts.equals(expEnts));
-  }
-
-  /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-   * 
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
-   * @throws ConcreteException
-   * @throws IOException
-   */
-  @Test
-  public void testShake1_verifySomeEntityCanonicalNames() throws TException, InvalidInputException, IOException, ConcreteException {
-    Communication comm = this.processedShakeHandComm;
-    assertTrue(comm.getEntitySetList().size() > 0);
+    
+    // Verify some canonical entity names
+    assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
     boolean atLeastOne = false;
-    for (Entity entity : comm.getEntitySetList().get(0).getEntityList()) {
+    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0).getEntityList()) {
       atLeastOne |= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
     }
     assertTrue(atLeastOne);
   }
 
-  /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
-   * 
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
-   * @throws ConcreteException
-   * @throws IOException
-   */
-  // @Test
-  // public void processSample() throws TException, InvalidInputException, IOException, ConcreteException {
-  // ConcreteUUIDFactory cuf = new ConcreteUUIDFactory();
-  // String text = "The man ran quickly toward the front line to shake the U.S. \n" +
-  // "President's hand. The man, Mr. Foo Bar, shared many interests \n" +
-  // "with the leader --- their favorite author was J.D. Salinger.\n " +
-  // "Another similarity was that blue was their favorite colour.";
-  // Communication sample = new Communication().setId("sample_communication")
-  // .setUuid(cuf.getConcreteUUID())
-  // .setType("article")
-  // .setText(text);
-  // Section section = new Section().setUuid(cuf.getConcreteUUID())
-  // .setTextSpan(new TextSpan().setStart(0).setEnding(text.length()))
-  // .setKind("Passage");
-  // SectionSegmentation ss = new SectionSegmentation().setUuid(cuf.getConcreteUUID());
-  // ss.addToSectionList(section);
-  // sample.addToSectionSegmentations(ss);
 
-  // Communication nc = this.pipe.process(sample);
-  // new SuperCommunication(nc).writeToFile("src/test/resources/sample_para_processed.concrete", true);
-  // }
 
   // @Test
   // public void processBadMessage() throws Exception {
