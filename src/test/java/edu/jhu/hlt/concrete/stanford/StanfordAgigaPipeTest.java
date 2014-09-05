@@ -136,7 +136,7 @@ public class StanfordAgigaPipeTest {
     System.out.println("this testcomm = " + this.randomTestComm.getText());
     assertTrue(nc.isSetEntityMentionSetList());
     assertTrue(nc.isSetEntitySetList());
-    new SuperCommunication(nc).writeToFile("src/test/resources/post-stanford_garbage_processed.concrete", true);
+    new SuperCommunication(nc).writeToFile("target/post-stanford_garbage_processed.concrete", true);
   }
 
   /**
@@ -163,68 +163,48 @@ public class StanfordAgigaPipeTest {
 
     assertTrue(docText.equals(StanfordAgigaPipeTest.SHAKE_HAND_TEXT_STRING));
 
-    Section nsect = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
-    List<Sentence> nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
-    assertTrue(nSentList.size() == 1);
+    final Section firstSection = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
+    final List<Sentence> firstSentList = firstSection.getSentenceSegmentationList().get(0).getSentenceList();
+    final Sentence firstSent = firstSentList.get(0);
+    final Tokenization firstTokenization = firstSent.getTokenizationList().get(0);
+    assertTrue(firstSentList.size() == 1);
 
     // Test spans
-    nsect = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
-    nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
-    assertTrue(nSentList.size() == 1);
-    Sentence nsent = nSentList.get(0);
-    assertTrue("Beginning char should be 0, but is " + nsent.getTextSpan().getStart(), nsent.getTextSpan().getStart() == 0);
-    assertTrue("Ending char should be 48, but is " + nsent.getTextSpan().getEnding(), nsent.getTextSpan().getEnding() == 48);
+    assertTrue(firstSentList.size() == 1);
+    
+    assertEquals("Beginning char should be 0.", 0, firstSent.getTextSpan().getStart());
+    assertEquals("Ending char should be 48.", 48, firstSent.getTextSpan().getEnding());
 
-    nsect = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
-    nsent = nsect.getSentenceSegmentationList().get(0).getSentenceList().get(0);
-    TextSpan tts = nsent.getTextSpan();
+    TextSpan tts = firstSent.getTextSpan();
     String pulledText = docText.substring(tts.getStart(), tts.getEnding());
     assertTrue(pulledText.equals(SHAKE_HAND_TEXT_STRING.trim()));
 
     // Test # Tokens
-    nsect = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
-    nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
-    nsent = nSentList.get(0);
-    Tokenization ntokenization = nsent.getTokenizationList().get(0);
-
     StringBuilder actualTokensSB = new StringBuilder();
-    for (Token tok : ntokenization.getTokenList().getTokenList()) {
+    for (Token tok : firstTokenization.getTokenList().getTokenList()) {
       actualTokensSB.append("(" + tok.text + ", " + tok.tokenIndex + ") ");
     }
-    assertTrue("Expected tokens length = " + stokens.length + ";" + "Actual   tokens length = " + ntokenization.getTokenList().getTokenList().size() + "; "
-        + "Actual tokens = " + actualTokensSB.toString(), ntokenization.getTokenList().getTokenList().size() == stokens.length);
+    assertTrue("Expected tokens length = " + stokens.length + ";" + "Actual   tokens length = " + firstTokenization.getTokenList().getTokenList().size() + "; "
+        + "Actual tokens = " + actualTokensSB.toString(), firstTokenization.getTokenList().getTokenList().size() == stokens.length);
 
     // Verify tokens
-    nsect = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
-    nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
-    nsent = nSentList.get(0);
-    ntokenization = nsent.getTokenizationList().get(0);
-
     int tokIdx = 0;
-    for (Token token : ntokenization.getTokenList().getTokenList()) {
+    for (Token token : firstTokenization.getTokenList().getTokenList()) {
       assertTrue("tokIdx = " + tokIdx + "; token.tokenIndex = " + token.tokenIndex, token.tokenIndex == tokIdx);
       assertTrue("expected = [" + stokens[tokIdx] + "]; token.text = [" + token.text + "]", token.text.equals(stokens[tokIdx]));
       tokIdx++;
     }
 
     // Verify tokens to full
-    nsect = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
-    nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
-    nsent = nSentList.get(0);
-    ntokenization = nsent.getTokenizationList().get(0);
-    for (Token token : ntokenization.getTokenList().getTokenList()) {
+    for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getTextSpan();
       String substr = docText.substring(tts.getStart(), tts.getEnding());
       assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts + ") = [" + substr + "]", token.getText().equals(substr));
     }
 
     // Verify tokens to full seeded
-    nsect = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
-    nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
-    nsent = nSentList.get(0);
-    ntokenization = nsent.getTokenizationList().get(0);
     tokIdx = 0;
-    for (Token token : ntokenization.getTokenList().getTokenList()) {
+    for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getTextSpan();
       String substr = docText.substring(tts.getStart(), tts.getEnding());
       assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts + ") = [" + substr + "]", stokens[tokIdx].equals(substr));
@@ -232,14 +212,10 @@ public class StanfordAgigaPipeTest {
     }
 
     // Verify token spans
-    nsect = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
-    nSentList = nsect.getSentenceSegmentationList().get(0).getSentenceList();
-    nsent = nSentList.get(0);
-    ntokenization = nsent.getTokenizationList().get(0);
     int[] start = { 0, 4, 8, 12, 15, 21, 25, 31, 40, 43, 47 };
     int[] end = { 3, 7, 11, 14, 20, 24, 29, 40, 42, 47, 48 };
     tokIdx = 0;
-    for (Token token : ntokenization.getTokenList().getTokenList()) {
+    for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getTextSpan();
       assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx], tts.getStart() == start[tokIdx]);
       assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx], tts.getEnding() == end[tokIdx]);
