@@ -143,7 +143,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
     for (Future<Communication> c : comms) {
       Communication ac = c.get();
       logger.info("Retrieved communication: {}", ac.getId());
-      try (PreparedStatement ps = conn.prepareStatement("INSERT INTO agigadocs (id, bytez) VALUES (?,?)");) {
+      try (PreparedStatement ps = conn.prepareStatement("INSERT INTO documents (id, bytez) VALUES (?,?)");) {
         ps.setString(1, ac.getId());
         ps.setBytes(2, cs.toBytes(ac));
         ps.executeUpdate();
