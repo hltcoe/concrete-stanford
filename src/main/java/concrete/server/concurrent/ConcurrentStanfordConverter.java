@@ -3,6 +3,9 @@
  */
 package concrete.server.concurrent;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.util.List;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -10,6 +13,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
@@ -25,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.concrete.util.CommunicationSerialization;
 import edu.jhu.hlt.gigaword.ClojureIngester;
 import edu.jhu.hlt.gigaword.ProxyDocument;
 
@@ -60,16 +66,44 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
    * @throws Exception 
    */
   public static void main(String[] args) throws Exception {
-    int threads = Runtime.getRuntime().availableProcessors();
-    if (threads < 8) {
-      logger.info("You need at least 8 threads to run this program. You only have {} available.", threads);
-      System.exit(1);
-    }
+//    int threads = Runtime.getRuntime().availableProcessors();
+//    if (threads < 8) {
+//      logger.info("You need at least 8 threads to run this program. You only have {} available.", threads);
+//      System.exit(1);
+//    }
     
     if (args.length != 1) {
       logger.info("This program takes 1 argument: the path to a .txt file with paths to agiga documents, 1 per line.");
       System.exit(1);
     }
+    
+    Optional<String> psqlHost = Optional.ofNullable(System.getenv("HURRICANE_HOST"));
+    Optional<String> psqlDBName = Optional.ofNullable(System.getenv("HURRICANE_DB"));
+    Optional<String> psqlUser = Optional.ofNullable(System.getenv("HURRICANE_USER"));
+    Optional<String> psqlPass = Optional.ofNullable(System.getenv("HURRICANE_PASS"));
+    
+    if (!psqlHost.isPresent() || !psqlDBName.isPresent() || !psqlUser.isPresent() || !psqlPass.isPresent()) {
+      logger.info("You need to set the following environment variables to run this program:");
+      logger.info("HURRICANE_HOST : hostname of a postgresql server");
+      logger.info("HURRICANE_DB : database name to use");
+      logger.info("HURRICANE_USER : database user with appropriate privileges");
+      logger.info("HURRICANE_PASS : password for user");
+      System.exit(1);
+    }
+    
+    Properties props = new Properties();
+    props.setProperty("user", psqlUser.get());
+    props.setProperty("password", psqlPass.get());
+    props.setProperty("ssl", "true");
+    Connection conn = DriverManager.getConnection("jdbc:postgresql://" + psqlHost.get() + "/" + psqlDBName.get(), props);
+    conn.setAutoCommit(false);
+    logger.info("Successfully connected to database.");
+    
+    CommunicationSerialization cs = new CommunicationSerialization();
+    
+    logger.info("Sleeping to allow profiler hooks...");
+    Thread.sleep(10000);
+    logger.info("Proceeding.");
     
     // this is silly, but needed for stanford logging disable.
     PrintStream err = System.err;
@@ -92,19 +126,35 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
         String pathStr = sc.nextLine();
         logger.info("Processing file: {}", pathStr);
         Iterator<ProxyDocument> iter = ci.proxyGZipPathToProxyDocIter(pathStr);
-        while (iter.hasNext()) {
+        logger.info("Document iterator obtained.");
+        int k = 0;
+        while (iter.hasNext() && k < 10) {
+          logger.info("Processing next iterator item.");
           ProxyDocument pd = iter.next();
           Communication c = pd.sectionedCommunication();
+          logger.info("Communication sectioned. Annotating.");
           Future<Communication> fc = annotator.annotate(c);
+          logger.info("Task submitted.");
           comms.add(fc);
+          k++;
         }
       }
     }
 
+    logger.info("All tasks submitted. Preparing SQL inserts.");
     for (Future<Communication> c : comms) {
       Communication ac = c.get();
-      logger.info("Successfully retrieved communication: {}", ac.getId());
+      try (PreparedStatement ps = conn.prepareStatement("INSERT INTO agigadocs (id, bytez) VALUES (?,?)");) {
+        ps.setString(1, ac.getId());
+        ps.setBytes(2, cs.toBytes(ac));
+        ps.executeUpdate();
+      }
     }
+    
+    logger.info("Database transaction prepared. Committing.");
+    conn.commit();
+    logger.info("Committed successfully. Shutting down database connection.");
+    conn.close();
     
     sw.stop();
     logger.info("Ingest complete. Took {} ms.", sw.getTime());
