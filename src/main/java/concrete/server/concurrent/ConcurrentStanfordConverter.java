@@ -3,20 +3,23 @@
  */
 package concrete.server.concurrent;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.List;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -50,7 +53,10 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
    *
    */
   public ConcurrentStanfordConverter() {
-    this.runner = Executors.newCachedThreadPool();
+    // this.runner = Executors.newCachedThreadPool();
+    int aThreads = Runtime.getRuntime().availableProcessors();
+    int toUse = aThreads > 16 ? aThreads - 8 : aThreads;
+    this.runner = Executors.newFixedThreadPool(toUse);
     this.srv = new ExecutorCompletionService<Communication>(this.runner);
   }
 
@@ -82,7 +88,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
     Optional<String> psqlDBName = Optional.ofNullable(System.getenv("HURRICANE_DB"));
     Optional<String> psqlUser = Optional.ofNullable(System.getenv("HURRICANE_USER"));
     Optional<String> psqlPass = Optional.ofNullable(System.getenv("HURRICANE_PASS"));
-
+    
     if (!psqlHost.isPresent() || !psqlDBName.isPresent() || !psqlUser.isPresent() || !psqlPass.isPresent()) {
       logger.info("You need to set the following environment variables to run this program:");
       logger.info("HURRICANE_HOST : hostname of a postgresql server");
@@ -98,8 +104,18 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
     // props.setProperty("ssl", "true");
     Connection conn = DriverManager.getConnection("jdbc:postgresql://" + psqlHost.get() + "/" + psqlDBName.get(), props);
     conn.setAutoCommit(false);
-    logger.info("Successfully connected to database.");
+    logger.info("Successfully connected to database. Getting previously ingested IDs.");
+    
+    Set<String> idSet = new HashSet<>();
+    try (PreparedStatement ps = conn.prepareStatement("SELECT id FROM documents");) {
+      ResultSet rs = ps.executeQuery();
+      while (rs.next()) {
+        String id = rs.getString(1);
+        idSet.add(id);
+      }
+    }
 
+    logger.info("Got previously ingested IDs. There are {} previously ingested documents.", idSet.size());
     CommunicationSerialization cs = new CommunicationSerialization();
 
     logger.info("Sleeping to allow profiler hooks...");
@@ -127,14 +143,18 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
         String pathStr = sc.nextLine();
         logger.info("Processing file: {}", pathStr);
         Iterator<ProxyDocument> iter = ci.proxyGZipPathToProxyDocIter(pathStr);
-        int k = 0;
-        while (iter.hasNext() && k < 3) {
+        while (iter.hasNext()) {
           ProxyDocument pd = iter.next();
+          String pId = pd.getId();
+          if (idSet.contains(pId)) {
+            logger.info("Already ingested document: {}; skipping.", pId);
+            continue;
+          }
+          
           Communication c = pd.sectionedCommunication();
           Future<Communication> fc = annotator.annotate(c);
           logger.info("Task submitted.");
           comms.add(fc);
-          k++;
         }
       }
     }
