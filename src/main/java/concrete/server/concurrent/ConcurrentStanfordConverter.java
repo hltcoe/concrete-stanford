@@ -3,7 +3,10 @@
  */
 package concrete.server.concurrent;
 
-import java.util.List;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Iterator;
+import java.util.Scanner;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -17,8 +20,9 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import concrete.util.concurrent.ConcurrentCommunicationLoader;
 import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.gigaword.ClojureIngester;
+import edu.jhu.hlt.gigaword.ProxyDocument;
 
 /**
  * @author max
@@ -43,6 +47,10 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
     return this.srv.submit(new CallableConcreteServer(fc));
   }
   
+  public Future<Communication> annotate(Communication c) throws InterruptedException, ExecutionException {
+    return this.srv.submit(new CallableConcreteServer(c));
+  }
+  
   /**
    * @param args
    * @throws Exception 
@@ -61,18 +69,29 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
     
     StopWatch sw = new StopWatch();
     logger.info("Ingest beginning at: {}", new DateTime().toString());
-    ConcurrentCommunicationLoader loader = new ConcurrentCommunicationLoader(8);
-    List<Future<Communication>> comms = loader.bulkLoad(args[0]);
+    Path pathToCommFiles = Paths.get(args[0]);
     
+    ClojureIngester ci = new ClojureIngester();
     ConcurrentStanfordConverter annotator = new ConcurrentStanfordConverter();
-    for (Future<Communication> fc : comms) {
-      Future<Communication> stanAnno = annotator.annotate(fc);
-      logger.info("Successfully retrieved communication: {}", stanAnno.get().getId());
+    
+    try(Scanner sc = new Scanner(pathToCommFiles.toFile())) {
+      while (sc.hasNextLine()) {
+        // paths.add(Paths.get(sc.nextLine()));
+        String pathStr = sc.nextLine();
+        logger.info("Processing file: {}", pathStr);
+        Iterator<ProxyDocument> iter = ci.proxyGZipPathToProxyDocIter(pathStr);
+        while (iter.hasNext()) {
+          ProxyDocument pd = iter.next();
+          Communication c = pd.sectionedCommunication();
+          Future<Communication> fc = annotator.annotate(c);
+          Communication ac = fc.get();
+          logger.info("Successfully retrieved communication: {}", ac.getId());
+        }
+      }
     }
     
     sw.stop();
     logger.info("Ingest complete. Took {} ms.", sw.getTime());
-    loader.close();
     annotator.close();
   }
 
