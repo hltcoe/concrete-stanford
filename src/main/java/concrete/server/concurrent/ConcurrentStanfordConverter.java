@@ -3,8 +3,12 @@
  */
 package concrete.server.concurrent;
 
+import java.util.List;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Scanner;
 import java.util.concurrent.CompletionService;
@@ -67,6 +71,13 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       System.exit(1);
     }
     
+    // this is silly, but needed for stanford logging disable.
+    PrintStream err = System.err;
+
+    System.setErr(new PrintStream(new OutputStream() {
+      public void write(int b) { }
+    }));
+    
     StopWatch sw = new StopWatch();
     logger.info("Ingest beginning at: {}", new DateTime().toString());
     Path pathToCommFiles = Paths.get(args[0]);
@@ -74,6 +85,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
     ClojureIngester ci = new ClojureIngester();
     ConcurrentStanfordConverter annotator = new ConcurrentStanfordConverter();
     
+    List<Future<Communication>> comms = new ArrayList<>();
     try(Scanner sc = new Scanner(pathToCommFiles.toFile())) {
       while (sc.hasNextLine()) {
         // paths.add(Paths.get(sc.nextLine()));
@@ -84,15 +96,20 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
           ProxyDocument pd = iter.next();
           Communication c = pd.sectionedCommunication();
           Future<Communication> fc = annotator.annotate(c);
-          Communication ac = fc.get();
-          logger.info("Successfully retrieved communication: {}", ac.getId());
+          comms.add(fc);
         }
       }
+    }
+
+    for (Future<Communication> c : comms) {
+      Communication ac = c.get();
+      logger.info("Successfully retrieved communication: {}", ac.getId());
     }
     
     sw.stop();
     logger.info("Ingest complete. Took {} ms.", sw.getTime());
     annotator.close();
+    System.setErr(err);
   }
 
   @Override
