@@ -6,6 +6,7 @@ package concrete.server.concurrent;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -126,13 +127,10 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
         String pathStr = sc.nextLine();
         logger.info("Processing file: {}", pathStr);
         Iterator<ProxyDocument> iter = ci.proxyGZipPathToProxyDocIter(pathStr);
-        logger.info("Document iterator obtained.");
         int k = 0;
-        while (iter.hasNext() && k < 10) {
-          logger.info("Processing next iterator item.");
+        while (iter.hasNext() && k < 3) {
           ProxyDocument pd = iter.next();
           Communication c = pd.sectionedCommunication();
-          logger.info("Communication sectioned. Annotating.");
           Future<Communication> fc = annotator.annotate(c);
           logger.info("Task submitted.");
           comms.add(fc);
@@ -144,10 +142,13 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
     logger.info("All tasks submitted. Preparing SQL inserts.");
     for (Future<Communication> c : comms) {
       Communication ac = c.get();
+      logger.info("Retrieved communication: {}", ac.getId());
       try (PreparedStatement ps = conn.prepareStatement("INSERT INTO agigadocs (id, bytez) VALUES (?,?)");) {
         ps.setString(1, ac.getId());
         ps.setBytes(2, cs.toBytes(ac));
         ps.executeUpdate();
+      } catch (SQLException e) {
+        logger.error("Got SQL Exception.", e);
       }
     }
 
