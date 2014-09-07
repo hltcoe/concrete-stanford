@@ -12,10 +12,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Scanner;
@@ -136,7 +134,6 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
     ClojureIngester ci = new ClojureIngester();
     ConcurrentStanfordConverter annotator = new ConcurrentStanfordConverter();
 
-    List<Future<Communication>> comms = new ArrayList<>();
     try(Scanner sc = new Scanner(pathToCommFiles.toFile())) {
       while (sc.hasNextLine()) {
         // paths.add(Paths.get(sc.nextLine()));
@@ -152,21 +149,33 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
           }
           
           Communication c = pd.sectionedCommunication();
-          Future<Communication> fc = annotator.annotate(c);
+          annotator.annotate(c);
           logger.debug("Task submitted.");
-          comms.add(fc);
         }
       }
     }
 
     logger.info("All tasks submitted. Preparing SQL inserts.");
-    for (Future<Communication> c : comms) {
+    int kProcessed = 0;
+    logger.info("Driver waiting on documents...");
+    Future<Communication> c = annotator.srv.poll(60 * 10, TimeUnit.SECONDS);
+    logger.info("Retrieved initial annotated comm. Continuing.");
+    while(c != null) {
       Communication ac = c.get();
       logger.debug("Retrieved communication: {}", ac.getId());
       try (PreparedStatement ps = conn.prepareStatement("INSERT INTO documents (id, bytez) VALUES (?,?)");) {
         ps.setString(1, ac.getId());
         ps.setBytes(2, cs.toBytes(ac));
         ps.executeUpdate();
+        kProcessed++;
+        
+        if (kProcessed % 100 == 0) {
+          logger.info("Converted {} documents; committing.", kProcessed);
+          conn.commit();
+        }
+        
+        logger.info("Waiting on next document in driver...");
+        c = annotator.srv.poll(60 * 10, TimeUnit.SECONDS);
       } catch (SQLException e) {
         logger.error("Got SQL Exception.", e);
       }
