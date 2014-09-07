@@ -53,10 +53,10 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
    *
    */
   public ConcurrentStanfordConverter() {
-    // this.runner = Executors.newCachedThreadPool();
-    int aThreads = Runtime.getRuntime().availableProcessors();
-    int toUse = aThreads > 16 ? aThreads - 8 : aThreads;
-    this.runner = Executors.newFixedThreadPool(toUse);
+    this.runner = Executors.newCachedThreadPool();
+//    int aThreads = Runtime.getRuntime().availableProcessors();
+//    int toUse = aThreads > 16 ? aThreads - 8 : aThreads;
+//    this.runner = Executors.newFixedThreadPool(toUse);
     this.srv = new ExecutorCompletionService<Communication>(this.runner);
   }
 
@@ -153,7 +153,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
           
           Communication c = pd.sectionedCommunication();
           Future<Communication> fc = annotator.annotate(c);
-          logger.info("Task submitted.");
+          logger.debug("Task submitted.");
           comms.add(fc);
         }
       }
@@ -162,7 +162,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
     logger.info("All tasks submitted. Preparing SQL inserts.");
     for (Future<Communication> c : comms) {
       Communication ac = c.get();
-      logger.info("Retrieved communication: {}", ac.getId());
+      logger.debug("Retrieved communication: {}", ac.getId());
       try (PreparedStatement ps = conn.prepareStatement("INSERT INTO documents (id, bytez) VALUES (?,?)");) {
         ps.setString(1, ac.getId());
         ps.setBytes(2, cs.toBytes(ac));

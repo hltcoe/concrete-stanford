@@ -92,13 +92,13 @@ public class InMemoryAnnoPipeline {
     words2SentencesAnnotator = new WordsToSentencesAnnotator();
     Properties props = new Properties();
     String annotatorList = "tokenize, ssplit, pos, lemma, parse, ner";
-    logger.debug("Using annotators " + annotatorList);
+    logger.debug("Using annotators: {}", annotatorList);
 
     props.put("annotators", annotatorList);
     props.setProperty("output.printSingletonEntities", "true");
-    logger.info("Loading models and resources.");
+    logger.debug("Loading models and resources.");
     pipeline = new StanfordCoreNLP(props);
-    logger.info("Done.");
+    logger.debug("Done.");
   }
 
   public void prepForNext() {
@@ -170,7 +170,7 @@ public class InMemoryAnnoPipeline {
       }
     }
     
-    logger.debug("Local processing annotation keys :: " + annotation.keySet().toString());
+    logger.debug("Local processing annotation keys :: {}", annotation.keySet().toString());
     // Convert to an XML document.
     Document xmlDoc = this.stanfordToXML(pipeline, annotation);
     AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc);
