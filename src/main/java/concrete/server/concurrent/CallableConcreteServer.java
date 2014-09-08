@@ -3,15 +3,18 @@
  */
 package concrete.server.concurrent;
 
+import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe;
+import edu.jhu.hlt.concrete.util.ConcreteException;
 
 /**
  * @author max
@@ -43,9 +46,15 @@ public class CallableConcreteServer implements Callable<Communication> {
 
   @Override
   public Communication call() throws Exception {
-    logger.debug("Processing communication: {}", c.getId());
-    Communication proced = this.pipe.process(this.c);
-    logger.debug("Finished.");
-    return proced;
+    try {
+      logger.debug("Processing communication: {}", c.getId());
+      Communication proced = this.pipe.process(this.c);
+      logger.debug("Finished.");
+      return proced;
+    } catch (IOException | TException | ConcreteException e) {
+      logger.error("Caught an exception processing {}: ", c.getId());
+      logger.error("Exception follows:", e);
+      return null;
+    }
   }
 }

@@ -3,7 +3,9 @@
  */
 package concrete.server.concurrent;
 
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -130,7 +132,8 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
     props.setProperty("user", psqlUser.get());
     props.setProperty("password", psqlPass.get());
     // props.setProperty("ssl", "true");
-    try (Connection conn = DriverManager.getConnection("jdbc:postgresql://" + psqlHost.get() + "/" + psqlDBName.get(), props);) {
+    try (Connection conn = DriverManager.getConnection("jdbc:postgresql://" + psqlHost.get() + "/" + psqlDBName.get(), props);
+        BufferedWriter bw = Files.newBufferedWriter(Paths.get("failed-ids.txt"));) {
       conn.setAutoCommit(false);
       logger.info("Successfully connected to database. Getting previously ingested IDs.");
 
@@ -182,6 +185,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       int kPending = 0;
       for (String pathStr : pathStrs) {
         ArrayDeque<Communication> dq = new ArrayDeque<Communication>(12000);
+        Set<String> docIdsToProcess = new HashSet<String>(12000);
         
         logger.info("Processing file: {}", pathStr);
         Iterator<ProxyDocument> iter = ci.proxyGZipPathToProxyDocIter(pathStr);
@@ -193,6 +197,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
 
           Communication c = pd.sectionedCommunication();
           dq.push(c);
+          docIdsToProcess.add(c.getId());
         }
         
         logger.info("Mapping complete. Submitting tasks.");
@@ -209,26 +214,36 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
           Optional<Future<Communication>> oc = Optional.ofNullable(annotator.srv.poll(60 * 3, TimeUnit.SECONDS));
           if (!oc.isPresent()) {
             logger.error("No documents were retrieved within 3 minutes.");
-            logger.error("kPending = {}", kPending);
-            logger.error("kProcessed = {}", kProcessed);
-            try {
-              annotator.close();
-            } catch (Exception e) {
-              logger.error("An error occurred when closing the ConcurrentStanfordAnnotator object.", e);
+            logger.error("It is likely a task died unexpectedly.");
+            logger.error("Here are the document IDs that have not been ingested:");
+            docIdsToProcess.forEach(i -> logger.error(i));
+            logger.error("These documents should be checked for errors.");
+
+            // Output bad document IDs.
+            bw.write("Bad IDs for path: ");
+            bw.write(pathStr);
+            bw.write("\n");
+            for (String s : docIdsToProcess) {
+              bw.write(s);
+              bw.write("\n");
             }
             
-            System.exit(1);
+            kPending = 0;
+            docIdsToProcess.clear();
+            break;
           }
           
           Communication ac = oc.get().get();
           logger.debug("Retrieved communication: {}", ac.getId());
           kPending--;
           try (PreparedStatement ps = conn.prepareStatement("INSERT INTO documents (id, bytez) VALUES (?,?)");) {
-            ps.setString(1, ac.getId());
+            String docId = ac.getId();
+            ps.setString(1, docId);
             ps.setBytes(2, cs.toBytes(ac));
             ps.executeUpdate();
             kProcessed++;
-
+            docIdsToProcess.remove(docId);
+            
             if (kProcessed % 100 == 0)
               conn.commit();
             
@@ -261,6 +276,8 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       logger.error("An InterruptedException was caught while processing documents.", ex);
     } catch (ExecutionException e) {
       logger.error("An ExecutionException was caught during task submission or queue retrieval.", e);
+    } catch (IOException e1) {
+      logger.error("There was an exception caught when closing the bad IDs file.", e1);
     } 
   }
 
