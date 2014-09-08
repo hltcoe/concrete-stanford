@@ -149,7 +149,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       logger.info("Warming up models. This is a good time for profilers to hook in.");
       new StanfordAgigaPipe();
       
-      Thread.sleep(5000);
+      Thread.sleep(2500);
       logger.info("Proceeding.");
 
       // this is silly, but needed for stanford logging disable.
@@ -206,8 +206,21 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
         while (kPending != 0) {
           logger.debug("Waiting on next document in driver...");
           // c = annotator.srv.poll(60 * 3, TimeUnit.SECONDS);
-          Future<Communication> c = annotator.srv.poll(60 * 3, TimeUnit.SECONDS);
-          Communication ac = c.get();
+          Optional<Future<Communication>> oc = Optional.ofNullable(annotator.srv.poll(60 * 3, TimeUnit.SECONDS));
+          if (!oc.isPresent()) {
+            logger.error("No documents were retrieved within 3 minutes.");
+            logger.error("kPending = {}", kPending);
+            logger.error("kProcessed = {}", kProcessed);
+            try {
+              annotator.close();
+            } catch (Exception e) {
+              logger.error("An error occurred when closing the ConcurrentStanfordAnnotator object.", e);
+            }
+            
+            System.exit(1);
+          }
+          
+          Communication ac = oc.get().get();
           logger.debug("Retrieved communication: {}", ac.getId());
           kPending--;
           try (PreparedStatement ps = conn.prepareStatement("INSERT INTO documents (id, bytez) VALUES (?,?)");) {
