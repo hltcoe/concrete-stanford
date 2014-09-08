@@ -54,15 +54,15 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
 
   private final ExecutorService runner;
   private final CompletionService<Communication> srv;
-
+  
   /**
    *
    */
-  public ConcurrentStanfordConverter() {
+  public ConcurrentStanfordConverter(int nThreads) {
     // this.runner = Executors.newCachedThreadPool();
     // int aThreads = Runtime.getRuntime().availableProcessors();
     // int toUse = aThreads > 16 ? aThreads - 8 : aThreads;
-    this.runner = Executors.newFixedThreadPool(16);
+    this.runner = Executors.newFixedThreadPool(nThreads);
     this.srv = new ExecutorCompletionService<Communication>(this.runner);
   }
 
@@ -79,14 +79,8 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
    * @throws Exception
    */
   public static void main(String[] args) {
-    // int threads = Runtime.getRuntime().availableProcessors();
-    // if (threads < 8) {
-    // logger.info("You need at least 8 threads to run this program. You only have {} available.", threads);
-    // System.exit(1);
-    // }
-
-    if (args.length != 1) {
-      logger.info("This program takes 1 argument: the path to a .txt file with paths to agiga documents, 1 per line.");
+    if (args.length != 2) {
+      logger.info("This program takes 1 argument: the path to a .txt file with paths to agiga documents, 1 per line, and how many threads to use [minimum 4].");
       System.exit(1);
     }
     
@@ -104,7 +98,21 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       logger.error("No file at: {} ; can't ingest anything.", pathToCommFiles.toString());
       System.exit(1);
     }
-
+    
+    int nThreadsToUse = -1;
+    try {
+      nThreadsToUse = Integer.parseInt(args[1]);
+    } catch (NumberFormatException e1) {
+      logger.info("Couldn't interpret {} as an integer. Try again.");
+      System.exit(1);
+    }
+    
+    if (nThreadsToUse < 4) {
+      logger.info("Minimum 4 threads required.");
+      System.exit(1);
+    }
+      
+    
     Optional<String> psqlHost = Optional.ofNullable(System.getenv("HURRICANE_HOST"));
     Optional<String> psqlDBName = Optional.ofNullable(System.getenv("HURRICANE_DB"));
     Optional<String> psqlUser = Optional.ofNullable(System.getenv("HURRICANE_USER"));
@@ -157,7 +165,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       logger.info("Ingest beginning at: {}", new DateTime().toString());
 
       ClojureIngester ci = new ClojureIngester();
-      ConcurrentStanfordConverter annotator = new ConcurrentStanfordConverter();
+      ConcurrentStanfordConverter annotator = new ConcurrentStanfordConverter(nThreadsToUse);
 
       List<String> pathStrs = new ArrayList<>();
       try (Scanner sc = new Scanner(pathToCommFiles.toFile())) {
@@ -173,7 +181,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       int kProcessed = 0;
       int kPending = 0;
       for (String pathStr : pathStrs) {
-        ArrayDeque<Communication> dq = new ArrayDeque<Communication>(1100);
+        ArrayDeque<Communication> dq = new ArrayDeque<Communication>(5000);
         
         logger.info("Processing file: {}", pathStr);
         Iterator<ProxyDocument> iter = ci.proxyGZipPathToProxyDocIter(pathStr);
