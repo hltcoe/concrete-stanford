@@ -180,10 +180,8 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
         while (iter.hasNext()) {
           ProxyDocument pd = iter.next();
           String pId = pd.getId();
-          if (idSet.contains(pId)) {
-            logger.info("Already ingested document: {}; skipping.", pId);
+          if (idSet.contains(pId))
             continue;
-          }
 
           Communication c = pd.sectionedCommunication();
           dq.push(c);
@@ -196,9 +194,9 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
           kPending++;
         }
         
-        logger.info("Tasks submitted. Preparing SQL inserts.");
+        logger.info("{} tasks submitted. Preparing SQL inserts.", kPending);
         while (kPending != 0) {
-          logger.info("Waiting on next document in driver...");
+          logger.debug("Waiting on next document in driver...");
           // c = annotator.srv.poll(60 * 3, TimeUnit.SECONDS);
           Future<Communication> c = annotator.srv.poll(60 * 3, TimeUnit.SECONDS);
           Communication ac = c.get();
@@ -210,10 +208,9 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
             ps.executeUpdate();
             kProcessed++;
 
-            if (kProcessed % 100 == 0) {
-              logger.info("Converted {} documents; committing.", kProcessed);
+            if (kProcessed % 100 == 0)
               conn.commit();
-            }
+            
           } catch (SQLException e) {
             logger.error("Caught an SQLException inserting documents.", e);
           } catch (ConcreteException e) {
