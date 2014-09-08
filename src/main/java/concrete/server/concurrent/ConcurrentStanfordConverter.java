@@ -111,7 +111,6 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       logger.info("Minimum 4 threads required.");
       System.exit(1);
     }
-      
     
     Optional<String> psqlHost = Optional.ofNullable(System.getenv("HURRICANE_HOST"));
     Optional<String> psqlDBName = Optional.ofNullable(System.getenv("HURRICANE_DB"));
@@ -161,6 +160,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
         }
       }));
 
+      logger.info("Using {} threads.", nThreadsToUse);
       StopWatch sw = new StopWatch();
       logger.info("Ingest beginning at: {}", new DateTime().toString());
 
@@ -181,7 +181,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       int kProcessed = 0;
       int kPending = 0;
       for (String pathStr : pathStrs) {
-        ArrayDeque<Communication> dq = new ArrayDeque<Communication>(5000);
+        ArrayDeque<Communication> dq = new ArrayDeque<Communication>(12000);
         
         logger.info("Processing file: {}", pathStr);
         Iterator<ProxyDocument> iter = ci.proxyGZipPathToProxyDocIter(pathStr);
