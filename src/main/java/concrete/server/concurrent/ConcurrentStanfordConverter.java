@@ -56,7 +56,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
 
   private final ExecutorService runner;
   private final CompletionService<Communication> srv;
-  
+
   /**
    *
    */
@@ -85,7 +85,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       logger.info("This program takes 1 argument: the path to a .txt file with paths to agiga documents, 1 per line, and how many threads to use [minimum 4].");
       System.exit(1);
     }
-    
+
     logger.info("Setting up uncaught exception handler.");
     Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
       @Override
@@ -94,13 +94,13 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
         logger.error("Exception is as follows.", e);
       }
     });
-    
+
     Path pathToCommFiles = Paths.get(args[0]);
     if (!Files.exists(pathToCommFiles)) {
       logger.error("No file at: {} ; can't ingest anything.", pathToCommFiles.toString());
       System.exit(1);
     }
-    
+
     int nThreadsToUse = -1;
     try {
       nThreadsToUse = Integer.parseInt(args[1]);
@@ -108,12 +108,12 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       logger.info("Couldn't interpret {} as an integer. Try again.");
       System.exit(1);
     }
-    
+
     if (nThreadsToUse < 4) {
       logger.info("Minimum 4 threads required.");
       System.exit(1);
     }
-    
+
     Optional<String> psqlHost = Optional.ofNullable(System.getenv("HURRICANE_HOST"));
     Optional<String> psqlDBName = Optional.ofNullable(System.getenv("HURRICANE_DB"));
     Optional<String> psqlUser = Optional.ofNullable(System.getenv("HURRICANE_USER"));
@@ -151,7 +151,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
 
       logger.info("Warming up models. This is a good time for profilers to hook in.");
       new StanfordAgigaPipe();
-      
+
       Thread.sleep(2500);
       logger.info("Proceeding.");
 
@@ -185,7 +185,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       for (String pathStr : pathStrs) {
         ArrayDeque<Communication> dq = new ArrayDeque<Communication>(12000);
         Set<String> docIdsToProcess = new HashSet<String>(12000);
-        
+
         logger.info("Processing file: {}", pathStr);
         Iterator<ProxyDocument> iter = ci.proxyGZipPathToProxyDocIter(pathStr);
         while (iter.hasNext()) {
@@ -197,14 +197,14 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
           Communication c = pd.sectionedCommunication();
           dq.push(c);
         }
-        
+
         logger.info("Mapping complete. Submitting tasks.");
         while (dq.peek() != null) {
           Communication pending = dq.pop();
           annotator.annotate(pending);
           docIdsToProcess.add(pending.getId());
         }
-        
+
         logger.info("{} tasks submitted. Preparing SQL inserts.", docIdsToProcess.size());
         while (!docIdsToProcess.isEmpty()) {
           logger.debug("Waiting on next document in driver...");
@@ -225,34 +225,41 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
               bw.write(s);
               bw.write("\n");
             }
-            
+
             docIdsToProcess.clear();
             break;
           }
-          
-          Communication ac = oc.get().get();
-          
-          String docId = ac.getId();
-          logger.debug("Retrieved communication: {}", docId);
-          try (PreparedStatement ps = conn.prepareStatement("INSERT INTO documents (id, bytez) VALUES (?,?)");) {
-            ps.setString(1, docId);
-            ps.setBytes(2, cs.toBytes(ac));
-            ps.executeUpdate();
-            kProcessed++;
-            
-            if (kProcessed % 100 == 0)
-              conn.commit();
-            
-          } catch (SQLException e) {
-            logger.error("Caught an SQLException inserting documents.", e);
-            logger.error("Problematic document file: {}", pathStr);
-            logger.error("Problematic document ID: {}", docId);
-          } catch (ConcreteException e) {
-            logger.error("There was an error creating a byte array from communication: {}", docId);
-            logger.error("Problematic document file: {}", pathStr);
-            logger.error("Problematic document ID: {}", docId);            
+
+          try {
+            Communication ac = oc.get().get();
+            String docId = ac.getId();
+            logger.debug("Retrieved communication: {}", docId);
+            try (PreparedStatement ps = conn.prepareStatement("INSERT INTO documents (id, bytez) VALUES (?,?)");) {
+              ps.setString(1, docId);
+              ps.setBytes(2, cs.toBytes(ac));
+              ps.executeUpdate();
+              kProcessed++;
+
+              if (kProcessed % 100 == 0)
+                conn.commit();
+
+            } catch (SQLException e) {
+              logger.error("Caught an SQLException inserting documents.", e);
+              logger.error("Problematic document file: {}", pathStr);
+              logger.error("Problematic document ID: {}", docId);
+            } catch (ConcreteException e) {
+              logger.error("There was an error creating a byte array from communication: {}", docId);
+              logger.error("Problematic document file: {}", pathStr);
+              logger.error("Problematic document ID: {}", docId);
+            } finally {
+              docIdsToProcess.remove(docId);
+            }
+          } catch (InterruptedException | ExecutionException e1) {
+            logger.error("Caught an Exception, likely when waiting for a Communication to process.", e1);
+            logger.error("Remaining doc IDs:");
+            docIdsToProcess.forEach(i -> logger.error(i));
           } finally {
-            docIdsToProcess.remove(docId);
+            docIdsToProcess.clear();
           }
         }
       }
@@ -264,13 +271,13 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
 
       sw.stop();
       logger.info("Ingest complete. Took {} ms.", sw.getTime());
-      
+
       try {
         annotator.close();
       } catch (Exception e) {
         logger.error("An error occurred when closing the ConcurrentStanfordAnnotator object.", e);
       }
-      
+
       System.setErr(err);
     } catch (SQLException ex) {
       logger.error("An SQLException was caught while processing the connection.", ex);
@@ -280,7 +287,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       logger.error("An ExecutionException was caught during task submission or queue retrieval.", e);
     } catch (IOException e1) {
       logger.error("There was an exception caught when closing the bad IDs file.", e1);
-    } 
+    }
   }
 
   @Override
