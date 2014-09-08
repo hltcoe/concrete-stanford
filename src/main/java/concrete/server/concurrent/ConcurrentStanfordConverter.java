@@ -231,22 +231,28 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
           }
           
           Communication ac = oc.get().get();
-          logger.debug("Retrieved communication: {}", ac.getId());
+          
+          String docId = ac.getId();
+          logger.debug("Retrieved communication: {}", docId);
           try (PreparedStatement ps = conn.prepareStatement("INSERT INTO documents (id, bytez) VALUES (?,?)");) {
-            String docId = ac.getId();
             ps.setString(1, docId);
             ps.setBytes(2, cs.toBytes(ac));
             ps.executeUpdate();
             kProcessed++;
-            docIdsToProcess.remove(docId);
             
             if (kProcessed % 100 == 0)
               conn.commit();
             
           } catch (SQLException e) {
             logger.error("Caught an SQLException inserting documents.", e);
+            logger.error("Problematic document file: {}", pathStr);
+            logger.error("Problematic document ID: {}", docId);
           } catch (ConcreteException e) {
-            logger.error("There was an error creating a byte array from communication: {}", ac.getId());
+            logger.error("There was an error creating a byte array from communication: {}", docId);
+            logger.error("Problematic document file: {}", pathStr);
+            logger.error("Problematic document ID: {}", docId);            
+          } finally {
+            docIdsToProcess.remove(docId);
           }
         }
       }
