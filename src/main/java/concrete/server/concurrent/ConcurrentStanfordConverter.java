@@ -3,19 +3,11 @@
  */
 package concrete.server.concurrent;
 
-import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -23,7 +15,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.CompletionService;
@@ -41,8 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe;
-import edu.jhu.hlt.concrete.util.CommunicationSerialization;
-import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.gigaword.ClojureIngester;
 import edu.jhu.hlt.gigaword.ProxyDocument;
 
@@ -60,7 +49,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
   /**
    *
    */
-  public ConcurrentStanfordConverter(int nThreads) {
+  public ConcurrentStanfordConverter(int nThreads, String... paths) {
     // this.runner = Executors.newCachedThreadPool();
     // int aThreads = Runtime.getRuntime().availableProcessors();
     // int toUse = aThreads > 16 ? aThreads - 8 : aThreads;
@@ -127,45 +116,26 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       logger.info("HURRICANE_PASS : password for user");
       System.exit(1);
     }
-
-    Properties props = new Properties();
-    props.setProperty("user", psqlUser.get());
-    props.setProperty("password", psqlPass.get());
-    // props.setProperty("ssl", "true");
-    try (Connection conn = DriverManager.getConnection("jdbc:postgresql://" + psqlHost.get() + "/" + psqlDBName.get(), props);
-        BufferedWriter bw = Files.newBufferedWriter(Paths.get("failed-ids.txt"));) {
-      conn.setAutoCommit(false);
+    
+    try (PostgresClient pgc = new PostgresClient(psqlHost.get(), psqlDBName.get(), psqlUser.get(), psqlPass.get().getBytes());) {
       logger.info("Successfully connected to database. Getting previously ingested IDs.");
-
-      Set<String> idSet = new HashSet<>();
-      try (PreparedStatement ps = conn.prepareStatement("SELECT id FROM documents");) {
-        ResultSet rs = ps.executeQuery();
-        while (rs.next()) {
-          String id = rs.getString(1);
-          idSet.add(id);
-        }
-      }
-
+      Set<String> idSet = pgc.getIngestedDocIds();
       logger.info("Got previously ingested IDs. There are {} previously ingested documents.", idSet.size());
-      CommunicationSerialization cs = new CommunicationSerialization();
-
+      
       logger.info("Warming up models. This is a good time for profilers to hook in.");
       new StanfordAgigaPipe();
 
       Thread.sleep(2500);
       logger.info("Proceeding.");
-
-      // this is silly, but needed for stanford logging disable.
-      PrintStream err = System.err;
-
-      System.setErr(new PrintStream(new OutputStream() {
-        public void write(int b) {
-        }
-      }));
+      
+      logger.info("Disabling System.err.");
+      SystemErrDisabler disabler = new SystemErrDisabler();
+      disabler.disable();
 
       logger.info("Using {} threads.", nThreadsToUse);
       StopWatch sw = new StopWatch();
       logger.info("Ingest beginning at: {}", new DateTime().toString());
+      sw.start();
 
       ClojureIngester ci = new ClojureIngester();
       ConcurrentStanfordConverter annotator = new ConcurrentStanfordConverter(nThreadsToUse);
@@ -217,15 +187,6 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
             docIdsToProcess.forEach(i -> logger.error(i));
             logger.warn("These documents should be checked for errors.");
 
-            // Output bad document IDs.
-            bw.write("Bad IDs for path: ");
-            bw.write(pathStr);
-            bw.write("\n");
-            for (String s : docIdsToProcess) {
-              bw.write(s);
-              bw.write("\n");
-            }
-
             docIdsToProcess.clear();
             break;
           }
@@ -234,26 +195,10 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
             Communication ac = oc.get().get();
             String docId = ac.getId();
             logger.debug("Retrieved communication: {}", docId);
-            try (PreparedStatement ps = conn.prepareStatement("INSERT INTO documents (id, bytez) VALUES (?,?)");) {
-              ps.setString(1, docId);
-              ps.setBytes(2, cs.toBytes(ac));
-              ps.executeUpdate();
-              kProcessed++;
-
-              if (kProcessed % 100 == 0)
-                conn.commit();
-
-            } catch (SQLException e) {
-              logger.error("Caught an SQLException inserting documents.", e);
-              logger.error("Problematic document file: {}", pathStr);
-              logger.error("Problematic document ID: {}", docId);
-            } catch (ConcreteException e) {
-              logger.error("There was an error creating a byte array from communication: {}", docId);
-              logger.error("Problematic document file: {}", pathStr);
-              logger.error("Problematic document ID: {}", docId);
-            } finally {
-              docIdsToProcess.remove(docId);
-            }
+            pgc.insertCommunication(ac);
+            kProcessed++;
+            if (kProcessed % 100 == 0)
+              pgc.commit();
           } catch (InterruptedException | ExecutionException e1) {
             logger.error("Caught an Exception, likely when waiting for a Communication to process.", e1);
             logger.error("Remaining doc IDs:");
@@ -264,13 +209,9 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
         }
       }
 
-      logger.info("Database transaction prepared. Committing.");
-      conn.commit();
-      logger.info("Committed successfully. Shutting down database connection.");
-      conn.close();
-
       sw.stop();
       logger.info("Ingest complete. Took {} ms.", sw.getTime());
+      disabler.enable();
 
       try {
         annotator.close();
@@ -278,15 +219,12 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
         logger.error("An error occurred when closing the ConcurrentStanfordAnnotator object.", e);
       }
 
-      System.setErr(err);
     } catch (SQLException ex) {
       logger.error("An SQLException was caught while processing the connection.", ex);
     } catch (InterruptedException ex) {
       logger.error("An InterruptedException was caught while processing documents.", ex);
     } catch (ExecutionException e) {
       logger.error("An ExecutionException was caught during task submission or queue retrieval.", e);
-    } catch (IOException e1) {
-      logger.error("There was an exception caught when closing the bad IDs file.", e1);
     }
   }
 
@@ -295,5 +233,4 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
     this.runner.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     this.runner.shutdown();
   }
-
 }
