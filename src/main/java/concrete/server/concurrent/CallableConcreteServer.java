@@ -43,9 +43,9 @@ public class CallableConcreteServer implements Callable<Communication> {
 
   @Override
   public Communication call() throws Exception {
-    logger.info("Processing communication: {}", c.getId());
+    logger.debug("Processing communication: {}", c.getId());
     Communication proced = this.pipe.process(this.c);
-    logger.info("Finished.");
+    logger.debug("Finished.");
     return proced;
   }
 }

@@ -12,8 +12,10 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Scanner;
@@ -134,50 +136,52 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
     ClojureIngester ci = new ClojureIngester();
     ConcurrentStanfordConverter annotator = new ConcurrentStanfordConverter();
 
+    List<String> pathStrs = new ArrayList<>();
     try(Scanner sc = new Scanner(pathToCommFiles.toFile())) {
-      while (sc.hasNextLine()) {
-        // paths.add(Paths.get(sc.nextLine()));
-        String pathStr = sc.nextLine();
-        logger.info("Processing file: {}", pathStr);
-        Iterator<ProxyDocument> iter = ci.proxyGZipPathToProxyDocIter(pathStr);
-        while (iter.hasNext()) {
-          ProxyDocument pd = iter.next();
-          String pId = pd.getId();
-          if (idSet.contains(pId)) {
-            logger.info("Already ingested document: {}; skipping.", pId);
-            continue;
-          }
-          
-          Communication c = pd.sectionedCommunication();
-          annotator.annotate(c);
-          logger.debug("Task submitted.");
-        }
-      }
+      while (sc.hasNextLine())
+        pathStrs.add(sc.nextLine());
     }
-
-    logger.info("All tasks submitted. Preparing SQL inserts.");
+  
     int kProcessed = 0;
-    logger.info("Driver waiting on documents...");
-    Future<Communication> c = annotator.srv.poll(60 * 10, TimeUnit.SECONDS);
-    logger.info("Retrieved initial annotated comm. Continuing.");
-    while(c != null) {
-      Communication ac = c.get();
-      logger.debug("Retrieved communication: {}", ac.getId());
-      try (PreparedStatement ps = conn.prepareStatement("INSERT INTO documents (id, bytez) VALUES (?,?)");) {
-        ps.setString(1, ac.getId());
-        ps.setBytes(2, cs.toBytes(ac));
-        ps.executeUpdate();
-        kProcessed++;
-        
-        if (kProcessed % 100 == 0) {
-          logger.info("Converted {} documents; committing.", kProcessed);
-          conn.commit();
+    int kPending = 0;
+    for (String pathStr : pathStrs) {
+      logger.info("Processing file: {}", pathStr);
+      Iterator<ProxyDocument> iter = ci.proxyGZipPathToProxyDocIter(pathStr);
+      while (iter.hasNext()) {
+        ProxyDocument pd = iter.next();
+        String pId = pd.getId();
+        if (idSet.contains(pId)) {
+          logger.info("Already ingested document: {}; skipping.", pId);
+          continue;
         }
         
+        Communication c = pd.sectionedCommunication();
+        annotator.annotate(c);
+        logger.debug("Task submitted.");
+        kPending++;
+      }
+      
+      logger.info("Tasks submitted. Preparing SQL inserts.");
+      while(kPending != 0) {
         logger.info("Waiting on next document in driver...");
-        c = annotator.srv.poll(60 * 10, TimeUnit.SECONDS);
-      } catch (SQLException e) {
-        logger.error("Got SQL Exception.", e);
+        // c = annotator.srv.poll(60 * 3, TimeUnit.SECONDS);
+        Future<Communication> c = annotator.srv.poll(60 * 3, TimeUnit.SECONDS);
+        Communication ac = c.get();
+        logger.debug("Retrieved communication: {}", ac.getId());
+        kPending--;
+        try (PreparedStatement ps = conn.prepareStatement("INSERT INTO documents (id, bytez) VALUES (?,?)");) {
+          ps.setString(1, ac.getId());
+          ps.setBytes(2, cs.toBytes(ac));
+          ps.executeUpdate();
+          kProcessed++;
+          
+          if (kProcessed % 100 == 0) {
+            logger.info("Converted {} documents; committing.", kProcessed);
+            conn.commit();
+          }
+        } catch (SQLException e) {
+          logger.error("Got SQL Exception.", e);
+        }
       }
     }
 
