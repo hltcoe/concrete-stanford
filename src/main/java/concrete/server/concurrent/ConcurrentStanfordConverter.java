@@ -182,7 +182,6 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       }
 
       int kProcessed = 0;
-      int kPending = 0;
       for (String pathStr : pathStrs) {
         ArrayDeque<Communication> dq = new ArrayDeque<Communication>(12000);
         Set<String> docIdsToProcess = new HashSet<String>(12000);
@@ -197,27 +196,26 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
 
           Communication c = pd.sectionedCommunication();
           dq.push(c);
-          docIdsToProcess.add(c.getId());
         }
         
         logger.info("Mapping complete. Submitting tasks.");
         while (dq.peek() != null) {
           Communication pending = dq.pop();
           annotator.annotate(pending);
-          kPending++;
+          docIdsToProcess.add(pending.getId());
         }
         
-        logger.info("{} tasks submitted. Preparing SQL inserts.", kPending);
-        while (kPending != 0) {
+        logger.info("{} tasks submitted. Preparing SQL inserts.", docIdsToProcess.size());
+        while (!docIdsToProcess.isEmpty()) {
           logger.debug("Waiting on next document in driver...");
           // c = annotator.srv.poll(60 * 3, TimeUnit.SECONDS);
           Optional<Future<Communication>> oc = Optional.ofNullable(annotator.srv.poll(60 * 3, TimeUnit.SECONDS));
           if (!oc.isPresent()) {
-            logger.error("No documents were retrieved within 3 minutes.");
-            logger.error("It is likely a task died unexpectedly.");
-            logger.error("Here are the document IDs that have not been ingested:");
+            logger.warn("No documents were retrieved within 3 minutes.");
+            logger.warn("It is likely a task died unexpectedly.");
+            logger.warn("Here are the document IDs that have not been ingested:");
             docIdsToProcess.forEach(i -> logger.error(i));
-            logger.error("These documents should be checked for errors.");
+            logger.warn("These documents should be checked for errors.");
 
             // Output bad document IDs.
             bw.write("Bad IDs for path: ");
@@ -228,14 +226,12 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
               bw.write("\n");
             }
             
-            kPending = 0;
             docIdsToProcess.clear();
             break;
           }
           
           Communication ac = oc.get().get();
           logger.debug("Retrieved communication: {}", ac.getId());
-          kPending--;
           try (PreparedStatement ps = conn.prepareStatement("INSERT INTO documents (id, bytez) VALUES (?,?)");) {
             String docId = ac.getId();
             ps.setString(1, docId);
