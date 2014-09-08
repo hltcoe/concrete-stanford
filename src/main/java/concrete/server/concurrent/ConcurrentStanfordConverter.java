@@ -193,6 +193,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
         while (dq.peek() != null) {
           Communication pending = dq.pop();
           annotator.annotate(pending);
+          kPending++;
         }
         
         logger.info("Tasks submitted. Preparing SQL inserts.");
@@ -217,7 +218,6 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
             logger.error("Caught an SQLException inserting documents.", e);
           } catch (ConcreteException e) {
             logger.error("There was an error creating a byte array from communication: {}", ac.getId());
-            
           }
         }
       }
