@@ -15,6 +15,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -37,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe;
 import edu.jhu.hlt.concrete.util.CommunicationSerialization;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.gigaword.ClojureIngester;
@@ -57,10 +59,10 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
    *
    */
   public ConcurrentStanfordConverter() {
-    this.runner = Executors.newCachedThreadPool();
+    // this.runner = Executors.newCachedThreadPool();
     // int aThreads = Runtime.getRuntime().availableProcessors();
     // int toUse = aThreads > 16 ? aThreads - 8 : aThreads;
-    // this.runner = Executors.newFixedThreadPool(toUse);
+    this.runner = Executors.newFixedThreadPool(16);
     this.srv = new ExecutorCompletionService<Communication>(this.runner);
   }
 
@@ -137,8 +139,10 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       logger.info("Got previously ingested IDs. There are {} previously ingested documents.", idSet.size());
       CommunicationSerialization cs = new CommunicationSerialization();
 
-      logger.info("Sleeping to allow profiler hooks...");
-      Thread.sleep(10000);
+      logger.info("Warming up models. This is a good time for profilers to hook in.");
+      new StanfordAgigaPipe();
+      
+      Thread.sleep(5000);
       logger.info("Proceeding.");
 
       // this is silly, but needed for stanford logging disable.
@@ -169,6 +173,8 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       int kProcessed = 0;
       int kPending = 0;
       for (String pathStr : pathStrs) {
+        ArrayDeque<Communication> dq = new ArrayDeque<Communication>(1100);
+        
         logger.info("Processing file: {}", pathStr);
         Iterator<ProxyDocument> iter = ci.proxyGZipPathToProxyDocIter(pathStr);
         while (iter.hasNext()) {
@@ -180,11 +186,15 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
           }
 
           Communication c = pd.sectionedCommunication();
-          annotator.annotate(c);
-          logger.debug("Task submitted.");
-          kPending++;
+          dq.push(c);
         }
-
+        
+        logger.info("Mapping complete. Submitting tasks.");
+        while (dq.peek() != null) {
+          Communication pending = dq.pop();
+          annotator.annotate(pending);
+        }
+        
         logger.info("Tasks submitted. Preparing SQL inserts.");
         while (kPending != 0) {
           logger.info("Waiting on next document in driver...");
