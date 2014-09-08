@@ -1,0 +1,86 @@
+{
+  "configuration": {
+    "properties": {
+      "property": {
+        "name":"logDir",
+        "value":"$${sys:home}/stanford-logs"
+      },
+
+      "property": {
+        "name":"fileName",
+        "value":"concrete-stanford.log"
+      }
+    },
+
+    "appenders": {
+      "Console": {
+        "name": "STDOUT",
+        "target": "SYSTEM_OUT",
+        "PatternLayout": {
+          "pattern": "%d %-5p %c{1.} [%t] %m%n"
+        }
+      },
+
+      "RollingFile": {
+        "name": "File",
+        "fileName": "stanford-logs/${fileName}",
+        "filePattern": "stanford-logs/${date:yyyy-MM}/%d{MM-dd-yyyy}-%i.log.gz",
+        "PatternLayout": {
+          "pattern":"%d %p %logger{36} [%t] %m%n"
+        },
+        "Policies": {
+          "SizeBasedTriggeringPolicy": {
+            "size":"1 GB"
+          }
+        },
+        "DefaultRolloverStrategy": {
+          "max":"10"
+        }
+      }
+    },
+    "loggers": {
+      "root": {
+        "level": "debug",
+        "appender-ref": {
+          "ref": "STDOUT"
+        },
+        "appender-ref": {
+          "ref": "File"
+        }
+      },
+
+      "logger" : [
+        {
+          "name" : "com.hp.hpl",
+          "level": "warn",
+          "appender-ref": {
+            "ref": "STDOUT"
+          }
+        },
+
+        {
+          "name" : "org.apache.zookeeper",
+          "level": "warn",
+          "appender-ref": {
+            "ref": "STDOUT"
+          }
+        },
+
+        {
+          "name" : "edu.jhu.hlt.gigaword",
+          "level" : "info",
+          "appender-ref": {
+            "ref": "STDOUT"
+          }
+        },
+        {
+          "name" : "org.apache.jena",
+          "level": "warn",
+          "appender-ref": {
+            "ref": "STDOUT"
+          }
+        }
+      ]
+    }
+  }
+}
