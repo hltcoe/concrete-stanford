@@ -63,12 +63,14 @@ public class StanfordAgigaPipeTest {
       + "\nLocal and international rights groups have accused Rajapakse of cracking down on\n" + "dissent, a charge the government has denied.\n";
 
   final String pathToAFPComm = "./src/test/resources/AFP_ENG_20100318.0623.xml";
+  final String pathToNYTComm = "./src/test/resources/NYT_ENG_20070319.0077.xml";
 
   ConcreteUUIDFactory cuf = new ConcreteUUIDFactory();
   ConcreteFactory cf = new ConcreteFactory();
 
   Communication randomTestComm;
   Communication mapped;
+  Communication wonkyNYT;
 
   StanfordAgigaPipe pipe;
 
@@ -82,8 +84,11 @@ public class StanfordAgigaPipeTest {
     Communication c = new ConcreteFactory().randomCommunication();
     this.randomTestComm = new SingleSectionSegmenter().annotate(c);
 
-    ProxyDocument pdc = new ClojureIngester().proxyDocPathToProxyDoc(this.pathToAFPComm);
+    ClojureIngester ci = new ClojureIngester();
+    ProxyDocument pdc = ci.proxyDocPathToProxyDoc(this.pathToAFPComm);
     this.mapped = pdc.sectionedCommunication(); 
+    
+    this.wonkyNYT = ci.proxyDocPathToProxyDoc(this.pathToNYTComm).sectionedCommunication();
   }
 
   /**
@@ -374,6 +379,12 @@ public class StanfordAgigaPipeTest {
     }
     
     assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
+  }
+  
+  @Test
+  public void testNYTMessage() throws Exception {
+    Communication processedNYT = this.pipe.process(this.wonkyNYT);
+    new SuperCommunication(processedNYT).writeToFile("target/test-nyt-out.concrete", true);
   }
 
   // @Test
