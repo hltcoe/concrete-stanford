@@ -58,7 +58,7 @@
       <artifactId>gigaword-json-ingest</artifactId>
       <version>3.3.2-SNAPSHOT</version>
     </dependency>
-    
+
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-core</artifactId>
@@ -98,7 +98,7 @@
 	  <artifactId>postgresql</artifactId>
 	  <version>9.3-1102-jdbc41</version>
     </dependency>
-    
+
   </dependencies>
 
   <distributionManagement>

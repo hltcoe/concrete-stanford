@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
@@ -18,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.CommunicationSerialization;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 
@@ -95,6 +97,19 @@ class PostgresClient implements AutoCloseable {
     
     return idSet;
   }
+  
+  public Communication getSingleDocument() throws SQLException, ConcreteException {
+    try (Connection conn = this.getConnector();
+        PreparedStatement ps = conn.prepareStatement("SELECT bytez FROM documents LIMIT 1");) {
+      ResultSet rs = ps.executeQuery();
+      if (rs.next()) {
+        byte[] bytez = rs.getBytes("bytez");
+        return this.cs.fromBytes(bytez);
+      } else {
+        throw new SQLException("No documents available.");
+      }
+    }
+  }
 
   /* (non-Javadoc)
    * @see java.lang.AutoCloseable#close()
@@ -104,5 +119,32 @@ class PostgresClient implements AutoCloseable {
     this.conn.commit();
     logger.debug("Closing.");
     this.conn.close();
+  }
+  
+  public static void main (String... args) {
+    if (args.length != 1) {
+      logger.info("This program takes 1 argument: a path on disk to serialize a Communication object.");
+      System.exit(1);
+    }
+    
+    Optional<String> psqlHost = Optional.ofNullable(System.getenv("HURRICANE_HOST"));
+    Optional<String> psqlDBName = Optional.ofNullable(System.getenv("HURRICANE_DB"));
+    Optional<String> psqlUser = Optional.ofNullable(System.getenv("HURRICANE_USER"));
+    Optional<String> psqlPass = Optional.ofNullable(System.getenv("HURRICANE_PASS"));
+
+    if (!psqlHost.isPresent() || !psqlDBName.isPresent() || !psqlUser.isPresent() || !psqlPass.isPresent()) {
+      logger.info("You need to set the following environment variables to run this program:");
+      logger.info("HURRICANE_HOST : hostname of a postgresql server");
+      logger.info("HURRICANE_DB : database name to use");
+      logger.info("HURRICANE_USER : database user with appropriate privileges");
+      logger.info("HURRICANE_PASS : password for user");
+      System.exit(1);
+    }
+    
+    try (PostgresClient cli = new PostgresClient(psqlHost.get(), psqlDBName.get(), psqlUser.get(), psqlPass.get().getBytes())) {
+      new SuperCommunication(cli.getSingleDocument()).writeToFile(args[0], true);
+    } catch (SQLException | ConcreteException e) {
+      logger.error("Caught SQL/ConcreteException.", e);
+    }
   }
 }
