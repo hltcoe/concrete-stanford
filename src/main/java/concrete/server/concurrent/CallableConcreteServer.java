@@ -12,6 +12,7 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.tools.AnnotationException;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe;
 import edu.jhu.hlt.concrete.util.ConcreteException;
@@ -51,7 +52,7 @@ public class CallableConcreteServer implements Callable<Communication> {
       Communication proced = this.pipe.process(this.c);
       logger.debug("Finished.");
       return proced;
-    } catch (IOException | TException | ConcreteException e) {
+    } catch (IOException | TException | ConcreteException | AnnotationException e) {
       logger.error("Caught an exception processing {}: ", c.getId());
       logger.error("Exception follows:", e);
       return null;

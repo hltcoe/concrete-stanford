@@ -19,6 +19,7 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.tools.AnnotationException;
 import edu.jhu.agiga.AgigaDocument;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.EntityMentionSet;
@@ -95,7 +96,7 @@ public class StanfordAgigaPipe {
       pipeline.prepForNext();
   }
 
-  public static void main(String[] args) throws TException, IOException, ConcreteException {
+  public static void main(String[] args) throws TException, IOException, ConcreteException, AnnotationException {
     if (args.length != 2) {
       System.out.println("Usage: " + StanfordAgigaPipe.class.getSimpleName() + " <input-concrete-file-with-section-segmentations> <output-file-name>");
       System.exit(1);
@@ -179,7 +180,7 @@ public class StanfordAgigaPipe {
 //      annotateNames.add(SectionKind.PASSAGE);
 //  }
 
-  public List<Communication> process(ZipFile zf) throws TException, IOException, ConcreteException {
+  public List<Communication> process(ZipFile zf) throws TException, IOException, ConcreteException, AnnotationException {
       Enumeration<? extends ZipEntry> e = zf.entries();
       List<Communication> outList = new LinkedList<Communication>();
       Serialization ser = new Serialization();
@@ -193,7 +194,7 @@ public class StanfordAgigaPipe {
   }
 
 
-  public Communication process(Communication c) throws TException, IOException, ConcreteException {
+  public Communication process(Communication c) throws TException, IOException, ConcreteException, AnnotationException {
     if (!c.isSetText())
       throw new ConcreteException("Expecting Communication Text, but was empty or none.");
     else if (!c.isSetSectionSegmentationList() || c.getSectionSegmentationListSize() == 0)
@@ -225,8 +226,9 @@ public class StanfordAgigaPipe {
   /**
    * This steps through the given communication. For each section segmentation, it will go through each of the sections, first doing what localized processing
    * it can (i.e., all but coref resolution), and then doing the global processing (coref).
+   * @throws AnnotationException 
    */
-  public void runPipelineOnCommunicationSectionsAndSentences(Communication comm) {
+  public void runPipelineOnCommunicationSectionsAndSentences(Communication comm) throws AnnotationException {
 
     // if called multiple times, reset the sentence count
     sentenceCount = 1;
@@ -443,8 +445,9 @@ public class StanfordAgigaPipe {
    * Given a particular section {@link Section} from a {@link Communication}, further locally process
    * {@link Annotation}; add those new annotations to an
    * aggregating {@link Annotation} to use for later global processing.
+   * @throws AnnotationException 
    */
-  public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, List<Tokenization> tokenizations) {
+  public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, List<Tokenization> tokenizations) throws AnnotationException {
     sentencesToSection(sentenceSplitText, docAnnotation);
     logger.debug("after sentencesToSection, before annotating");
     for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class)) {

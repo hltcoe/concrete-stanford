@@ -8,6 +8,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.tools.AnnotationException;
 import edu.jhu.agiga.AgigaCoref;
 import edu.jhu.agiga.AgigaDocument;
 import edu.jhu.agiga.AgigaSentence;
@@ -71,12 +72,12 @@ public class AgigaConcreteAnnotator {
     return new SimpleEntry<EntityMentionSet, EntitySet>(ems, es);
   }
 
-  public void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations) {
+  public void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations) throws AnnotationException {
     SentenceSegmentation ss = createSentenceSegmentation(section, agigaDoc, tokenizations, 0);
     section.addToSentenceSegmentationList(ss);
   }
 
-  public SentenceSegmentation createSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int charOffset) {
+  public SentenceSegmentation createSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int charOffset) throws AnnotationException {
     logger.debug("f3");
     SentenceSegmentation ss = new SentenceSegmentation().setUuid(this.idFactory.getConcreteUUID()).setMetadata(metadata());
     // ss.setSectionId(in.getUuid());
@@ -88,7 +89,7 @@ public class AgigaConcreteAnnotator {
   }
 
   // add all Sentences
-  private void addSentences(SentenceSegmentation in, AgigaDocument ad, List<Tokenization> tokenizations) {
+  private void addSentences(SentenceSegmentation in, AgigaDocument ad, List<Tokenization> tokenizations) throws AnnotationException {
     logger.debug("f4");
     final int n = ad.getSents().size();
     int sentPtr = 0;

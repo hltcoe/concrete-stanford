@@ -19,6 +19,7 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.tools.AnnotationException;
 import concrete.util.concurrent.ConcurrentCommunicationLoader;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
@@ -41,8 +42,9 @@ public class BulkConversion {
 
   /**
    * @param args
+   * @throws AnnotationException 
    */
-  public static void main(String[] args) {
+  public static void main(String[] args) throws AnnotationException {
     if (args.length != 3) {
       logger.info("Usage: <path-to-sectioned-comm-list> <path-to-out-dir> <delete-old-dir>");
       System.exit(1);

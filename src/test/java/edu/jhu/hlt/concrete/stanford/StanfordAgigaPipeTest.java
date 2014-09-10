@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.tools.AnnotationException;
 import concrete.util.data.ConcreteFactory;
 import edu.jhu.hlt.asphalt.AsphaltException;
 import edu.jhu.hlt.ballast.InvalidInputException;
@@ -107,9 +108,10 @@ public class StanfordAgigaPipeTest {
    * @throws InvalidInputException
    * @throws ConcreteException
    * @throws IOException
+   * @throws AnnotationException 
    */
   @Test
-  public void processNonPassages() throws TException, InvalidInputException, IOException, ConcreteException {
+  public void processNonPassages() throws TException, InvalidInputException, IOException, ConcreteException, AnnotationException {
     SuperCommunication sc = new SuperCommunication(this.randomTestComm);
     assertTrue(sc.hasSectionSegmentations());
     assertTrue(sc.hasSections());
@@ -129,9 +131,10 @@ public class StanfordAgigaPipeTest {
    * @throws InvalidInputException
    * @throws ConcreteException
    * @throws IOException
+   * @throws AnnotationException 
    */
   @Test
-  public void testNoMentions() throws TException, InvalidInputException, IOException, ConcreteException {
+  public void testNoMentions() throws TException, InvalidInputException, IOException, ConcreteException, AnnotationException {
     Communication c = new ConcreteFactory().randomCommunication().setText("gobljsfoewj");
     Communication c1 = new SingleSectionSegmenter().annotate(c);
     SuperCommunication sc = new SuperCommunication(c1);
@@ -153,9 +156,10 @@ public class StanfordAgigaPipeTest {
    * @throws InvalidInputException
    * @throws ConcreteException
    * @throws IOException
+   * @throws AnnotationException 
    */
   @Test
-  public void processHandshakeCommunication() throws TException, InvalidInputException, IOException, ConcreteException {
+  public void processHandshakeCommunication() throws TException, InvalidInputException, IOException, ConcreteException, AnnotationException {
     Communication shakeHandComm = this.cf.randomCommunication().setText(SHAKE_HAND_TEXT_STRING);
     Section section = new Section().setUuid(cuf.getConcreteUUID()).setTextSpan(new TextSpan().setStart(0).setEnding(SHAKE_HAND_TEXT_STRING.length()))
         .setKind("Passage");

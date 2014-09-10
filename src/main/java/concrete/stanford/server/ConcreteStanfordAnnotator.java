@@ -8,6 +8,7 @@ import java.io.IOException;
 
 import org.apache.thrift.TException;
 
+import concrete.tools.AnnotationException;
 import edu.jhu.hlt.asphalt.AsphaltException;
 import edu.jhu.hlt.asphalt.services.Annotator;
 import edu.jhu.hlt.ballast.ServerException;
@@ -55,7 +56,7 @@ public class ConcreteStanfordAnnotator implements Annotator.Iface {
     try {
       Communication annotated = this.pipe.process(original);
       return annotated;
-    } catch (IOException | ConcreteException e) {
+    } catch (IOException | ConcreteException | AnnotationException e) {
       throw new AsphaltException("There was an error during processing: " + e.getMessage());
     }
   }
