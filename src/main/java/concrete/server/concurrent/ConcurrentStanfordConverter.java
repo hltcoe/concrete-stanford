@@ -65,17 +65,6 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
     return this.srv.submit(new CallableConcreteServer(c));
   }
 
-  private void setUncaughtExceptionHandler() {
-    logger.info("Setting up uncaught exception handler.");
-    Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
-      @Override
-      public void uncaughtException(Thread t, Throwable e) {
-        logger.error("Caught unhandled exception in thread: [{}]", t.getName());
-        logger.error("Exception is as follows.", e);
-      }
-    });
-  }
-
   /**
    * @param args
    * @throws Exception
@@ -144,7 +133,6 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
 
       ClojureIngester ci = new ClojureIngester();
       ConcurrentStanfordConverter annotator = new ConcurrentStanfordConverter(nThreadsToUse);
-      annotator.setUncaughtExceptionHandler();
 
       List<String> pathStrs = new ArrayList<>();
       try (Scanner sc = new Scanner(pathToCommFiles.toFile())) {
