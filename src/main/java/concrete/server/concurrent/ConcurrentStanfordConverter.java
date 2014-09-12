@@ -64,6 +64,17 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
   public Future<Communication> annotate(Communication c) throws InterruptedException, ExecutionException {
     return this.srv.submit(new CallableConcreteServer(c));
   }
+  
+  private void setUncaughtExceptionHandler() {
+    logger.info("Setting up uncaught exception handler.");
+    Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
+      @Override
+      public void uncaughtException(Thread t, Throwable e) {
+        logger.error("Caught unhandled exception in thread: [{}]", t.getName());
+        logger.error("Exception is as follows.", e);
+      }
+    });
+  }
 
   /**
    * @param args
@@ -74,15 +85,6 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       logger.info("This program takes 1 argument: the path to a .txt file with paths to agiga documents, 1 per line, and how many threads to use [minimum 4].");
       System.exit(1);
     }
-
-    logger.info("Setting up uncaught exception handler.");
-    Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
-      @Override
-      public void uncaughtException(Thread t, Throwable e) {
-        logger.error("Caught unhandled exception in thread: [{}]", t.getName());
-        logger.error("Exception is as follows.", e);
-      }
-    });
 
     Path pathToCommFiles = Paths.get(args[0]);
     if (!Files.exists(pathToCommFiles)) {
@@ -139,6 +141,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
 
       ClojureIngester ci = new ClojureIngester();
       ConcurrentStanfordConverter annotator = new ConcurrentStanfordConverter(nThreadsToUse);
+      annotator.setUncaughtExceptionHandler();
 
       List<String> pathStrs = new ArrayList<>();
       try (Scanner sc = new Scanner(pathToCommFiles.toFile())) {
