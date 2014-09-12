@@ -94,11 +94,15 @@
       <version>${ballast.version}</version>
     </dependency>
     <dependency>
-	  <groupId>org.postgresql</groupId>
-	  <artifactId>postgresql</artifactId>
-	  <version>9.3-1102-jdbc41</version>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>9.3-1102-jdbc41</version>
     </dependency>
-
+    <dependency>
+      <groupId>org.xerial</groupId>
+      <artifactId>sqlite-jdbc</artifactId>
+      <version>3.7.2</version>
+    </dependency>
   </dependencies>
 
   <distributionManagement>
