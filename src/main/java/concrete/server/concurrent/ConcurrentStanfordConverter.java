@@ -4,7 +4,6 @@
 package concrete.server.concurrent;
 
 import java.io.FileNotFoundException;
-import java.lang.Thread.UncaughtExceptionHandler;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,6 +29,7 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.server.LoggedUncaughtExceptionHandler;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe;
 import edu.jhu.hlt.gigaword.ClojureIngester;
@@ -76,13 +76,7 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
     }
 
     logger.info("Setting up uncaught exception handler.");
-    Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
-      @Override
-      public void uncaughtException(Thread t, Throwable e) {
-        logger.error("Caught unhandled exception in thread: [{}]", t.getName());
-        logger.error("Exception is as follows.", e);
-      }
-    });
+    Thread.setDefaultUncaughtExceptionHandler(new LoggedUncaughtExceptionHandler());
 
     Path pathToCommFiles = Paths.get(args[0]);
     if (!Files.exists(pathToCommFiles)) {
