@@ -19,23 +19,6 @@
         "PatternLayout": {
           "pattern": "%d %-5p %c{1.} [%t] %m%n"
         }
-      },
-
-      "RollingFile": {
-        "name": "File",
-        "fileName": "stanford-logs/${fileName}",
-        "filePattern": "stanford-logs/${date:yyyy-MM}/%d{MM-dd-yyyy}-%i.log.gz",
-        "PatternLayout": {
-          "pattern":"%d %p %logger{36} [%t] %m%n"
-        },
-        "Policies": {
-          "SizeBasedTriggeringPolicy": {
-            "size":"1 GB"
-          }
-        },
-        "DefaultRolloverStrategy": {
-          "max":"10"
-        }
       }
     },
     "loggers": {
@@ -43,9 +26,6 @@
         "level": "info",
         "appender-ref": {
           "ref": "STDOUT"
-        },
-        "appender-ref": {
-          "ref": "File"
         }
       },
 
