@@ -481,10 +481,11 @@ public class StanfordAgigaPipe {
    * @throws IOException
    */
   protected String getText(Tree t) throws IOException {
-    StringBuffer sb = new StringBuffer();
-    if (t == null) {
+    if (t == null)
       return null;
-    }
+    
+    StringBuffer sb = new StringBuffer();
+    
     for (Tree tt : t.getLeaves()) {
       sb.append(tt.value());
       sb.append(" ");
