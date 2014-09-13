@@ -3,7 +3,7 @@
  * See LICENSE in the project root directory.
  */
 
-package concrete.server.concurrent;
+package concrete.server.sql;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -27,7 +27,7 @@ import edu.jhu.hlt.concrete.util.ConcreteException;
  * @author max
  *
  */
-class PostgresClient implements AutoCloseable {
+public class PostgresClient implements AutoCloseable {
 
   private static final Logger logger = LoggerFactory.getLogger(PostgresClient.class);
   

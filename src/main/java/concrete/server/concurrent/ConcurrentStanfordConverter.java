@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import concrete.server.LoggedUncaughtExceptionHandler;
+import concrete.server.sql.PostgresClient;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe;
 import edu.jhu.hlt.gigaword.ClojureIngester;
