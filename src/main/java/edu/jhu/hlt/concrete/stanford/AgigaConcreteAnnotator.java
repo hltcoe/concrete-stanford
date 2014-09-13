@@ -38,20 +38,16 @@ public class AgigaConcreteAnnotator {
 
   private AgigaConverter ag;
 
-  public AgigaConcreteAnnotator(boolean setSpans){
-      ag = new AgigaConverter(setSpans);
+  public AgigaConcreteAnnotator(boolean setSpans) {
+    ag = new AgigaConverter(setSpans);
   }
 
   public AnnotationMetadata metadata() {
-    return new AnnotationMetadata()
-      .setTool("anno-pipeline-v2")
-      .setTimestamp(System.currentTimeMillis() / 1000);
+    return new AnnotationMetadata().setTool("anno-pipeline-v2").setTimestamp(System.currentTimeMillis() / 1000);
   }
 
   public SimpleEntry<EntityMentionSet, EntitySet> convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations) {
-    EntityMentionSet ems = new EntityMentionSet()
-      .setUuid(this.idFactory.getConcreteUUID())
-      .setMetadata(metadata());
+    EntityMentionSet ems = new EntityMentionSet().setUuid(this.idFactory.getConcreteUUID()).setMetadata(metadata());
     List<Entity> elist = new LinkedList<Entity>();
     for (AgigaCoref coref : agigaDoc.getCorefs()) {
       if (!coref.getMentions().isEmpty()) {
@@ -62,38 +58,36 @@ public class AgigaConcreteAnnotator {
       }
     }
 
-    if(!ems.isSetMentionList()) {
-        ems.setMentionList(new ArrayList<EntityMention>());
-    }
+    if (!ems.isSetMentionList()) 
+      ems.setMentionList(new ArrayList<EntityMention>());
+    
 
-    EntitySet es = new EntitySet()
-      .setUuid(this.idFactory.getConcreteUUID())
-      .setMetadata(metadata())
-      .setEntityList(elist);
+    EntitySet es = new EntitySet().setUuid(this.idFactory.getConcreteUUID()).setMetadata(metadata()).setEntityList(elist);
 
     return new SimpleEntry<EntityMentionSet, EntitySet>(ems, es);
   }
 
-  public void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations, UUID sectionSegmentationUUID) throws AnnotationException {
+  public void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations, UUID sectionSegmentationUUID)
+      throws AnnotationException {
     SentenceSegmentation ss = createSentenceSegmentation(section, agigaDoc, tokenizations, 0, sectionSegmentationUUID);
     section.addToSentenceSegmentationList(ss);
   }
 
-  public SentenceSegmentation createSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int charOffset, UUID sectionSegmentationUUID) throws AnnotationException {
+  public SentenceSegmentation createSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int charOffset,
+      UUID sectionSegmentationUUID) throws AnnotationException {
     logger.debug("f3");
-    SentenceSegmentation ss = new SentenceSegmentation()
-      .setUuid(this.idFactory.getConcreteUUID());
+    SentenceSegmentation ss = new SentenceSegmentation().setUuid(this.idFactory.getConcreteUUID());
     AnnotationMetadata md = this.metadata();
     TheoryDependencies td = new TheoryDependencies();
     td.addToSectionTheoryList(sectionSegmentationUUID);
     md.setDependencies(td);
     ss.setMetadata(md);
-    
+
     // ss.setSectionId(in.getUuid());
     addSentences(ss, ad, tokenizations);
-    if(!ss.isSetSentenceList()) {
-        ss.setSentenceList(new ArrayList<Sentence>());
-    }
+    if (!ss.isSetSentenceList()) 
+      ss.setSentenceList(new ArrayList<Sentence>());
+    
     return ss;
   }
 
@@ -104,14 +98,14 @@ public class AgigaConcreteAnnotator {
     int sentPtr = 0;
     assert n > 0 : "n=" + n;
     for (int i = 0; i < n; i++) {
-        AgigaSentence asent = ad.getSents().get(sentPtr++);
-        //the second argument is the estimated character provenance offset.
-        //We're not filling the optional textSpan fields, so the exact parameter
-        //value doesn't matter.
-        Sentence st = this.ag.convertSentence(asent, -1, tokenizations);
-        String sentText = this.ag.flattenText(asent);
-        logger.debug(sentText);
-        in.addToSentenceList(st);
+      AgigaSentence asent = ad.getSents().get(sentPtr++);
+      // the second argument is the estimated character provenance offset.
+      // We're not filling the optional textSpan fields, so the exact parameter
+      // value doesn't matter.
+      Sentence st = this.ag.convertSentence(asent, -1, tokenizations, in.getUuid());
+      String sentText = this.ag.flattenText(asent);
+      logger.debug(sentText);
+      in.addToSentenceList(st);
     }
   }
 }
