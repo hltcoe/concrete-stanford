@@ -50,6 +50,8 @@ public class RedisEnabledStanfordConverter {
     
     ClojureIngester ci = new ClojureIngester();
     StanfordAgigaPipe pipe = new StanfordAgigaPipe();
+    SystemErrDisabler sed = new SystemErrDisabler();
+    sed.disable();
     
     JedisPool jp = new JedisPool(redisHost, redisPort);
     try (Jedis jedis = jp.getResource();
@@ -85,6 +87,7 @@ public class RedisEnabledStanfordConverter {
       logger.error("Caught an exception when opening or closing the SQLiteClient.", e1);
     }
     
+    sed.enable();
     jp.destroy();
   }
 }
