@@ -12,7 +12,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <concrete.version>3.5.0</concrete.version>
-    <ballast.version>3.4.0-SNAPSHOT</ballast.version>
+    <ballast.version>3.5.0</ballast.version>
   </properties>
 
   <build>
@@ -56,7 +56,7 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>gigaword-json-ingest</artifactId>
-      <version>3.5.1-SNAPSHOT</version>
+      <version>3.5.1</version>
     </dependency>
 
     <dependency>
@@ -86,7 +86,7 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-agiga</artifactId>
-      <version>3.3.7-SNAPSHOT</version>
+      <version>3.5.0</version>
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
