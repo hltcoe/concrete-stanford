@@ -465,7 +465,7 @@ public class StanfordAgigaPipe {
     agigaToConcrete.convertSection(section, agigaDoc, tokenizations, sectionSegmentationUUID);
   }
 
-  public void processCoref(Communication comm, Annotation docAnnotation, List<Tokenization> tokenizations) {
+  public void processCoref(Communication comm, Annotation docAnnotation, List<Tokenization> tokenizations) throws AnnotationException {
     AgigaDocument agigaDoc = annotateCoref(docAnnotation);
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
     SimpleEntry<EntityMentionSet, EntitySet> tuple = agigaToConcrete.convertCoref(comm, agigaDoc, tokenizations);

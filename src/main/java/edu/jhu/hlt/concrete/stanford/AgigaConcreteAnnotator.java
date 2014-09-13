@@ -2,7 +2,6 @@ package edu.jhu.hlt.concrete.stanford;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -46,23 +45,33 @@ public class AgigaConcreteAnnotator {
     return new AnnotationMetadata().setTool("anno-pipeline-v2").setTimestamp(System.currentTimeMillis() / 1000);
   }
 
-  public SimpleEntry<EntityMentionSet, EntitySet> convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations) {
-    EntityMentionSet ems = new EntityMentionSet().setUuid(this.idFactory.getConcreteUUID()).setMetadata(metadata());
-    List<Entity> elist = new LinkedList<Entity>();
+  public SimpleEntry<EntityMentionSet, EntitySet> convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations) throws AnnotationException {
+    EntityMentionSet ems = new EntityMentionSet()
+      .setUuid(this.idFactory.getConcreteUUID());
+    TheoryDependencies td = new TheoryDependencies();
+    for (Tokenization t : tokenizations)
+      td.addToTokenizationTheoryList(t.getUuid());
+    AnnotationMetadata md = this.metadata()
+        .setDependencies(td);
+    ems.setMetadata(md);
+    
+    List<Entity> elist = new ArrayList<Entity>();
     for (AgigaCoref coref : agigaDoc.getCorefs()) {
       if (!coref.getMentions().isEmpty()) {
         Entity e = this.ag.convertCoref(ems, coref, agigaDoc, tokenizations);
         elist.add(e);
-      } else {
+      } else 
         logger.warn("There were not any mentions for coref: " + coref.toString());
-      }
+      
     }
 
     if (!ems.isSetMentionList()) 
       ems.setMentionList(new ArrayList<EntityMention>());
-    
 
-    EntitySet es = new EntitySet().setUuid(this.idFactory.getConcreteUUID()).setMetadata(metadata()).setEntityList(elist);
+    EntitySet es = new EntitySet()
+      .setUuid(this.idFactory.getConcreteUUID())
+      .setMetadata(md)
+      .setEntityList(elist);
 
     return new SimpleEntry<EntityMentionSet, EntitySet>(ems, es);
   }
