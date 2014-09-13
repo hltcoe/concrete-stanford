@@ -30,6 +30,7 @@ public class RedisEnabledStanfordConverter {
 
   public static final String REDIS_SET_KEY = "gigaword-keys";
   public static final String ERRORS_KEY = "gigaword-error-keys";
+  public static final String FINISHED_KEY = "gigaword-finished-keys";
 
   private static final Logger logger = LoggerFactory.getLogger(RedisEnabledStanfordConverter.class);
   
@@ -61,6 +62,7 @@ public class RedisEnabledStanfordConverter {
           Communication wSections = ci.proxyDocStringToProxyDoc(document).sectionedCommunication();
           Communication postStanford = pipe.process(wSections);
           sqlcli.insert(postStanford);
+          jedis.sadd(FINISHED_KEY, idToGrab);
         } catch (IOException | TException | ConcreteException | AnnotationException e) {
           logger.error("Caught an exception while annotating a document.", e);
           logger.error("Document in question: {}", idToGrab);
