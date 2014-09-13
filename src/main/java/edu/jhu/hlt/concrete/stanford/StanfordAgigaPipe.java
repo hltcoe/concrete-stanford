@@ -240,6 +240,7 @@ public class StanfordAgigaPipe {
     logger.debug("\ttype = " + comm.getType());
     logger.debug("\tfull = " + commText);
     for (SectionSegmentation sectionSegmentation : comm.getSectionSegmentationList()) {
+      UUID uuid = sectionSegmentation.getUuid();
       // TODO: get section and sentence segmentation info from metadata
       List<Section> sections = sectionSegmentation.getSectionList();
       List<UUID> sectionUUIDs = new ArrayList<>();
@@ -247,7 +248,7 @@ public class StanfordAgigaPipe {
       List<Tokenization> tokenizations = new ArrayList<Tokenization>();
       Annotation documentAnnotation = getSeededDocumentAnnotation();
       logger.debug("documentAnnotation = " + documentAnnotation);
-      logger.debug("Annotating SectionSegmentation: {}", sectionSegmentation.getUuid());
+      logger.debug("Annotating SectionSegmentation: {}", uuid.toString());
       for (Section section : sections) {
         TextSpan sts = section.getTextSpan();
         // 1) First *perform* the tokenization & sentence splits
@@ -290,7 +291,7 @@ public class StanfordAgigaPipe {
         // 2) Second, perform the other localized processing
         logger.debug("Additional processing on section: {}", section.getUuid());
         logger.debug(">> SectionText=["+sectionText+"]");
-        processSection(section, sectionAnnotation, documentAnnotation, tokenizations);
+        processSection(section, sectionAnnotation, documentAnnotation, tokenizations, uuid);
       }
 
       // 3) Third, do coref; cross-reference against sectionUUIDs
@@ -445,9 +446,10 @@ public class StanfordAgigaPipe {
    * Given a particular section {@link Section} from a {@link Communication}, further locally process
    * {@link Annotation}; add those new annotations to an
    * aggregating {@link Annotation} to use for later global processing.
+   * @param sectionSegmentationUUID TODO
    * @throws AnnotationException 
    */
-  public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, List<Tokenization> tokenizations) throws AnnotationException {
+  public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, List<Tokenization> tokenizations, UUID sectionSegmentationUUID) throws AnnotationException {
     sentencesToSection(sentenceSplitText, docAnnotation);
     logger.debug("after sentencesToSection, before annotating");
     for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class)) {
@@ -461,7 +463,7 @@ public class StanfordAgigaPipe {
 
     transferAnnotations(sentenceSplitText, docAnnotation);
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
-    agigaToConcrete.convertSection(section, agigaDoc, tokenizations);
+    agigaToConcrete.convertSection(section, agigaDoc, tokenizations, sectionSegmentationUUID);
   }
 
   public void processCoref(Communication comm, Annotation docAnnotation, List<Tokenization> tokenizations) {

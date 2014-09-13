@@ -21,7 +21,9 @@ import edu.jhu.hlt.concrete.EntitySet;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.SentenceSegmentation;
+import edu.jhu.hlt.concrete.TheoryDependencies;
 import edu.jhu.hlt.concrete.Tokenization;
+import edu.jhu.hlt.concrete.UUID;
 import edu.jhu.hlt.concrete.agiga.AgigaConverter;
 import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
 
@@ -72,14 +74,21 @@ public class AgigaConcreteAnnotator {
     return new SimpleEntry<EntityMentionSet, EntitySet>(ems, es);
   }
 
-  public void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations) throws AnnotationException {
-    SentenceSegmentation ss = createSentenceSegmentation(section, agigaDoc, tokenizations, 0);
+  public void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations, UUID sectionSegmentationUUID) throws AnnotationException {
+    SentenceSegmentation ss = createSentenceSegmentation(section, agigaDoc, tokenizations, 0, sectionSegmentationUUID);
     section.addToSentenceSegmentationList(ss);
   }
 
-  public SentenceSegmentation createSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int charOffset) throws AnnotationException {
+  public SentenceSegmentation createSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int charOffset, UUID sectionSegmentationUUID) throws AnnotationException {
     logger.debug("f3");
-    SentenceSegmentation ss = new SentenceSegmentation().setUuid(this.idFactory.getConcreteUUID()).setMetadata(metadata());
+    SentenceSegmentation ss = new SentenceSegmentation()
+      .setUuid(this.idFactory.getConcreteUUID());
+    AnnotationMetadata md = this.metadata();
+    TheoryDependencies td = new TheoryDependencies();
+    td.addToSectionTheoryList(sectionSegmentationUUID);
+    md.setDependencies(td);
+    ss.setMetadata(md);
+    
     // ss.setSectionId(in.getUuid());
     addSentences(ss, ad, tokenizations);
     if(!ss.isSetSentenceList()) {
