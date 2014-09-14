@@ -63,7 +63,7 @@ public class QSubbableStanfordConverter {
     StopWatch sw = new StopWatch();
     sw.start();
 
-    Iterator<ProxyDocument> pdIter = ci.proxyGZipPathToProxyDocIter(args[2]);
+    Iterator<ProxyDocument> pdIter = ci.proxyGZipPathToProxyDocIter(args[0]);
     logger.info("Got document iterator.");
     while (pdIter.hasNext()) {
       ProxyDocument pd = pdIter.next();
