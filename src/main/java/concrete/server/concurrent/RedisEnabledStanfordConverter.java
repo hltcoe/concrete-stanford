@@ -66,6 +66,7 @@ public class RedisEnabledStanfordConverter {
       Optional<String> idToProcess = Optional.ofNullable(jedis.spop(REDIS_SET_KEY));
       while (idToProcess.isPresent()) {
         String idToGrab = idToProcess.get();
+        logger.info("On document: {}", idToGrab);
         String document = jedis.get(idToGrab);
         try {
           Communication wSections = ci.proxyDocStringToProxyDoc(document).sectionedCommunication();
@@ -81,6 +82,7 @@ public class RedisEnabledStanfordConverter {
         }
 
         if (idToCommMap.size() == 100) {
+          logger.info("Attempting to write to DB.");
           int connAttemptsRemaining = 10;
           while (connAttemptsRemaining > 0) {
             connAttemptsRemaining--;
