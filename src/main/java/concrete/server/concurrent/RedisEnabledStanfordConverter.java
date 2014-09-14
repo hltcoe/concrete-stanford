@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.apache.thrift.TException;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +61,7 @@ public class RedisEnabledStanfordConverter {
     ClojureIngester ci = new ClojureIngester();
     StanfordAgigaPipe pipe = new StanfordAgigaPipe();
 
+    logger.info("Ingest beginning at: {}", new DateTime().toString());
     Map<String, Communication> idToCommMap = new HashMap<>(1000);
     JedisPool jp = new JedisPool(redisHost, redisPort);
     try (Jedis jedis = jp.getResource();) {
