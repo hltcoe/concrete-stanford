@@ -47,11 +47,12 @@ public class RedisEnabledStanfordConverter {
   public static void main(String[] args) {
     String redisHost = args[0];
     int redisPort = Integer.parseInt(args[1]);
+
+    SystemErrDisabler sed = new SystemErrDisabler();
+    sed.disable();
     
     ClojureIngester ci = new ClojureIngester();
     StanfordAgigaPipe pipe = new StanfordAgigaPipe();
-    SystemErrDisabler sed = new SystemErrDisabler();
-    sed.disable();
     
     JedisPool jp = new JedisPool(redisHost, redisPort);
     try (Jedis jedis = jp.getResource();
