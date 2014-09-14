@@ -6,15 +6,12 @@
 package concrete.server.concurrent;
 
 import java.io.IOException;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 
+import org.apache.commons.lang.time.StopWatch;
 import org.apache.thrift.TException;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
@@ -22,12 +19,13 @@ import org.slf4j.LoggerFactory;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import concrete.server.sql.SQLiteClient;
 import concrete.tools.AnnotationException;
 import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.gigaword.ClojureIngester;
+import edu.jhu.hlt.gigaword.ProxyDocument;
 
 /**
  * @author max
@@ -35,9 +33,7 @@ import edu.jhu.hlt.gigaword.ClojureIngester;
  */
 public class RedisEnabledStanfordConverter {
 
-  public static final String REDIS_SET_KEY = "gigaword-keys";
   public static final String ERRORS_KEY = "gigaword-error-keys";
-  public static final String FINISHED_KEY = "gigaword-finished-keys";
 
   private static final Logger logger = LoggerFactory.getLogger(RedisEnabledStanfordConverter.class);
 
@@ -60,81 +56,42 @@ public class RedisEnabledStanfordConverter {
 
     ClojureIngester ci = new ClojureIngester();
     StanfordAgigaPipe pipe = new StanfordAgigaPipe();
+    Path inGz = Paths.get(args[2]);
+    Path name = inGz.getFileName();
+    Path out = Paths.get("/export/common/max/data/agiga2").resolve(name);
+    try {
+      Files.createDirectories(out);
+    } catch (IOException e1) {
+      // ?
+      logger.error("Got IOEx.", e1);
+    }
 
     logger.info("Ingest beginning at: {}", new DateTime().toString());
-    Map<String, Communication> idToCommMap = new HashMap<>(1000);
+    StopWatch sw = new StopWatch();
+    sw.start();
+
     JedisPool jp = new JedisPool(redisHost, redisPort);
     try (Jedis jedis = jp.getResource();) {
-      Optional<String> idToProcess = Optional.ofNullable(jedis.spop(REDIS_SET_KEY));
-      while (idToProcess.isPresent()) {
-        String idToGrab = idToProcess.get();
-        logger.info("On document: {}", idToGrab);
-        String document = jedis.get(idToGrab);
+      Iterator<ProxyDocument> pdIter = ci.proxyGZipPathToProxyDocIter(args[2]);
+      logger.info("Got document iterator.");
+      while (pdIter.hasNext()) {
+        ProxyDocument pd = pdIter.next();
         try {
-          Communication wSections = ci.proxyDocStringToProxyDoc(document).sectionedCommunication();
+          Communication wSections = pd.sectionedCommunication();
           Communication postStanford = pipe.process(wSections);
-          idToCommMap.put(idToGrab, postStanford);
-          // sqlcli.insert(postStanford);
-          // jedis.sadd(FINISHED_KEY, idToGrab);
+          Path fileOut = out.resolve(pd.getId() + ".concrete");
+          new SuperCommunication(postStanford).writeToFile(fileOut, true);
         } catch (IOException | TException | ConcreteException | AnnotationException e) {
           logger.warn("Caught an exception while annotating a document.", e);
-          logger.warn("Document in question: {}", idToGrab);
+          logger.warn("Document in question: {}", pd.getId());
           // Put key in error set.
-          jedis.sadd(ERRORS_KEY, idToGrab);
+          jedis.sadd(ERRORS_KEY, pd.getId());
         }
-
-        if (idToCommMap.size() == 100) {
-          logger.info("Attempting to write to DB.");
-          int connAttemptsRemaining = 10;
-          while (connAttemptsRemaining > 0) {
-            connAttemptsRemaining--;
-            Set<Entry<String, Communication>> eSet = new HashSet<>();
-            try (SQLiteClient sqlcli = new SQLiteClient(args[2], 101)) {
-              Iterator<Entry<String, Communication>> iter = idToCommMap.entrySet().iterator();
-              while (iter.hasNext()) {
-                Entry<String, Communication> entry = iter.next();
-                String docId = entry.getKey();
-                Communication annotated = entry.getValue();
-                try {
-                  sqlcli.insert(annotated);
-                  jedis.sadd(FINISHED_KEY, docId);
-                  eSet.add(entry);
-                } catch (ConcreteException e) {
-                  logger.warn("Caught a ConcreteException during writing to the DB.", e);
-                  jedis.sadd(ERRORS_KEY, docId);
-                  iter.remove();
-                }
-              }
-
-            } catch (SQLException se) {
-              logger.warn("Caught SQLException; backing off and trying again.", se);
-              try {
-                Thread.sleep(2 * (2 * (10 - connAttemptsRemaining)) * 1000);
-              } catch (InterruptedException e) {
-                logger.warn("Sleep messed up (won't happen)");
-              }
-            }
-
-            // Remove committed docs, then retry if needed.
-            idToCommMap.entrySet().removeAll(eSet);
-            // Reaching this point means that the iteration has finished.
-            // Check size. If 0, break out of SQL loop.
-            if (idToCommMap.size() == 0)
-              break;
-            else
-              logger.info("Attempting to reconnect.");
-          }
-
-          if (connAttemptsRemaining == 0 && idToCommMap.size() > 0) {
-            logger.error("Failed to connect to the SQL database after 10 tries. Crashing.");
-            idToCommMap.keySet().forEach(i -> jedis.sadd(ERRORS_KEY, i));
-            System.exit(1);
-          }
-        }
-
-        idToProcess = Optional.ofNullable(jedis.spop(REDIS_SET_KEY));
       }
     }
+    
+    sw.stop();
+    logger.info("Finished. Took {} ms.", sw.getTime());
 
     sed.enable();
     jp.destroy();
