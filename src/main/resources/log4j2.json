@@ -1,16 +1,5 @@
 {
   "configuration": {
-    "properties": {
-      "property": {
-        "name":"logDir",
-        "value":"$${sys:home}/stanford-logs"
-      },
-
-      "property": {
-        "name":"fileName",
-        "value":"concrete-stanford.log"
-      }
-    },
 
     "appenders": {
       "Console": {
