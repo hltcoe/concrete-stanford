@@ -12,6 +12,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <concrete.version>3.6.0-SNAPSHOT</concrete.version>
+    <concrete.agiga.version>3.6.0-SNAPSHOT</concrete.agiga.version>
     <ballast.version>3.5.0</ballast.version>
   </properties>
 
@@ -86,7 +87,7 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-agiga</artifactId>
-      <version>3.5.0</version>
+      <version>${concrete.agiga.version}</version>
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
