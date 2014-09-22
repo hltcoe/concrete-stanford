@@ -278,20 +278,23 @@ public class StanfordAgigaPipeTest {
   public void processAFPComm() throws Exception {
     Communication afpProcessedComm = this.pipe.process(this.mapped);
     final String processedText = afpProcessedComm.getText();
+    final String processedRawText = afpProcessedComm.getRawText();
     
     // Text equality
-    assertEquals("Text should be equal.", AFP_0623_TEXT, processedText);
-    
+    assertEquals("Text should be equal.", AFP_0623_TEXT, processedRawText);
+    assertTrue("Communication should have text field set", afpProcessedComm.isSetText());
+
     // Sections
     List<Section> nsects = afpProcessedComm.getSectionSegmentationList().get(0).getSectionList();
     assertEquals("Should have found 8 sections.", 8, nsects.size());
     
     // Sentences
     int numSents = 0;
-    for (Section sect : nsects)
-      if (sect.isSetSentenceSegmentationList() && sect.getSentenceSegmentationList().get(0) != null) 
+    for (Section sect : nsects) {
+        if (sect.isSetSentenceSegmentationList() && sect.getSentenceSegmentationList().get(0) != null) {
         numSents += sect.getSentenceSegmentationList().get(0).getSentenceList().size();
-    
+        }
+    }
     assertEquals("Should have found 8 sentences.", 8, numSents);
     
     // First sentence span test
@@ -299,7 +302,7 @@ public class StanfordAgigaPipeTest {
     int end = 242;
     Sentence sent = afpProcessedComm.getSectionSegmentationList().get(0).getSectionList().get(1).getSentenceSegmentationList()
         .get(0).getSentenceList().get(0);
-    TextSpan tts = sent.getTextSpan();
+    TextSpan tts = sent.getRawTextSpan();
     assertEquals("Start should be " + begin, begin, tts.getStart());
     assertEquals("End should be " + end, end, tts.getEnding());
     
@@ -316,45 +319,108 @@ public class StanfordAgigaPipeTest {
             + "Tigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out\n" + "and contested the presidency in January's elections.",
         "Fonseka was arrested soon after losing the poll and appeared in front of a court\n" + "martial this week.", "The case was adjourned.",
         "Local and international rights groups have accused Rajapakse of cracking down on\n" + "dissent, a charge the government has denied." };
-    int sentIdx = 0;
-    for (Section sect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
-      if (sect.getSentenceSegmentationList() != null) {
-        for (Sentence st : sect.getSentenceSegmentationList().get(0).getSentenceList()) {
-          TextSpan span = st.getTextSpan();
-          String grabbed = AFP_0623_TEXT.substring(span.getStart(), span.getEnding()).trim();
-          // System.out.println("SentId = " + sentIdx + ", grabbing [[" + grabbed + "]], should be looking at <<" + sentences[sentIdx] + ">> .... " +
-          // grabbed.equals(sentences[sentIdx]));
-
-          assertTrue("SentId = " + sentIdx + ", grabbing [[" + grabbed + "]], should be looking at <<" + sentences[sentIdx] + ">>",
-              grabbed.equals(sentences[sentIdx]));
-          sentIdx++;
+    {
+        int sentIdx = 0;
+        for (Section sect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+            if (sect.getSentenceSegmentationList() != null) {
+                for (Sentence st : sect.getSentenceSegmentationList().get(0).getSentenceList()) {
+                    TextSpan span = st.getRawTextSpan();
+                    String grabbed = processedRawText.substring(span.getStart(), span.getEnding()).trim();
+                    assertTrue("SentId = " + sentIdx + ", grabbing [[" + grabbed + "]], should be looking at <<" + sentences[sentIdx] + ">>",
+                               grabbed.equals(sentences[sentIdx]));
+                    sentIdx++;
+                }
+            }
         }
-      }
+    }
+    //test sentences wrt processed
+    String[] processedSentences = {
+        "Sri Lankan media groups Thursday protested against the arrest of a reporter close to Sarath Fonseka , the detained ex-army chief who tried to unseat the president in recent elections .",
+        "The groups issued a joint statement demanding the release of Ruwan Weerakoon , a reporter with the Nation newspaper , who was arrested this week .",
+        "`` We request the Inspector General of Police to disclose the reasons behind the arrest and detention of Ruwan Weerakoon and make arrangements for him to receive legal aid immediately , '' the statement added .",
+        "Weerakoon maintained close contact with Fonseka when the general led the military during the final phase of last year 's war against Tamil Tiger rebels .",
+        "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation Tigers of Tamil Eelam -LRB- LTTE -RRB- were crushed in May , but the two men later fell out and contested the presidency in January 's elections .",
+        "Fonseka was arrested soon after losing the poll and appeared in front of a court martial this week .", 
+        "The case was adjourned .",
+        "Local and international rights groups have accused Rajapakse of cracking down on dissent , a charge the government has denied ." };
+    {
+        int sentIdx = 0;
+        int numOkay = 0;
+        int numTot = 0;
+        for (Section sect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+            if (sect.getSentenceSegmentationList() != null) {
+                for (Sentence st : sect.getSentenceSegmentationList().get(0).getSentenceList()) {
+                    TextSpan span = st.getTextSpan();
+                    String grabbed = processedText.substring(span.getStart(), span.getEnding()).trim();
+                    boolean eq = grabbed.equals(processedSentences[sentIdx]);
+                    if(eq) {
+                        numOkay++;
+                    } else {
+                        logger.warn("SentId = " + sentIdx + ", span = "+span+", grabbing [[" + grabbed + "]], should be looking at <<" + processedSentences[sentIdx] + ">>");
+                    }
+                    numTot++;
+                    sentIdx++;
+                }
+            }
+        }
+        double fracPassing = ((double) numOkay / (double) numTot);
+        assertTrue("WARNING: only " + (fracPassing*100) + "% of processed sentences matched!", fracPassing >= 0.8);
     }
     
     // Verify tokens
-    int numEq = 0;
-    int numTot = 0;
-    for (Section nsect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
-      if (nsect.getSentenceSegmentationList() == null)
-        continue;
-      for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
-        for (Token token : nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
-          TextSpan span = token.getTextSpan();
-          String substr = processedText.substring(span.getStart(), span.getEnding());
-          boolean areEq = token.getText().equals(substr);
-          if (!areEq) {
-            logger.warn("expected = [" + token.getText() + "];" + "docText(" + tts + ") = [" + substr + "]");
-          } else {
-            numEq++;
-          }
-          numTot++;
+    {
+        int numEq = 0;
+        int numTot = 0;
+        // wrt the raw text
+        for (Section nsect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+            if (nsect.getSentenceSegmentationList() == null)
+                continue;
+            for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
+                for (Token token : nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
+                    TextSpan span = token.getRawTextSpan();
+                    String substr = processedRawText.substring(span.getStart(), span.getEnding());
+                    boolean areEq = token.getText().equals(substr);
+                    if (!areEq) {
+                        logger.warn("expected = [" + token.getText() + "];" + "docText(" + tts + ") = [" + substr + "]");
+                    } else {
+                        numEq++;
+                    }
+                    numTot++;
+                }
+            }
         }
-      }
+        double fracPassing = ((double) numEq / (double) numTot);
+        assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing >= 0.8);
     }
-    double fracPassing = ((double) numEq / (double) numTot);
-    assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing >= 0.8);
-    
+    {
+        int numEq = 0;
+        int numTot = 0;
+        // wrt the processed text
+        for (Section nsect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+            if (nsect.getSentenceSegmentationList() == null)
+                continue;
+            for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
+                for (Token token : nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
+                    assertTrue("token " + token.getTokenIndex() + " shouldn't have null textspan",
+                               token.isSetTextSpan());
+                    TextSpan span = token.getTextSpan();
+                    assertTrue("ending " + span.getEnding() + " is out of range ("+processedText.length()+")",
+                               span.getEnding() < processedText.length());
+                    String substr = processedText.substring(span.getStart(), span.getEnding());
+                    boolean areEq = token.getText().equals(substr);
+                    if (!areEq) {
+                        logger.warn("expected = [" + token.getText() + "];" + " docText(" + span + ") = [" + substr + "]");
+                    } else {
+                        numEq++;
+                    }
+                    numTot++;
+                }
+            }
+        }
+        double fracPassing = ((double) numEq / (double) numTot);
+        assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing >= 0.8);
+    }
+
     // Dependency parses
     int expNumDepParses = 3;
     for (Section nsect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
