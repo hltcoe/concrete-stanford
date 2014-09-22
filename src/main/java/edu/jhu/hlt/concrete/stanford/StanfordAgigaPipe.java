@@ -30,9 +30,12 @@ import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.UUID;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
+import edu.jhu.hlt.concrete.util.CopyToRaw;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.Serialization;
 import edu.jhu.hlt.concrete.util.ThriftIO;
+import edu.jhu.hlt.concrete.util.ToolNameAdder;
+import edu.jhu.hlt.concrete.util.WrapToolNameAdder;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentenceIndexAnnotation;
@@ -64,6 +67,9 @@ public class StanfordAgigaPipe {
 
   private InMemoryAnnoPipeline pipeline;
   private Set<String> annotateNames;
+
+  private ToolNameAdder toolNameAdder;
+  private CopyToRaw copyToRaw;
 
   /**
    * The global character offset. The exact meaning is determined by
@@ -139,13 +145,19 @@ public class StanfordAgigaPipe {
     annotateNames = new HashSet<>();
     annotateNames.add("Passage");
     annotateNames.add("Other");
-    pipeline = new InMemoryAnnoPipeline();
+    init();
   }
 
   public StanfordAgigaPipe(Set<String> typesToAnnotate) {
     this.annotateNames = new HashSet<>();
     this.annotateNames.addAll(typesToAnnotate);
+    init();
+  }
+
+  private void init() {
     this.pipeline = new InMemoryAnnoPipeline();
+    this.toolNameAdder = new WrapToolNameAdder("concrete-stanford-copier");
+    this.copyToRaw = new CopyToRaw(this.toolNameAdder);
   }
 
 //  public void parseArgs(String[] args) {
@@ -206,7 +218,7 @@ public class StanfordAgigaPipe {
     }
 
     // cp will be heavily mutated here.
-    Communication cp = new Communication(c);
+    Communication cp = this.copyToRaw.copyCommunication(c);
     resetGlobals();
     runPipelineOnCommunicationSectionsAndSentences(cp);
     return cp;
