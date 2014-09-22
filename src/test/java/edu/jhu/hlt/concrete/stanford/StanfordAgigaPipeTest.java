@@ -181,7 +181,7 @@ public class StanfordAgigaPipeTest {
                new CommunicationSerialization().toBytes(shakeHandComm) != null);
 
     Communication processedShakeHandComm = pipe.process(shakeHandComm);
-    final String docText = processedShakeHandComm.getText();
+    final String docText = processedShakeHandComm.getRawText();
     final String[] stokens = { "The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
 
     assertTrue(docText.equals(StanfordAgigaPipeTest.SHAKE_HAND_TEXT_STRING));
@@ -194,11 +194,11 @@ public class StanfordAgigaPipeTest {
 
     // Test spans
     assertTrue(firstSentList.size() == 1);
-    
-    assertEquals("Beginning char should be 0.", 0, firstSent.getTextSpan().getStart());
-    assertEquals("Ending char should be 48.", 48, firstSent.getTextSpan().getEnding());
+    assertTrue("firstSent.rawTextSpan should be set", firstSent.isSetRawTextSpan());
+    assertEquals("Beginning char should be 0.", 0, firstSent.getRawTextSpan().getStart());
+    assertEquals("Ending char should be 48.", 48, firstSent.getRawTextSpan().getEnding());
 
-    TextSpan tts = firstSent.getTextSpan();
+    TextSpan tts = firstSent.getRawTextSpan();
     String pulledText = docText.substring(tts.getStart(), tts.getEnding());
     assertTrue(pulledText.equals(SHAKE_HAND_TEXT_STRING.trim()));
 
@@ -220,7 +220,7 @@ public class StanfordAgigaPipeTest {
 
     // Verify tokens to full
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      tts = token.getTextSpan();
+      tts = token.getRawTextSpan();
       String substr = docText.substring(tts.getStart(), tts.getEnding());
       assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts + ") = [" + substr + "]", token.getText().equals(substr));
     }
@@ -228,7 +228,7 @@ public class StanfordAgigaPipeTest {
     // Verify tokens to full seeded
     tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      tts = token.getTextSpan();
+      tts = token.getRawTextSpan();
       String substr = docText.substring(tts.getStart(), tts.getEnding());
       assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts + ") = [" + substr + "]", stokens[tokIdx].equals(substr));
       tokIdx++;
@@ -239,7 +239,7 @@ public class StanfordAgigaPipeTest {
     int[] end = { 3, 7, 11, 14, 20, 24, 29, 40, 42, 47, 48 };
     tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      tts = token.getTextSpan();
+      tts = token.getRawTextSpan();
       assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx], tts.getStart() == start[tokIdx]);
       assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx], tts.getEnding() == end[tokIdx]);
       tokIdx++;
