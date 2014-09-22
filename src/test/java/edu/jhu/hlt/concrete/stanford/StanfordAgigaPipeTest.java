@@ -289,37 +289,64 @@ public class StanfordAgigaPipeTest {
     assertEquals("Should have found 8 sections.", 8, nsects.size());
     
     // Sentences
-    int numSents = 0;
-    for (Section sect : nsects) {
-        if (sect.isSetSentenceSegmentationList() && sect.getSentenceSegmentationList().get(0) != null) {
-        numSents += sect.getSentenceSegmentationList().get(0).getSentenceList().size();
+    {
+        int numSents = 0;
+        for (Section sect : nsects) {
+            if (sect.isSetSentenceSegmentationList() && sect.getSentenceSegmentationList().get(0) != null) {
+                numSents += sect.getSentenceSegmentationList().get(0).getSentenceList().size();
+            }
         }
+        assertEquals("Should have found 8 sentences.", 8, numSents);
     }
-    assertEquals("Should have found 8 sentences.", 8, numSents);
     
-    // First sentence span test
-    int begin = 60;
-    int end = 242;
-    Sentence sent = afpProcessedComm.getSectionSegmentationList().get(0).getSectionList().get(1).getSentenceSegmentationList()
-        .get(0).getSentenceList().get(0);
-    TextSpan tts = sent.getRawTextSpan();
-    assertEquals("Start should be " + begin, begin, tts.getStart());
-    assertEquals("End should be " + end, end, tts.getEnding());
+    // First sentence span test wrt RAW
+    {
+        int begin = 60;
+        int end = 242;
+        Sentence sent = afpProcessedComm.getSectionSegmentationList().get(0).getSectionList().get(1).getSentenceSegmentationList()
+            .get(0).getSentenceList().get(0);
+        TextSpan tts = sent.getRawTextSpan();
+        assertEquals("Start should be " + begin, begin, tts.getStart());
+        assertEquals("End should be " + end, end, tts.getEnding());
+    }
+
+    // First sentence span test wrt processed
+    {
+        int begin = 0;
+        int end = 184;
+        Sentence sent = afpProcessedComm.getSectionSegmentationList().get(0).getSectionList().get(1).getSentenceSegmentationList()
+            .get(0).getSentenceList().get(0);
+        TextSpan tts = sent.getTextSpan();
+        assertEquals("Start should be " + begin, begin, tts.getStart());
+        assertEquals("End should be " + end, end, tts.getEnding());
+    }
+    // Second sentence span test wrt processed
+    {
+        int begin = 186;
+        int end = 332;
+        Sentence sent = afpProcessedComm.getSectionSegmentationList().get(0)
+            .getSectionList().get(2)
+            .getSentenceSegmentationList().get(0)
+            .getSentenceList().get(0);
+        TextSpan tts = sent.getTextSpan();
+        assertEquals("Start should be " + begin, begin, tts.getStart());
+        assertEquals("End should be " + end, end, tts.getEnding());
+    }
     
     // Sentences test
-    String[] sentences = {
-        "Sri Lankan media groups Thursday protested against the arrest of a reporter\n"
-            + "close to Sarath Fonseka, the detained ex-army chief who tried to unseat the\n" + "president in recent elections.",
-        "The groups issued a joint statement demanding the release of Ruwan Weerakoon, a\n" + "reporter with the Nation newspaper, who was arrested this week.",
-        "\"We request the Inspector General of Police to disclose the reasons behind the\n"
-            + "arrest and detention of Ruwan Weerakoon and make arrangements for him to receive\n" + "legal aid immediately,\" the statement added.",
-        "Weerakoon maintained close contact with Fonseka when the general led the\n"
-            + "military during the final phase of last year's war against Tamil Tiger rebels.",
-        "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation\n"
-            + "Tigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out\n" + "and contested the presidency in January's elections.",
-        "Fonseka was arrested soon after losing the poll and appeared in front of a court\n" + "martial this week.", "The case was adjourned.",
-        "Local and international rights groups have accused Rajapakse of cracking down on\n" + "dissent, a charge the government has denied." };
     {
+        String[] sentences = {
+            "Sri Lankan media groups Thursday protested against the arrest of a reporter\n"
+            + "close to Sarath Fonseka, the detained ex-army chief who tried to unseat the\n" + "president in recent elections.",
+            "The groups issued a joint statement demanding the release of Ruwan Weerakoon, a\n" + "reporter with the Nation newspaper, who was arrested this week.",
+            "\"We request the Inspector General of Police to disclose the reasons behind the\n"
+            + "arrest and detention of Ruwan Weerakoon and make arrangements for him to receive\n" + "legal aid immediately,\" the statement added.",
+            "Weerakoon maintained close contact with Fonseka when the general led the\n"
+            + "military during the final phase of last year's war against Tamil Tiger rebels.",
+            "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation\n"
+            + "Tigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out\n" + "and contested the presidency in January's elections.",
+            "Fonseka was arrested soon after losing the poll and appeared in front of a court\n" + "martial this week.", "The case was adjourned.",
+            "Local and international rights groups have accused Rajapakse of cracking down on\n" + "dissent, a charge the government has denied." };
         int sentIdx = 0;
         for (Section sect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
             if (sect.getSentenceSegmentationList() != null) {
@@ -334,16 +361,16 @@ public class StanfordAgigaPipeTest {
         }
     }
     //test sentences wrt processed
-    String[] processedSentences = {
-        "Sri Lankan media groups Thursday protested against the arrest of a reporter close to Sarath Fonseka , the detained ex-army chief who tried to unseat the president in recent elections .",
-        "The groups issued a joint statement demanding the release of Ruwan Weerakoon , a reporter with the Nation newspaper , who was arrested this week .",
-        "`` We request the Inspector General of Police to disclose the reasons behind the arrest and detention of Ruwan Weerakoon and make arrangements for him to receive legal aid immediately , '' the statement added .",
-        "Weerakoon maintained close contact with Fonseka when the general led the military during the final phase of last year 's war against Tamil Tiger rebels .",
-        "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation Tigers of Tamil Eelam -LRB- LTTE -RRB- were crushed in May , but the two men later fell out and contested the presidency in January 's elections .",
-        "Fonseka was arrested soon after losing the poll and appeared in front of a court martial this week .", 
-        "The case was adjourned .",
-        "Local and international rights groups have accused Rajapakse of cracking down on dissent , a charge the government has denied ." };
     {
+        String[] processedSentences = {
+            "Sri Lankan media groups Thursday protested against the arrest of a reporter close to Sarath Fonseka , the detained ex-army chief who tried to unseat the president in recent elections .",
+            "The groups issued a joint statement demanding the release of Ruwan Weerakoon , a reporter with the Nation newspaper , who was arrested this week .",
+            "`` We request the Inspector General of Police to disclose the reasons behind the arrest and detention of Ruwan Weerakoon and make arrangements for him to receive legal aid immediately , '' the statement added .",
+            "Weerakoon maintained close contact with Fonseka when the general led the military during the final phase of last year 's war against Tamil Tiger rebels .",
+            "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation Tigers of Tamil Eelam -LRB- LTTE -RRB- were crushed in May , but the two men later fell out and contested the presidency in January 's elections .",
+            "Fonseka was arrested soon after losing the poll and appeared in front of a court martial this week .", 
+            "The case was adjourned .",
+            "Local and international rights groups have accused Rajapakse of cracking down on dissent , a charge the government has denied ." };
         int sentIdx = 0;
         int numOkay = 0;
         int numTot = 0;
@@ -367,7 +394,7 @@ public class StanfordAgigaPipeTest {
         assertTrue("WARNING: only " + (fracPassing*100) + "% of processed sentences matched!", fracPassing >= 0.8);
     }
     
-    // Verify tokens
+    // Verify tokens wrt RAW
     {
         int numEq = 0;
         int numTot = 0;
@@ -381,7 +408,7 @@ public class StanfordAgigaPipeTest {
                     String substr = processedRawText.substring(span.getStart(), span.getEnding());
                     boolean areEq = token.getText().equals(substr);
                     if (!areEq) {
-                        logger.warn("expected = [" + token.getText() + "];" + "docText(" + tts + ") = [" + substr + "]");
+                        logger.warn("expected = [" + token.getText() + "];" + "docText(" + span + ") = [" + substr + "]");
                     } else {
                         numEq++;
                     }
@@ -392,6 +419,7 @@ public class StanfordAgigaPipeTest {
         double fracPassing = ((double) numEq / (double) numTot);
         assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing >= 0.8);
     }
+    // Verify tokens wrt PROCESSED
     {
         int numEq = 0;
         int numTot = 0;
@@ -418,50 +446,57 @@ public class StanfordAgigaPipeTest {
             }
         }
         double fracPassing = ((double) numEq / (double) numTot);
-        assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing >= 0.8);
+        assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing == 1.0);
     }
 
     // Dependency parses
-    int expNumDepParses = 3;
-    for (Section nsect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
-      if (nsect.getSentenceSegmentationList() == null)
-        continue;
-      for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
-        Tokenization tokenization = nsent.getTokenizationList().get(0);
-        assertEquals(expNumDepParses, tokenization.getDependencyParseList().size());
-      }
+    {
+        int expNumDepParses = 3;
+        for (Section nsect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+            if (nsect.getSentenceSegmentationList() == null)
+                continue;
+            for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
+                Tokenization tokenization = nsent.getTokenizationList().get(0);
+                assertEquals(expNumDepParses, tokenization.getDependencyParseList().size());
+            }
+        }
     }
     
     // Verify non-empty dependency parses
-    for (Section nsect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
-      if (nsect.getSentenceSegmentationList() == null)
-        continue;
-      for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
-        Tokenization tokenization = nsent.getTokenizationList().get(0);
-        for (DependencyParse depParse : tokenization.getDependencyParseList()) {
-          assertTrue("DependencyParse " + depParse.getMetadata().getTool() + " is empty", depParse.getDependencyList().size() > 0);
+    {
+        for (Section nsect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+            if (nsect.getSentenceSegmentationList() == null)
+                continue;
+            for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
+                Tokenization tokenization = nsent.getTokenizationList().get(0);
+                for (DependencyParse depParse : tokenization.getDependencyParseList()) {
+                    assertTrue("DependencyParse " + depParse.getMetadata().getTool() + " is empty", depParse.getDependencyList().size() > 0);
+                }
+            }
         }
-      }
     }
     
     // Verify some NEs
-    assertTrue(afpProcessedComm.getEntitySetList().size() > 0);
-    assertTrue(afpProcessedComm.getEntitySetList().get(0).getEntityList().size() > 0);
-    boolean allSet = true;
-    for (Entity entity : afpProcessedComm.getEntitySetList().get(0).getEntityList()) {
-      allSet &= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
+    {
+        assertTrue(afpProcessedComm.getEntitySetList().size() > 0);
+        assertTrue(afpProcessedComm.getEntitySetList().get(0).getEntityList().size() > 0);
+        boolean allSet = true;
+        for (Entity entity : afpProcessedComm.getEntitySetList().get(0).getEntityList()) {
+            allSet &= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
+        }
+        assertTrue(allSet);
     }
-    assertTrue(allSet);
     
     // Verify anchor tokens
-    int numWithout = 0;
-    for (EntityMention em : afpProcessedComm.getEntityMentionSetList().get(0).getMentionList()) {
-      numWithout += (em.getTokens().anchorTokenIndex >= 0 ? 0 : 1);
-      // logger.info("In memory, token head via member" + em.getTokenList().anchorTokenIndex);
-      // logger.info("In memory, token head via function " + em.getTokenList().getAnchorTokenIndex());
+    {
+        int numWithout = 0;
+        for (EntityMention em : afpProcessedComm.getEntityMentionSetList().get(0).getMentionList()) {
+            numWithout += (em.getTokens().anchorTokenIndex >= 0 ? 0 : 1);
+            // logger.info("In memory, token head via member" + em.getTokenList().anchorTokenIndex);
+            // logger.info("In memory, token head via function " + em.getTokenList().getAnchorTokenIndex());
+        }    
+        assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
     }
-    
-    assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
   }
   
   // TODO: needs enabling/fixing. 
