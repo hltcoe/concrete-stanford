@@ -181,6 +181,8 @@ public class StanfordAgigaPipeTest {
                new CommunicationSerialization().toBytes(shakeHandComm) != null);
 
     Communication processedShakeHandComm = pipe.process(shakeHandComm);
+    assertTrue("Error in serializing processed communication",
+               new CommunicationSerialization().toBytes(processedShakeHandComm) != null);
     final String docText = processedShakeHandComm.getRawText();
     final String[] stokens = { "The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
 
@@ -496,6 +498,11 @@ public class StanfordAgigaPipeTest {
             // logger.info("In memory, token head via function " + em.getTokenList().getAnchorTokenIndex());
         }    
         assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
+    }
+
+    {
+        assertTrue("Error in serializing processed communication",
+                   new CommunicationSerialization().toBytes(afpProcessedComm) != null);
     }
   }
   
