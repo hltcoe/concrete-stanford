@@ -242,15 +242,14 @@ public class StanfordAgigaPipe {
    * @throws AnnotationException 
    */
   public void runPipelineOnCommunicationSectionsAndSentences(Communication comm) throws AnnotationException {
-
     // if called multiple times, reset the sentence count
     sentenceCount = 1;
-    String commText = comm.getText() != null ? comm.getText() : comm.getText();
-    // List<Annotation> finishedAnnotations = new ArrayList<Annotation>();
-
+    String commText = comm.isSetText() ? comm.getText() : comm.getRawText();
+    StringBuilder sb = new StringBuilder();
     logger.debug("Annotating communication: {}", comm.getId());
     logger.debug("\tuuid = " + comm.getUuid());
     logger.debug("\ttype = " + comm.getType());
+    logger.debug("\treading from " + (comm.isSetText() ? "text" : "raw text"));
     logger.debug("\tfull = " + commText);
     for (SectionSegmentation sectionSegmentation : comm.getSectionSegmentationList()) {
       UUID uuid = sectionSegmentation.getUuid();
