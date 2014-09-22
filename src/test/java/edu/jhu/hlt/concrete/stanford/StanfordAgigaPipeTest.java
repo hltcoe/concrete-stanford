@@ -24,6 +24,7 @@ import concrete.util.data.ConcreteFactory;
 import edu.jhu.hlt.asphalt.AsphaltException;
 import edu.jhu.hlt.ballast.InvalidInputException;
 import edu.jhu.hlt.ballast.tools.SingleSectionSegmenter;
+import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.DependencyParse;
 import edu.jhu.hlt.concrete.Entity;
@@ -35,6 +36,7 @@ import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
+import edu.jhu.hlt.concrete.util.CommunicationSerialization;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
 import edu.jhu.hlt.gigaword.ClojureIngester;
@@ -161,11 +163,22 @@ public class StanfordAgigaPipeTest {
   @Test
   public void processHandshakeCommunication() throws TException, InvalidInputException, IOException, ConcreteException, AnnotationException {
     Communication shakeHandComm = this.cf.randomCommunication().setText(SHAKE_HAND_TEXT_STRING);
-    Section section = new Section().setUuid(cuf.getConcreteUUID()).setTextSpan(new TextSpan().setStart(0).setEnding(SHAKE_HAND_TEXT_STRING.length()))
+    AnnotationMetadata md = new AnnotationMetadata()
+        .setTool("concrete-stanford:test")
+        .setTimestamp(System.currentTimeMillis() / 1000);
+    shakeHandComm.setMetadata(md);
+    Section section = new Section()
+        .setUuid(cuf.getConcreteUUID())
+        .setTextSpan(new TextSpan().setStart(0).setEnding(SHAKE_HAND_TEXT_STRING.length()))
         .setKind("Passage");
-    SectionSegmentation ss = new SectionSegmentation().setUuid(cuf.getConcreteUUID());
+    SectionSegmentation ss = new SectionSegmentation()
+        .setUuid(cuf.getConcreteUUID())
+        .setMetadata(md);
     ss.addToSectionList(section);
     shakeHandComm.addToSectionSegmentationList(ss);
+
+    assertTrue("Error in creating original communication",
+               new CommunicationSerialization().toBytes(shakeHandComm) != null);
 
     Communication processedShakeHandComm = pipe.process(shakeHandComm);
     final String docText = processedShakeHandComm.getText();
