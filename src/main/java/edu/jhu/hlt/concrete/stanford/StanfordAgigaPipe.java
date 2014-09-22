@@ -78,6 +78,7 @@ public class StanfordAgigaPipe {
    * is updated according to the processed text.
    */
   private int charOffset = 0;
+  private int processedCharOffset = 0;
 
   /**
    * Whether {@code charOffset} should refer to the original text (true) 
@@ -99,6 +100,7 @@ public class StanfordAgigaPipe {
       globalTokenOffset = 0;
       sentenceCount = 1;
       charOffset = 0;
+      processedCharOffset = 0;
       pipeline.prepForNext();
   }
 
@@ -217,7 +219,6 @@ public class StanfordAgigaPipe {
         throw new ConcreteException("Expecting Sections, but there weren't any.");
     }
 
-    // cp will be heavily mutated here.
     Communication cp = this.copyToRaw.copyCommunication(c);
     resetGlobals();
     runPipelineOnCommunicationSectionsAndSentences(cp);
@@ -262,7 +263,9 @@ public class StanfordAgigaPipe {
       logger.debug("documentAnnotation = " + documentAnnotation);
       logger.debug("Annotating SectionSegmentation: {}", uuid.toString());
       for (Section section : sections) {
-        TextSpan sts = section.getTextSpan();
+        int sectionStartCharOffset = processedCharOffset;
+        logger.debug("new section, processed offset = " + sectionStartCharOffset);
+        TextSpan sts = section.getRawTextSpan();
         // 1) First *perform* the tokenization & sentence splits
         // Note we do this first, even before checking the content-type
         String sectionText = commText.substring(sts.getStart(), sts.getEnding());
@@ -284,9 +287,11 @@ public class StanfordAgigaPipe {
 
           //Note that we need to update the global character offset...
           List<CoreLabel> sentTokens = sectionAnnotation.get(TokensAnnotation.class);
+          int tokCount = 0;
           for(CoreLabel badToken : sentTokens) { 
-              updateCharOffsetSetToken(badToken, false);
+              updateCharOffsetSetToken(badToken, false, false);
           }
+
           logger.debug(""+charOffset);
           logger.debug("\t"+  sectionText);
           //int tokenEnd = tokenOffset + sentTokens.size();
@@ -303,8 +308,15 @@ public class StanfordAgigaPipe {
         // 2) Second, perform the other localized processing
         logger.debug("Additional processing on section: {}", section.getUuid());
         logger.debug(">> SectionText=["+sectionText+"]");
-        processSection(section, sectionAnnotation, documentAnnotation, tokenizations, uuid);
+        processSection(section, sectionAnnotation, documentAnnotation, 
+                       tokenizations, uuid, sectionStartCharOffset,
+                       sb);
+        // between sections are two line feeds
+        // one is counted for in the sentTokens loop above
+        processedCharOffset++;
       }
+
+      comm.setText(sb.toString());
 
       // 3) Third, do coref; cross-reference against sectionUUIDs
       logger.debug("Running coref.");
@@ -370,7 +382,7 @@ public class StanfordAgigaPipe {
       for (CoreLabel token : sentTokens) {
         // note that character offsets are global
         // String tokenText = token.get(TextAnnotation.class);
-        updateCharOffsetSetToken(token, isFirst);
+        updateCharOffsetSetToken(token, isFirst, true);
         logger.debug("this token goes from " +
                      token.get(CharacterOffsetBeginAnnotation.class) + " to " +
                      token.get(CharacterOffsetEndAnnotation.class));
@@ -406,7 +418,7 @@ public class StanfordAgigaPipe {
 
   }
 
-  public void updateCharOffsetSetToken(CoreLabel token, boolean isFirst){
+  public void updateCharOffsetSetToken(CoreLabel token, boolean isFirst, boolean updateProcessedOff){
       if(usingOriginalCharOffsets()){
           if(isFirst){
               //this is because when we have text like "foo bar", foo.after == " " AND bar.before == " "
@@ -429,6 +441,9 @@ public class StanfordAgigaPipe {
           charOffset += token.get(TextAnnotation.class).length();
           token.set(CharacterOffsetEndAnnotation.class, charOffset);
           charOffset++;
+      }
+      if(updateProcessedOff) {
+          processedCharOffset += token.get(TextAnnotation.class).length() + 1;
       }
   }
 
