@@ -475,7 +475,7 @@ public class StanfordAgigaPipe {
    * @param sectionSegmentationUUID TODO
    * @throws AnnotationException 
    */
-  public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, List<Tokenization> tokenizations, UUID sectionSegmentationUUID) throws AnnotationException {
+  public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, List<Tokenization> tokenizations, UUID sectionSegmentationUUID, int sectionOffset, StringBuilder sb) throws AnnotationException {
     sentencesToSection(sentenceSplitText, docAnnotation);
     logger.debug("after sentencesToSection, before annotating");
     for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class)) 
@@ -488,7 +488,7 @@ public class StanfordAgigaPipe {
     
     transferAnnotations(sentenceSplitText, docAnnotation);
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
-    agigaToConcrete.convertSection(section, agigaDoc, tokenizations, sectionSegmentationUUID);
+    agigaToConcrete.convertSection(section, agigaDoc, tokenizations, sectionSegmentationUUID, sectionOffset, sb);
   }
 
   public void processCoref(Communication comm, Annotation docAnnotation, List<Tokenization> tokenizations) throws AnnotationException {
