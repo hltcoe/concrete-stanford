@@ -90,9 +90,9 @@ public class StanfordAgigaPipe {
       return useOriginalCharOffsets;
   }
 
-  public void setUsingOriginalCharOffsets(boolean b){
-      this.useOriginalCharOffsets = b;
-  }
+  // public void setUsingOriginalCharOffsets(boolean b){
+  //     this.useOriginalCharOffsets = b;
+  // }
 
   private int globalTokenOffset = 0;
 
