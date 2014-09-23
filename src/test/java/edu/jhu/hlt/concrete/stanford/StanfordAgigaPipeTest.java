@@ -67,6 +67,7 @@ public class StanfordAgigaPipeTest {
 
   final String pathToAFPComm = "./src/test/resources/AFP_ENG_20100318.0623.xml";
   final String pathToNYTComm = "./src/test/resources/NYT_ENG_20070319.0077.xml";
+  final String pathTo1999NYTComm = "./src/test/resources/NYT_ENG_19991220.0301.xml";
 
   ConcreteUUIDFactory cuf = new ConcreteUUIDFactory();
   ConcreteFactory cf = new ConcreteFactory();
@@ -74,6 +75,7 @@ public class StanfordAgigaPipeTest {
   Communication randomTestComm;
   Communication mapped;
   Communication wonkyNYT;
+  Communication nyt1999;
 
   StanfordAgigaPipe pipe;
 
@@ -92,6 +94,8 @@ public class StanfordAgigaPipeTest {
     this.mapped = pdc.sectionedCommunication(); 
     
     this.wonkyNYT = ci.proxyDocPathToProxyDoc(this.pathToNYTComm).sectionedCommunication();
+
+    this.nyt1999 = ci.proxyDocPathToProxyDoc(this.pathTo1999NYTComm).sectionedCommunication();
   }
 
   /**
@@ -505,7 +509,273 @@ public class StanfordAgigaPipeTest {
                    new CommunicationSerialization().toBytes(afpProcessedComm) != null);
     }
   }
-  
+
+  /**
+   * This following test is useful because it uses a number
+   * of numeric fractions. The Stanford tokenizer is a bit
+   * strange with those: for a fraction of K n/m (e.g.,
+   * 66 6/16), it will add a non-breaking space in between
+   * K and n. Therefore, it may appear that "K n/m" is two
+   * tokens, but it really is one. This test primarily
+   * verifies that those boundaries are respected in both
+   * the Token.text and Token.textSpan fields.
+   */
+  @Test
+  public void process1999NYTComm() throws Exception {
+    Communication nytProcessedComm = this.pipe.process(this.nyt1999);
+    final String processedText = nytProcessedComm.getText();
+    final String processedRawText = nytProcessedComm.getRawText();
+
+    assertTrue("Communication should have text field set", nytProcessedComm.isSetText());
+
+    // Sections
+    List<Section> nsects = nytProcessedComm.getSectionSegmentationList().get(0).getSectionList();
+    assertEquals("Should have found 15 sections (including title): has " + nsects.size(),
+                 15, nsects.size());
+
+    // Verify tokens wrt RAW
+    {
+        int numEq = 0;
+        int numTot = 0;
+        // wrt the raw text
+        for (Section nsect : nytProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+            if (nsect.getSentenceSegmentationList() == null)
+                continue;
+            for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
+                for (Token token : nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
+                    TextSpan span = token.getRawTextSpan();
+                    String substr = processedRawText.substring(span.getStart(), span.getEnding());
+                    boolean areEq = token.getText().equals(substr);
+                    if (!areEq) {
+                        logger.warn("verifying raw tokens: expected = [" + token.getText() + "];" + "docText(" + span + ") = [" + substr + "]");
+                    } else {
+                        numEq++;
+                    }
+                    numTot++;
+                }
+            }
+        }
+        double fracPassing = ((double) numEq / (double) numTot);
+        assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing >= 0.8);
+    }
+    // Verify tokens wrt PROCESSED
+    {
+        int numEq = 0;
+        int numTot = 0;
+        // wrt the processed text
+        for (Section nsect : nytProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+            if (nsect.getSentenceSegmentationList() == null)
+                continue;
+            for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
+                for (Token token : nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
+                    assertTrue("token " + token.getTokenIndex() + " shouldn't have null textspan",
+                               token.isSetTextSpan());
+                    TextSpan span = token.getTextSpan();
+                    assertTrue("ending " + span.getEnding() + " is out of range ("+processedText.length()+")",
+                               span.getEnding() < processedText.length());
+                    String substr = processedText.substring(span.getStart(), span.getEnding());
+                    boolean areEq = token.getText().equals(substr);
+                    if (!areEq) {
+                        logger.warn("verifying procesed tokens: expected = [" + token.getText() + "];" + " docText(" + span + ") = [" + substr + "]");
+                    } else {
+                        numEq++;
+                    }
+                    numTot++;
+                }
+            }
+        }
+        double fracPassing = ((double) numEq / (double) numTot);
+        assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing == 1.0);
+    }
+
+    // Dependency parses
+    {
+        int expNumDepParses = 3;
+        for (Section nsect : nytProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+            if (nsect.getSentenceSegmentationList() == null)
+                continue;
+            for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
+                Tokenization tokenization = nsent.getTokenizationList().get(0);
+                assertEquals(expNumDepParses, tokenization.getDependencyParseList().size());
+            }
+        }
+    }
+
+    // Verify non-empty dependency parses
+    {
+        for (Section nsect : nytProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+            if (nsect.getSentenceSegmentationList() == null)
+                continue;
+            for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
+                Tokenization tokenization = nsent.getTokenizationList().get(0);
+                for (DependencyParse depParse : tokenization.getDependencyParseList()) {
+                    assertTrue("DependencyParse " + depParse.getMetadata().getTool() + " is empty", depParse.getDependencyList().size() > 0);
+                }
+            }
+        }
+    }
+
+    // Verify some NEs
+    {
+        assertTrue(nytProcessedComm.getEntitySetList().size() > 0);
+        assertTrue(nytProcessedComm.getEntitySetList().get(0).getEntityList().size() > 0);
+        boolean allSet = true;
+        for (Entity entity : nytProcessedComm.getEntitySetList().get(0).getEntityList()) {
+            allSet &= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
+        }
+        assertTrue(allSet);
+    }
+
+    // Verify anchor tokens
+    {
+        int numWithout = 0;
+        for (EntityMention em : nytProcessedComm.getEntityMentionSetList().get(0).getMentionList()) {
+            numWithout += (em.getTokens().anchorTokenIndex >= 0 ? 0 : 1);
+        }    
+        assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
+    }
+
+    {
+        assertTrue("Error in serializing processed communication",
+                   new CommunicationSerialization().toBytes(nytProcessedComm) != null);
+    }
+  }
+
+  // @Test
+  // public void processWonkyNYTComm() throws Exception {
+  //   Communication nytProcessedComm = this.pipe.process(this.wonkyNYT);
+  //   final String processedText = nytProcessedComm.getText();
+  //   final String processedRawText = nytProcessedComm.getRawText();
+    
+  //   // Text equality
+  //   //assertEquals("Text should be equal.", AFP_0623_TEXT, processedRawText);
+  //   assertTrue("Communication should have text field set", nytProcessedComm.isSetText());
+
+  //   // Sections
+  //   List<Section> nsects = nytProcessedComm.getSectionSegmentationList().get(0).getSectionList();
+  //   assertEquals("Should have found 28 sections (including title): has " + nsects.size(), 
+  //                28, nsects.size());
+
+    
+  //   // First sentence span test wrt RAW
+  //   // {
+  //   //     int begin = 60;
+  //   //     int end = 242;
+  //   //     Sentence sent = afpProcessedComm.getSectionSegmentationList().get(0).getSectionList().get(1).getSentenceSegmentationList()
+  //   //         .get(0).getSentenceList().get(0);
+  //   //     TextSpan tts = sent.getRawTextSpan();
+  //   //     assertEquals("Start should be " + begin, begin, tts.getStart());
+  //   //     assertEquals("End should be " + end, end, tts.getEnding());
+  //   // }
+    
+  //   // Verify tokens wrt RAW
+  //   {
+  //       int numEq = 0;
+  //       int numTot = 0;
+  //       // wrt the raw text
+  //       for (Section nsect : nytProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+  //           if (nsect.getSentenceSegmentationList() == null)
+  //               continue;
+  //           for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
+  //               for (Token token : nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
+  //                   TextSpan span = token.getRawTextSpan();
+  //                   String substr = processedRawText.substring(span.getStart(), span.getEnding());
+  //                   boolean areEq = token.getText().equals(substr);
+  //                   if (!areEq) {
+  //                       logger.warn("expected = [" + token.getText() + "];" + "docText(" + span + ") = [" + substr + "]");
+  //                   } else {
+  //                       numEq++;
+  //                   }
+  //                   numTot++;
+  //               }
+  //           }
+  //       }
+  //       double fracPassing = ((double) numEq / (double) numTot);
+  //       assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing >= 0.8);
+  //   }
+  //   // Verify tokens wrt PROCESSED
+  //   {
+  //       int numEq = 0;
+  //       int numTot = 0;
+  //       // wrt the processed text
+  //       for (Section nsect : nytProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+  //           if (nsect.getSentenceSegmentationList() == null)
+  //               continue;
+  //           for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
+  //               for (Token token : nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
+  //                   assertTrue("token " + token.getTokenIndex() + " shouldn't have null textspan",
+  //                              token.isSetTextSpan());
+  //                   TextSpan span = token.getTextSpan();
+  //                   assertTrue("ending " + span.getEnding() + " is out of range ("+processedText.length()+")",
+  //                              span.getEnding() < processedText.length());
+  //                   String substr = processedText.substring(span.getStart(), span.getEnding());
+  //                   boolean areEq = token.getText().equals(substr);
+  //                   if (!areEq) {
+  //                       logger.warn("expected = [" + token.getText() + "];" + " docText(" + span + ") = [" + substr + "]");
+  //                   } else {
+  //                       numEq++;
+  //                   }
+  //                   numTot++;
+  //               }
+  //           }
+  //       }
+  //       double fracPassing = ((double) numEq / (double) numTot);
+  //       assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing == 1.0);
+  //   }
+
+  //   // Dependency parses
+  //   {
+  //       int expNumDepParses = 3;
+  //       for (Section nsect : nytProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+  //           if (nsect.getSentenceSegmentationList() == null)
+  //               continue;
+  //           for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
+  //               Tokenization tokenization = nsent.getTokenizationList().get(0);
+  //               assertEquals(expNumDepParses, tokenization.getDependencyParseList().size());
+  //           }
+  //       }
+  //   }
+    
+  //   // Verify non-empty dependency parses
+  //   {
+  //       for (Section nsect : nytProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+  //           if (nsect.getSentenceSegmentationList() == null)
+  //               continue;
+  //           for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
+  //               Tokenization tokenization = nsent.getTokenizationList().get(0);
+  //               for (DependencyParse depParse : tokenization.getDependencyParseList()) {
+  //                   assertTrue("DependencyParse " + depParse.getMetadata().getTool() + " is empty", depParse.getDependencyList().size() > 0);
+  //               }
+  //           }
+  //       }
+  //   }
+    
+  //   // Verify some NEs
+  //   {
+  //       assertTrue(nytProcessedComm.getEntitySetList().size() > 0);
+  //       assertTrue(nytProcessedComm.getEntitySetList().get(0).getEntityList().size() > 0);
+  //       boolean allSet = true;
+  //       for (Entity entity : nytProcessedComm.getEntitySetList().get(0).getEntityList()) {
+  //           allSet &= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
+  //       }
+  //       assertTrue(allSet);
+  //   }
+    
+  //   // Verify anchor tokens
+  //   {
+  //       int numWithout = 0;
+  //       for (EntityMention em : nytProcessedComm.getEntityMentionSetList().get(0).getMentionList()) {
+  //           numWithout += (em.getTokens().anchorTokenIndex >= 0 ? 0 : 1);
+  //       }    
+  //       assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
+  //   }
+
+  //   {
+  //       assertTrue("Error in serializing processed communication",
+  //                  new CommunicationSerialization().toBytes(nytProcessedComm) != null);
+  //   }
+  // }
+
   // TODO: needs enabling/fixing. 
 //  @Test
 //  public void testNYTMessage() throws Exception {
