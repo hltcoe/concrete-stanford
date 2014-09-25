@@ -76,14 +76,14 @@ public class AgigaConcreteAnnotator {
     return new SimpleEntry<EntityMentionSet, EntitySet>(ems, es);
   }
 
-  public void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations, UUID sectionSegmentationUUID)
+    public void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations, UUID sectionSegmentationUUID, int charOffset, StringBuilder sb)
       throws AnnotationException {
-    SentenceSegmentation ss = createSentenceSegmentation(section, agigaDoc, tokenizations, 0, sectionSegmentationUUID);
+      SentenceSegmentation ss = createSentenceSegmentation(section, agigaDoc, tokenizations, charOffset, sectionSegmentationUUID, sb);
     section.addToSentenceSegmentationList(ss);
+    sb.append("\n\n");
   }
 
-  public SentenceSegmentation createSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int charOffset,
-      UUID sectionSegmentationUUID) throws AnnotationException {
+  public SentenceSegmentation createSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int charOffset, UUID sectionSegmentationUUID, StringBuilder sb) throws AnnotationException {
     logger.debug("f3");
     SentenceSegmentation ss = new SentenceSegmentation().setUuid(this.idFactory.getConcreteUUID());
     AnnotationMetadata md = this.metadata();
@@ -93,7 +93,7 @@ public class AgigaConcreteAnnotator {
     ss.setMetadata(md);
 
     // ss.setSectionId(in.getUuid());
-    addSentences(ss, ad, tokenizations);
+    addSentences(ss, ad, tokenizations, charOffset, sb);
     if (!ss.isSetSentenceList()) 
       ss.setSentenceList(new ArrayList<Sentence>());
     
@@ -101,18 +101,25 @@ public class AgigaConcreteAnnotator {
   }
 
   // add all Sentences
-  private void addSentences(SentenceSegmentation in, AgigaDocument ad, List<Tokenization> tokenizations) throws AnnotationException {
+  private void addSentences(SentenceSegmentation in, AgigaDocument ad, List<Tokenization> tokenizations, int charOffset, StringBuilder sb) throws AnnotationException {
     logger.debug("f4");
     final int n = ad.getSents().size();
     int sentPtr = 0;
+    int currOffset = charOffset;
     assert n > 0 : "n=" + n;
     for (int i = 0; i < n; i++) {
       AgigaSentence asent = ad.getSents().get(sentPtr++);
       // the second argument is the estimated character provenance offset.
       // We're not filling the optional textSpan fields, so the exact parameter
       // value doesn't matter.
-      Sentence st = this.ag.convertSentence(asent, -1, tokenizations, in.getUuid());
+      Sentence st = this.ag.convertSentence(asent, currOffset, tokenizations, in.getUuid());
       String sentText = this.ag.flattenText(asent);
+      sb.append(sentText);
+      currOffset += sentText.length();
+      if((i+1) < n) {
+          sb.append("\n");
+          currOffset++;
+      }
       logger.debug(sentText);
       in.addToSentenceList(st);
     }
