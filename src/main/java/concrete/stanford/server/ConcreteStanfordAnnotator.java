@@ -15,7 +15,6 @@ import edu.jhu.hlt.ballast.ServerException;
 import edu.jhu.hlt.ballast.server.BallastServer;
 import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
-import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 
@@ -48,10 +47,6 @@ public class ConcreteStanfordAnnotator implements Annotator.Iface {
     
     if (!original.isSetText())
       throw new AsphaltException("Your communication does not have text; text is required for this tool.");
-    SuperCommunication sc = new SuperCommunication(original);
-    if (!sc.hasSectionSegmentations() || !sc.hasSections())
-      throw new AsphaltException("Your communication does not have section segmentations "
-          + "or sections present. These are required to run the tool.");
     
     try {
       Communication annotated = this.pipe.process(original);

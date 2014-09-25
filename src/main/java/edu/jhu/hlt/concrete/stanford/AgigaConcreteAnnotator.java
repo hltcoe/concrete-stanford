@@ -19,7 +19,6 @@ import edu.jhu.hlt.concrete.EntityMentionSet;
 import edu.jhu.hlt.concrete.EntitySet;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
-import edu.jhu.hlt.concrete.SentenceSegmentation;
 import edu.jhu.hlt.concrete.TheoryDependencies;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.UUID;
@@ -45,45 +44,42 @@ public class AgigaConcreteAnnotator {
     return new AnnotationMetadata().setTool("anno-pipeline-v2").setTimestamp(System.currentTimeMillis() / 1000);
   }
 
-  public SimpleEntry<EntityMentionSet, EntitySet> convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations) throws AnnotationException {
-    EntityMentionSet ems = new EntityMentionSet()
-      .setUuid(this.idFactory.getConcreteUUID());
+  public SimpleEntry<EntityMentionSet, EntitySet> convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations)
+      throws AnnotationException {
+    EntityMentionSet ems = new EntityMentionSet().setUuid(this.idFactory.getConcreteUUID());
     TheoryDependencies td = new TheoryDependencies();
     for (Tokenization t : tokenizations)
       td.addToTokenizationTheoryList(t.getUuid());
-    AnnotationMetadata md = this.metadata()
-        .setDependencies(td);
+    AnnotationMetadata md = this.metadata().setDependencies(td);
     ems.setMetadata(md);
-    
+
     List<Entity> elist = new ArrayList<Entity>();
     for (AgigaCoref coref : agigaDoc.getCorefs()) {
       if (!coref.getMentions().isEmpty()) {
         Entity e = this.ag.convertCoref(ems, coref, agigaDoc, tokenizations);
         elist.add(e);
-      } else 
+      } else
         logger.warn("There were not any mentions for coref: " + coref.toString());
-      
+
     }
 
-    if (!ems.isSetMentionList()) 
+    if (!ems.isSetMentionList())
       ems.setMentionList(new ArrayList<EntityMention>());
 
-    EntitySet es = new EntitySet()
-      .setUuid(this.idFactory.getConcreteUUID())
-      .setMetadata(md)
-      .setEntityList(elist);
+    EntitySet es = new EntitySet().setUuid(this.idFactory.getConcreteUUID()).setMetadata(md).setEntityList(elist);
 
     return new SimpleEntry<EntityMentionSet, EntitySet>(ems, es);
   }
 
-    public void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations, UUID sectionSegmentationUUID, int charOffset, StringBuilder sb)
-      throws AnnotationException {
-      SentenceSegmentation ss = createSentenceSegmentation(section, agigaDoc, tokenizations, charOffset, sectionSegmentationUUID, sb);
+  public Section convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations, UUID sectionSegmentationUUID, int charOffset,
+      StringBuilder sb) throws AnnotationException {
+    SentenceSegmentation ss = createSentenceSegmentation(section, agigaDoc, tokenizations, charOffset, sectionSegmentationUUID, sb);
     section.addToSentenceSegmentationList(ss);
     sb.append("\n\n");
   }
 
-  public SentenceSegmentation createSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int charOffset, UUID sectionSegmentationUUID, StringBuilder sb) throws AnnotationException {
+  public SentenceSegmentation createSentenceSegmentation(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int charOffset,
+      UUID sectionSegmentationUUID, StringBuilder sb) throws AnnotationException {
     logger.debug("f3");
     SentenceSegmentation ss = new SentenceSegmentation().setUuid(this.idFactory.getConcreteUUID());
     AnnotationMetadata md = this.metadata();
@@ -94,14 +90,15 @@ public class AgigaConcreteAnnotator {
 
     // ss.setSectionId(in.getUuid());
     addSentences(ss, ad, tokenizations, charOffset, sb);
-    if (!ss.isSetSentenceList()) 
+    if (!ss.isSetSentenceList())
       ss.setSentenceList(new ArrayList<Sentence>());
-    
+
     return ss;
   }
 
   // add all Sentences
-  private void addSentences(SentenceSegmentation in, AgigaDocument ad, List<Tokenization> tokenizations, int charOffset, StringBuilder sb) throws AnnotationException {
+  private void addSentences(SentenceSegmentation in, AgigaDocument ad, List<Tokenization> tokenizations, int charOffset, StringBuilder sb)
+      throws AnnotationException {
     logger.debug("f4");
     final int n = ad.getSents().size();
     int sentPtr = 0;
@@ -116,9 +113,9 @@ public class AgigaConcreteAnnotator {
       String sentText = this.ag.flattenText(asent);
       sb.append(sentText);
       currOffset += sentText.length();
-      if((i+1) < n) {
-          sb.append("\n");
-          currOffset++;
+      if ((i + 1) < n) {
+        sb.append("\n");
+        currOffset++;
       }
       logger.debug(sentText);
       in.addToSentenceList(st);
