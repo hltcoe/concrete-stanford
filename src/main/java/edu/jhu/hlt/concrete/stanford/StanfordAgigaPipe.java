@@ -297,7 +297,8 @@ public class StanfordAgigaPipe {
 
       // 3) Third, do coref; cross-reference against sectionUUIDs
       logger.debug("Running coref.");
-      List<Tokenization> toks = new ArrayList<>(new SuperCommunication(comm).generateTokenizationIdToTokenizationMap().values());
+      SuperCommunication sc = new SuperCommunication(comm);
+      List<Tokenization> toks = new ArrayList<>(sc.generateTokenizationIdToTokenizationMap().values());
       processCoref(comm, documentAnnotation, toks);
     
   }
