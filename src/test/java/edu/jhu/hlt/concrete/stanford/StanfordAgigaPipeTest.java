@@ -144,7 +144,6 @@ public class StanfordAgigaPipeTest {
     assertTrue(sc.hasSections());
 
     Communication nc = this.pipe.process(c);
-    logger.info("this testcomm = " + this.randomTestComm.getText());
     assertTrue(nc.isSetEntityMentionSetList());
     assertTrue(nc.isSetEntitySetList());
     new SuperCommunication(nc).writeToFile("target/post-stanford_garbage_processed.concrete", true);
