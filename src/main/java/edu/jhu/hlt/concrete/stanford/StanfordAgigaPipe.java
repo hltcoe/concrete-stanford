@@ -141,19 +141,13 @@ public class StanfordAgigaPipe {
     annotateNames = new HashSet<>();
     annotateNames.add("Passage");
     annotateNames.add("Other");
-    init();
+    this.pipeline = new InMemoryAnnoPipeline();
   }
 
   public StanfordAgigaPipe(Set<String> typesToAnnotate) {
     this.annotateNames = new HashSet<>();
     this.annotateNames.addAll(typesToAnnotate);
-    init();
-  }
-
-  private void init() {
     this.pipeline = new InMemoryAnnoPipeline();
-    this.toolNameAdder = new WrapToolNameAdder("concrete-stanford-copier");
-    this.copyToRaw = new CopyToRaw(this.toolNameAdder);
   }
 
 //  public void parseArgs(String[] args) {
@@ -207,10 +201,11 @@ public class StanfordAgigaPipe {
       throw new ConcreteException("Expecting Communication Text, but was empty or none.");
 
     PerspectiveCommunication pc = new PerspectiveCommunication(c, "PerspectiveCreator");
+    Communication persp = pc.getPerspective();
     // Communication cp = this.copyToRaw.copyCommunication(c);
     resetGlobals();
-    Communication annotated = this.runPipelineOnCommunicationSectionsAndSentences(pc.getPerspective());
-    return annotated;
+    this.runPipelineOnCommunicationSectionsAndSentences(persp);
+    return persp;
   }
 
   /**
@@ -229,7 +224,7 @@ public class StanfordAgigaPipe {
    * it can (i.e., all but coref resolution), and then doing the global processing (coref).
    * @throws AnnotationException 
    */
-  public Communication runPipelineOnCommunicationSectionsAndSentences(Communication comm) throws AnnotationException {
+  public void runPipelineOnCommunicationSectionsAndSentences(Communication comm) throws AnnotationException {
     Communication toRet = new Communication(comm);
     // if called multiple times, reset the sentence count
     sentenceCount = 1;
@@ -293,7 +288,7 @@ public class StanfordAgigaPipe {
         logger.debug("Additional processing on section: {}", section.getUuid());
         logger.debug(">> SectionText=["+sectionText+"]");
         processSection(section, sectionAnnotation, documentAnnotation, 
-                       tokenizations, uuid, sectionStartCharOffset,
+                       tokenizations, sectionStartCharOffset,
                        sb);
         // between sections are two line feeds
         // one is counted for in the sentTokens loop above

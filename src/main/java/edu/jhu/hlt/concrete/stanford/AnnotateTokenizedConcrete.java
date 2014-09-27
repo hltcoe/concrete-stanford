@@ -23,9 +23,7 @@ import edu.jhu.agiga.AgigaDocument;
 import edu.jhu.agiga.AgigaSentence;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.Section;
-import edu.jhu.hlt.concrete.SectionSegmentation;
 import edu.jhu.hlt.concrete.Sentence;
-import edu.jhu.hlt.concrete.SentenceSegmentation;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
@@ -71,8 +69,7 @@ public class AnnotateTokenizedConcrete {
    *          The concrete communication.
    */
   public void annotateWithStanfordNlp(Communication comm) {
-    SectionSegmentation cSs = comm.getSectionSegmentationList().get(0);
-    for (Section cSection : cSs.getSectionList()) {
+    for (Section cSection : comm.getSectionList()) {
       Annotation sSectionAnno = getSectionAsAnnotation(cSection, comm);
       try {
         // Run the in-memory anno pipeline to (1) create Stanford objects,
@@ -123,8 +120,7 @@ public class AnnotateTokenizedConcrete {
    * @return The annotation representing the section.
    */
   private Annotation getSectionAsAnnotation(Section cSection, Communication comm) {
-    SentenceSegmentation cSentSeg = cSection.getSentenceSegmentationList().get(0);
-    List<Sentence> cSents = cSentSeg.getSentenceList();
+    List<Sentence> cSents = cSection.getSentenceList();
     return concreteSentListToAnnotation(cSents, comm);
   }
 
@@ -183,7 +179,7 @@ public class AnnotateTokenizedConcrete {
   private List<CoreLabel> concreteSentToCoreLabels(Sentence cSent, Communication comm) {
     CoreLabelTokenFactory coreLabelTokenFactory = new CoreLabelTokenFactory();
     List<CoreLabel> sSent = new ArrayList<>();
-    Tokenization cToks = cSent.getTokenizationList().get(0);
+    Tokenization cToks = cSent.getTokenization();
     for (Token cTok : cToks.getTokenList().getTokenList()) {
       TextSpan cSpan = cTok.getTextSpan();
       String text = cTok.getText();

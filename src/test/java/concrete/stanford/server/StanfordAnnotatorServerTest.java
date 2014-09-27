@@ -11,15 +11,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import concrete.tools.AnnotationException;
 import concrete.util.data.ConcreteFactory;
 import edu.jhu.hlt.asphalt.AsphaltException;
 import edu.jhu.hlt.asphalt.services.Annotator;
 import edu.jhu.hlt.ballast.InvalidInputException;
 import edu.jhu.hlt.ballast.server.AbstractServiceTest;
 import edu.jhu.hlt.ballast.server.BallastServer;
-import edu.jhu.hlt.ballast.tools.SingleSectionSegmenter;
 import edu.jhu.hlt.concrete.Communication;
-import edu.jhu.hlt.concrete.SectionSegmentation;
+import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 
@@ -62,19 +62,17 @@ public class StanfordAnnotatorServerTest extends AbstractServiceTest {
         .setText("Hello world! Testing this out. John is an entity mention.");
     
     Communication wSections = this.client.annotate(c);
-    assertTrue(wSections.isSetSectionSegmentationList());
-    assertTrue(new SuperCommunication(wSections).firstSection().isSetSentenceSegmentationList());
     assertTrue(wSections.isSetEntitySetList());
     assertTrue(wSections.isSetEntityMentionSetList());
   }
   
   @Test
-  public void okCommShouldPass() throws AsphaltException, TException, ConcreteException, InvalidInputException {
+  public void okCommShouldPass() throws AsphaltException, TException, ConcreteException, InvalidInputException, AnnotationException {
     Communication c = this.cf.randomCommunication()
         .setType("News")
         .setText("Hello world! Testing this out. John is an entity mention.");
-    SectionSegmentation ss = new SingleSectionSegmenter().annotateDiff(c);
-    c.addToSectionSegmentationList(ss);
+    Section s = new SuperCommunication(c).singleSection("Passage");
+    c.addToSectionList(s);
     
     Communication result = this.client.annotate(c);
     assertTrue(result.isSetEntitySetList());

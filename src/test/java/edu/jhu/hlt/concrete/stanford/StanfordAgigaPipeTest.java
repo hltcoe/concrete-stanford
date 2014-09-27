@@ -85,7 +85,7 @@ public class StanfordAgigaPipeTest {
     this.pipe = new StanfordAgigaPipe();
 
     Communication c = new ConcreteFactory().randomCommunication();
-    this.randomTestComm = new SingleSectionSegmenter().annotate(c);
+    c.addToSectionList(new SuperCommunication(c).singleSection("Passage"));
 
     ClojureIngester ci = new ClojureIngester();
     ProxyDocument pdc = ci.proxyDocPathToProxyDoc(this.pathToAFPComm);
@@ -117,7 +117,6 @@ public class StanfordAgigaPipeTest {
   @Test
   public void processNonPassages() throws TException, InvalidInputException, IOException, ConcreteException, AnnotationException {
     SuperCommunication sc = new SuperCommunication(this.randomTestComm);
-    assertTrue(sc.hasSectionSegmentations());
     assertTrue(sc.hasSections());
 
     Communication nc = this.pipe.process(this.randomTestComm);
@@ -140,12 +139,11 @@ public class StanfordAgigaPipeTest {
   @Test
   public void testNoMentions() throws TException, InvalidInputException, IOException, ConcreteException, AnnotationException {
     Communication c = new ConcreteFactory().randomCommunication().setText("gobljsfoewj");
-    Communication c1 = new SingleSectionSegmenter().annotate(c);
-    SuperCommunication sc = new SuperCommunication(c1);
-    assertTrue(sc.hasSectionSegmentations());
+    c.addToSectionList(new SuperCommunication(c).singleSection("Passage"));
+    SuperCommunication sc = new SuperCommunication(c);
     assertTrue(sc.hasSections());
 
-    Communication nc = this.pipe.process(c1);
+    Communication nc = this.pipe.process(c);
     logger.info("this testcomm = " + this.randomTestComm.getText());
     assertTrue(nc.isSetEntityMentionSetList());
     assertTrue(nc.isSetEntitySetList());
@@ -173,11 +171,7 @@ public class StanfordAgigaPipeTest {
         .setUuid(cuf.getConcreteUUID())
         .setTextSpan(new TextSpan().setStart(0).setEnding(SHAKE_HAND_TEXT_STRING.length()))
         .setKind("Passage");
-    SectionSegmentation ss = new SectionSegmentation()
-        .setUuid(cuf.getConcreteUUID())
-        .setMetadata(md);
-    ss.addToSectionList(section);
-    shakeHandComm.addToSectionSegmentationList(ss);
+    shakeHandComm.addToSectionList(section);
 
     assertTrue("Error in creating original communication",
                new CommunicationSerialization().toBytes(shakeHandComm) != null);
@@ -185,15 +179,15 @@ public class StanfordAgigaPipeTest {
     Communication processedShakeHandComm = pipe.process(shakeHandComm);
     assertTrue("Error in serializing processed communication",
                new CommunicationSerialization().toBytes(processedShakeHandComm) != null);
-    final String docText = processedShakeHandComm.getRawText();
+    final String docText = processedShakeHandComm.getOriginalText();
     final String[] stokens = { "The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
 
     assertTrue(docText.equals(StanfordAgigaPipeTest.SHAKE_HAND_TEXT_STRING));
 
-    final Section firstSection = processedShakeHandComm.getSectionSegmentationList().get(0).getSectionList().get(0);
-    final List<Sentence> firstSentList = firstSection.getSentenceSegmentationList().get(0).getSentenceList();
+    final Section firstSection = processedShakeHandComm.getSectionList().get(0);
+    final List<Sentence> firstSentList = firstSection.getSentenceList();
     final Sentence firstSent = firstSentList.get(0);
-    final Tokenization firstTokenization = firstSent.getTokenizationList().get(0);
+    final Tokenization firstTokenization = firstSent.getTokenization();
     assertTrue(firstSentList.size() == 1);
 
     // Test spans
@@ -282,23 +276,21 @@ public class StanfordAgigaPipeTest {
   public void processAFPComm() throws Exception {
     Communication afpProcessedComm = this.pipe.process(this.mapped);
     final String processedText = afpProcessedComm.getText();
-    final String processedRawText = afpProcessedComm.getRawText();
+    final String processedRawText = afpProcessedComm.getOriginalText();
     
     // Text equality
     assertEquals("Text should be equal.", AFP_0623_TEXT, processedRawText);
     assertTrue("Communication should have text field set", afpProcessedComm.isSetText());
 
     // Sections
-    List<Section> nsects = afpProcessedComm.getSectionSegmentationList().get(0).getSectionList();
+    List<Section> nsects = afpProcessedComm.getSectionList();
     assertEquals("Should have found 8 sections.", 8, nsects.size());
     
     // Sentences
     {
         int numSents = 0;
         for (Section sect : nsects) {
-            if (sect.isSetSentenceSegmentationList() && sect.getSentenceSegmentationList().get(0) != null) {
-                numSents += sect.getSentenceSegmentationList().get(0).getSentenceList().size();
-            }
+                numSents += sect.getSentenceList().size();
         }
         assertEquals("Should have found 8 sentences.", 8, numSents);
     }
@@ -307,8 +299,8 @@ public class StanfordAgigaPipeTest {
     {
         int begin = 60;
         int end = 242;
-        Sentence sent = afpProcessedComm.getSectionSegmentationList().get(0).getSectionList().get(1).getSentenceSegmentationList()
-            .get(0).getSentenceList().get(0);
+        Sentence sent = afpProcessedComm.getSectionList().get(1)
+            .getSentenceList().get(0);
         TextSpan tts = sent.getRawTextSpan();
         assertEquals("Start should be " + begin, begin, tts.getStart());
         assertEquals("End should be " + end, end, tts.getEnding());
@@ -318,8 +310,7 @@ public class StanfordAgigaPipeTest {
     {
         int begin = 0;
         int end = 184;
-        Sentence sent = afpProcessedComm.getSectionSegmentationList().get(0).getSectionList().get(1).getSentenceSegmentationList()
-            .get(0).getSentenceList().get(0);
+        Sentence sent = afpProcessedComm.getSectionList().get(1).getSentenceList().get(0);
         TextSpan tts = sent.getTextSpan();
         assertEquals("Start should be " + begin, begin, tts.getStart());
         assertEquals("End should be " + end, end, tts.getEnding());
@@ -328,9 +319,9 @@ public class StanfordAgigaPipeTest {
     {
         int begin = 186;
         int end = 332;
-        Sentence sent = afpProcessedComm.getSectionSegmentationList().get(0)
+        Sentence sent = afpProcessedComm
             .getSectionList().get(2)
-            .getSentenceSegmentationList().get(0)
+            
             .getSentenceList().get(0);
         TextSpan tts = sent.getTextSpan();
         assertEquals("Start should be " + begin, begin, tts.getStart());
@@ -352,16 +343,14 @@ public class StanfordAgigaPipeTest {
             "Fonseka was arrested soon after losing the poll and appeared in front of a court\n" + "martial this week.", "The case was adjourned.",
             "Local and international rights groups have accused Rajapakse of cracking down on\n" + "dissent, a charge the government has denied." };
         int sentIdx = 0;
-        for (Section sect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
-            if (sect.getSentenceSegmentationList() != null) {
-                for (Sentence st : sect.getSentenceSegmentationList().get(0).getSentenceList()) {
+        for (Section sect : afpProcessedComm.getSectionList()) {
+                for (Sentence st : sect.getSentenceList()) {
                     TextSpan span = st.getRawTextSpan();
                     String grabbed = processedRawText.substring(span.getStart(), span.getEnding()).trim();
                     assertTrue("SentId = " + sentIdx + ", grabbing [[" + grabbed + "]], should be looking at <<" + sentences[sentIdx] + ">>",
                                grabbed.equals(sentences[sentIdx]));
                     sentIdx++;
                 }
-            }
         }
     }
     //test sentences wrt processed
@@ -378,9 +367,8 @@ public class StanfordAgigaPipeTest {
         int sentIdx = 0;
         int numOkay = 0;
         int numTot = 0;
-        for (Section sect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
-            if (sect.getSentenceSegmentationList() != null) {
-                for (Sentence st : sect.getSentenceSegmentationList().get(0).getSentenceList()) {
+        for (Section sect : afpProcessedComm.getSectionList()) {
+                for (Sentence st : sect.getSentenceList()) {
                     TextSpan span = st.getTextSpan();
                     String grabbed = processedText.substring(span.getStart(), span.getEnding()).trim();
                     boolean eq = grabbed.equals(processedSentences[sentIdx]);
@@ -392,7 +380,6 @@ public class StanfordAgigaPipeTest {
                     numTot++;
                     sentIdx++;
                 }
-            }
         }
         double fracPassing = ((double) numOkay / (double) numTot);
         assertTrue("WARNING: only " + (fracPassing*100) + "% of processed sentences matched!", fracPassing >= 0.8);
@@ -403,11 +390,9 @@ public class StanfordAgigaPipeTest {
         int numEq = 0;
         int numTot = 0;
         // wrt the raw text
-        for (Section nsect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
-            if (nsect.getSentenceSegmentationList() == null)
-                continue;
-            for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
-                for (Token token : nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
+        for (Section nsect : afpProcessedComm.getSectionList()) {
+            for (Sentence nsent : nsect.getSentenceList()) {
+                for (Token token : nsent.getTokenization().getTokenList().getTokenList()) {
                     TextSpan span = token.getRawTextSpan();
                     String substr = processedRawText.substring(span.getStart(), span.getEnding());
                     boolean areEq = token.getText().equals(substr);
@@ -428,11 +413,9 @@ public class StanfordAgigaPipeTest {
         int numEq = 0;
         int numTot = 0;
         // wrt the processed text
-        for (Section nsect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
-            if (nsect.getSentenceSegmentationList() == null)
-                continue;
-            for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
-                for (Token token : nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
+        for (Section nsect : afpProcessedComm.getSectionList()) {
+            for (Sentence nsent : nsect.getSentenceList()) {
+                for (Token token : nsent.getTokenization().getTokenList().getTokenList()) {
                     assertTrue("token " + token.getTokenIndex() + " shouldn't have null textspan",
                                token.isSetTextSpan());
                     TextSpan span = token.getTextSpan();
@@ -456,11 +439,9 @@ public class StanfordAgigaPipeTest {
     // Dependency parses
     {
         int expNumDepParses = 3;
-        for (Section nsect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
-            if (nsect.getSentenceSegmentationList() == null)
-                continue;
-            for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
-                Tokenization tokenization = nsent.getTokenizationList().get(0);
+        for (Section nsect : afpProcessedComm.getSectionList()) {
+            for (Sentence nsent : nsect.getSentenceList()) {
+                Tokenization tokenization = nsent.getTokenization();
                 assertEquals(expNumDepParses, tokenization.getDependencyParseList().size());
             }
         }
@@ -468,11 +449,9 @@ public class StanfordAgigaPipeTest {
     
     // Verify non-empty dependency parses
     {
-        for (Section nsect : afpProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
-            if (nsect.getSentenceSegmentationList() == null)
-                continue;
-            for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
-                Tokenization tokenization = nsent.getTokenizationList().get(0);
+        for (Section nsect : afpProcessedComm.getSectionList()) {
+            for (Sentence nsent : nsect.getSentenceList()) {
+                Tokenization tokenization = nsent.getTokenization();
                 for (DependencyParse depParse : tokenization.getDependencyParseList()) {
                     assertTrue("DependencyParse " + depParse.getMetadata().getTool() + " is empty", depParse.getDependencyList().size() > 0);
                 }
@@ -522,12 +501,12 @@ public class StanfordAgigaPipeTest {
   public void process1999NYTComm() throws Exception {
     Communication nytProcessedComm = this.pipe.process(this.nyt1999);
     final String processedText = nytProcessedComm.getText();
-    final String processedRawText = nytProcessedComm.getRawText();
+    final String processedRawText = nytProcessedComm.getOriginalText();
 
     assertTrue("Communication should have text field set", nytProcessedComm.isSetText());
 
     // Sections
-    List<Section> nsects = nytProcessedComm.getSectionSegmentationList().get(0).getSectionList();
+    List<Section> nsects = nytProcessedComm.getSectionList();
     assertEquals("Should have found 15 sections (including title): has " + nsects.size(),
                  15, nsects.size());
 
@@ -536,11 +515,9 @@ public class StanfordAgigaPipeTest {
         int numEq = 0;
         int numTot = 0;
         // wrt the raw text
-        for (Section nsect : nytProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
-            if (nsect.getSentenceSegmentationList() == null)
-                continue;
-            for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
-                for (Token token : nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
+        for (Section nsect : nytProcessedComm.getSectionList()) {
+            for (Sentence nsent : nsect.getSentenceList()) {
+                for (Token token : nsent.getTokenization().getTokenList().getTokenList()) {
                     TextSpan span = token.getRawTextSpan();
                     String substr = processedRawText.substring(span.getStart(), span.getEnding());
                     boolean areEq = token.getText().equals(substr);
@@ -561,11 +538,9 @@ public class StanfordAgigaPipeTest {
         int numEq = 0;
         int numTot = 0;
         // wrt the processed text
-        for (Section nsect : nytProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
-            if (nsect.getSentenceSegmentationList() == null)
-                continue;
-            for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
-                for (Token token : nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
+        for (Section nsect : nytProcessedComm.getSectionList()) {
+            for (Sentence nsent : nsect.getSentenceList()) {
+                for (Token token : nsent.getTokenization().getTokenList().getTokenList()) {
                     assertTrue("token " + token.getTokenIndex() + " shouldn't have null textspan",
                                token.isSetTextSpan());
                     TextSpan span = token.getTextSpan();
@@ -589,11 +564,9 @@ public class StanfordAgigaPipeTest {
     // Dependency parses
     {
         int expNumDepParses = 3;
-        for (Section nsect : nytProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
-            if (nsect.getSentenceSegmentationList() == null)
-                continue;
-            for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
-                Tokenization tokenization = nsent.getTokenizationList().get(0);
+        for (Section nsect : nytProcessedComm.getSectionList()) {
+            for (Sentence nsent : nsect.getSentenceList()) {
+                Tokenization tokenization = nsent.getTokenization();
                 assertEquals(expNumDepParses, tokenization.getDependencyParseList().size());
             }
         }
@@ -601,11 +574,9 @@ public class StanfordAgigaPipeTest {
 
     // Verify non-empty dependency parses
     {
-        for (Section nsect : nytProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
-            if (nsect.getSentenceSegmentationList() == null)
-                continue;
-            for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
-                Tokenization tokenization = nsent.getTokenizationList().get(0);
+        for (Section nsect : nytProcessedComm.getSectionList()) {
+            for (Sentence nsent : nsect.getSentenceList()) {
+                Tokenization tokenization = nsent.getTokenization();
                 for (DependencyParse depParse : tokenization.getDependencyParseList()) {
                     assertTrue("DependencyParse " + depParse.getMetadata().getTool() + " is empty", depParse.getDependencyList().size() > 0);
                 }
@@ -643,14 +614,14 @@ public class StanfordAgigaPipeTest {
   // public void processWonkyNYTComm() throws Exception {
   //   Communication nytProcessedComm = this.pipe.process(this.wonkyNYT);
   //   final String processedText = nytProcessedComm.getText();
-  //   final String processedRawText = nytProcessedComm.getRawText();
+  //   final String processedRawText = nytProcessedComm.getOriginalText();
     
   //   // Text equality
   //   //assertEquals("Text should be equal.", AFP_0623_TEXT, processedRawText);
   //   assertTrue("Communication should have text field set", nytProcessedComm.isSetText());
 
   //   // Sections
-  //   List<Section> nsects = nytProcessedComm.getSectionSegmentationList().get(0).getSectionList();
+  //   List<Section> nsects = nytProcessedComm.getSectionList();
   //   assertEquals("Should have found 28 sections (including title): has " + nsects.size(), 
   //                28, nsects.size());
 
@@ -659,7 +630,7 @@ public class StanfordAgigaPipeTest {
   //   // {
   //   //     int begin = 60;
   //   //     int end = 242;
-  //   //     Sentence sent = afpProcessedComm.getSectionSegmentationList().get(0).getSectionList().get(1).getSentenceSegmentationList()
+  //   //     Sentence sent = afpProcessedComm.getSectionList().get(1).getSentenceSegmentationList()
   //   //         .get(0).getSentenceList().get(0);
   //   //     TextSpan tts = sent.getRawTextSpan();
   //   //     assertEquals("Start should be " + begin, begin, tts.getStart());
@@ -671,10 +642,10 @@ public class StanfordAgigaPipeTest {
   //       int numEq = 0;
   //       int numTot = 0;
   //       // wrt the raw text
-  //       for (Section nsect : nytProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+  //       for (Section nsect : nytProcessedComm.getSectionList()) {
   //           if (nsect.getSentenceSegmentationList() == null)
   //               continue;
-  //           for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
+  //           for (Sentence nsent : nsect.getSentenceList()) {
   //               for (Token token : nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
   //                   TextSpan span = token.getRawTextSpan();
   //                   String substr = processedRawText.substring(span.getStart(), span.getEnding());
@@ -696,10 +667,10 @@ public class StanfordAgigaPipeTest {
   //       int numEq = 0;
   //       int numTot = 0;
   //       // wrt the processed text
-  //       for (Section nsect : nytProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+  //       for (Section nsect : nytProcessedComm.getSectionList()) {
   //           if (nsect.getSentenceSegmentationList() == null)
   //               continue;
-  //           for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
+  //           for (Sentence nsent : nsect.getSentenceList()) {
   //               for (Token token : nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
   //                   assertTrue("token " + token.getTokenIndex() + " shouldn't have null textspan",
   //                              token.isSetTextSpan());
@@ -724,10 +695,10 @@ public class StanfordAgigaPipeTest {
   //   // Dependency parses
   //   {
   //       int expNumDepParses = 3;
-  //       for (Section nsect : nytProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+  //       for (Section nsect : nytProcessedComm.getSectionList()) {
   //           if (nsect.getSentenceSegmentationList() == null)
   //               continue;
-  //           for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
+  //           for (Sentence nsent : nsect.getSentenceList()) {
   //               Tokenization tokenization = nsent.getTokenizationList().get(0);
   //               assertEquals(expNumDepParses, tokenization.getDependencyParseList().size());
   //           }
@@ -736,10 +707,10 @@ public class StanfordAgigaPipeTest {
     
   //   // Verify non-empty dependency parses
   //   {
-  //       for (Section nsect : nytProcessedComm.getSectionSegmentationList().get(0).getSectionList()) {
+  //       for (Section nsect : nytProcessedComm.getSectionList()) {
   //           if (nsect.getSentenceSegmentationList() == null)
   //               continue;
-  //           for (Sentence nsent : nsect.getSentenceSegmentationList().get(0).getSentenceList()) {
+  //           for (Sentence nsent : nsect.getSentenceList()) {
   //               Tokenization tokenization = nsent.getTokenizationList().get(0);
   //               for (DependencyParse depParse : tokenization.getDependencyParseList()) {
   //                   assertTrue("DependencyParse " + depParse.getMetadata().getTool() + " is empty", depParse.getDependencyList().size() > 0);
