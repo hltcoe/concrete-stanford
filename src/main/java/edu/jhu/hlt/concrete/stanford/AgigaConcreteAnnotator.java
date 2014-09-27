@@ -71,14 +71,14 @@ public class AgigaConcreteAnnotator {
     return new SimpleEntry<EntityMentionSet, EntitySet>(ems, es);
   }
 
-  public void convertSection(Section section, AgigaDocument agigaDoc, List<Tokenization> tokenizations, int charOffset,
+  public void convertSection(Section section, AgigaDocument agigaDoc, int charOffset,
       StringBuilder sb) throws AnnotationException {
-    this.addSentences(section, agigaDoc, tokenizations, charOffset, sb);
+    this.addSentences(section, agigaDoc, charOffset, sb);
     sb.append("\n\n");
   }
 
   // add all Sentences
-  private void addSentences(Section in, AgigaDocument ad, List<Tokenization> tokenizations, int charOffset, StringBuilder sb)
+  private void addSentences(Section in, AgigaDocument ad, int charOffset, StringBuilder sb)
       throws AnnotationException {
     logger.debug("f4");
     final int n = ad.getSents().size();

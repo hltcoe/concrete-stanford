@@ -225,7 +225,6 @@ public class StanfordAgigaPipe {
    * @throws AnnotationException 
    */
   public void runPipelineOnCommunicationSectionsAndSentences(Communication comm) throws AnnotationException {
-    Communication toRet = new Communication(comm);
     // if called multiple times, reset the sentence count
     sentenceCount = 1;
     String commText = comm.isSetText() ? comm.getText() : comm.getOriginalText();
@@ -236,9 +235,8 @@ public class StanfordAgigaPipe {
     logger.debug("\treading from " + (comm.isSetText() ? "text" : "raw text"));
     logger.debug("\tfull = " + commText);
 
-      List<Section> sections = toRet.getSectionList();
+      List<Section> sections = comm.getSectionList();
       // List<Integer> numberOfSentences = new ArrayList<Integer>();
-      List<Tokenization> tokenizations = new ArrayList<Tokenization>();
       Annotation documentAnnotation = getSeededDocumentAnnotation();
       logger.debug("documentAnnotation = " + documentAnnotation);
 
@@ -288,7 +286,7 @@ public class StanfordAgigaPipe {
         logger.debug("Additional processing on section: {}", section.getUuid());
         logger.debug(">> SectionText=["+sectionText+"]");
         processSection(section, sectionAnnotation, documentAnnotation, 
-                       tokenizations, sectionStartCharOffset,
+                       sectionStartCharOffset,
                        sb);
         // between sections are two line feeds
         // one is counted for in the sentTokens loop above
@@ -299,7 +297,8 @@ public class StanfordAgigaPipe {
 
       // 3) Third, do coref; cross-reference against sectionUUIDs
       logger.debug("Running coref.");
-      processCoref(comm, documentAnnotation, tokenizations);
+      List<Tokenization> toks = new ArrayList<>(new SuperCommunication(comm).generateTokenizationIdToTokenizationMap().values());
+      processCoref(comm, documentAnnotation, toks);
     
   }
 
@@ -454,7 +453,7 @@ public class StanfordAgigaPipe {
    * @param sectionSegmentationUUID TODO
    * @throws AnnotationException 
    */
-  public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, List<Tokenization> tokenizations, int sectionOffset, StringBuilder sb) throws AnnotationException {
+  public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, int sectionOffset, StringBuilder sb) throws AnnotationException {
     sentencesToSection(sentenceSplitText, docAnnotation);
     logger.debug("after sentencesToSection, before annotating");
     for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class)) 
@@ -467,7 +466,7 @@ public class StanfordAgigaPipe {
     
     transferAnnotations(sentenceSplitText, docAnnotation);
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
-    agigaToConcrete.convertSection(section, agigaDoc, tokenizations, sectionOffset, sb);
+    agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb);
   }
 
   public void processCoref(Communication comm, Annotation docAnnotation, List<Tokenization> tokenizations) throws AnnotationException {

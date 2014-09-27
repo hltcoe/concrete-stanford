@@ -89,7 +89,8 @@ public class StanfordAgigaPipeTest {
 
     ClojureIngester ci = new ClojureIngester();
     ProxyDocument pdc = ci.proxyDocPathToProxyDoc(this.pathToAFPComm);
-    this.mapped = pdc.sectionedCommunication(); 
+    this.mapped = pdc.sectionedCommunication();
+    this.randomTestComm = new Communication(c);
     
     this.wonkyNYT = ci.proxyDocPathToProxyDoc(this.pathToNYTComm).sectionedCommunication();
 
@@ -120,7 +121,6 @@ public class StanfordAgigaPipeTest {
     assertTrue(sc.hasSections());
 
     Communication nc = this.pipe.process(this.randomTestComm);
-    logger.info("this testcomm = {}", this.randomTestComm.getText());
     assertTrue(nc.isSetEntityMentionSetList());
     assertTrue(nc.isSetEntitySetList());
     new SuperCommunication(nc).writeToFile("src/test/resources/post-stanford.concrete", true);
