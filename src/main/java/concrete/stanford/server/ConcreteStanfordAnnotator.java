@@ -47,6 +47,8 @@ public class ConcreteStanfordAnnotator implements Annotator.Iface {
     
     if (!original.isSetText())
       throw new AsphaltException("Your communication does not have text; text is required for this tool.");
+    if (!original.isSetSectionList() || original.getSectionListSize() <= 0)
+      throw new AsphaltException("Your communication does not have sections; sections are required for this tool.");
     
     try {
       Communication annotated = this.pipe.process(original);
