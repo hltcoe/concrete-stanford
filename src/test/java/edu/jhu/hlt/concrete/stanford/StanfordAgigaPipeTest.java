@@ -413,50 +413,39 @@ public class StanfordAgigaPipeTest {
     }
 
     // Dependency parses
-    {
-        int expNumDepParses = 3;
-        for (Section nsect : afpProcessedComm.getSectionList()) {
-          if (nsect.isSetSentenceList())
-            for (Sentence nsent : nsect.getSentenceList()) {
-                Tokenization tokenization = nsent.getTokenization();
-                assertEquals(expNumDepParses, tokenization.getDependencyParseList().size());
-            }
-        }
-    }
-    
     // Verify non-empty dependency parses
-    {
-        for (Section nsect : afpProcessedComm.getSectionList()) {
-          if (nsect.isSetSentenceList())
-            for (Sentence nsent : nsect.getSentenceList()) {
-                Tokenization tokenization = nsent.getTokenization();
-                for (DependencyParse depParse : tokenization.getDependencyParseList()) {
-                    assertTrue("DependencyParse " + depParse.getMetadata().getTool() + " is empty", depParse.getDependencyList().size() > 0);
-                }
-            }
-        }
-    }
+    this.testNDependencyParses(3, afpProcessedComm);
     
     // Verify some NEs
     assertTrue(afpProcessedComm.getEntitySetList().size() > 0);
     assertTrue(afpProcessedComm.getEntitySetList().get(0).getEntityList().size() > 0);
     boolean allSet = true;
-    for (Entity entity : afpProcessedComm.getEntitySetList().get(0).getEntityList()) {
+    for (Entity entity : afpProcessedComm.getEntitySetList().get(0).getEntityList())
       allSet &= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
-    }
+    
     assertTrue(allSet);
     
     // Verify anchor tokens
     int numWithout = 0;
-    for (EntityMention em : afpProcessedComm.getEntityMentionSetList().get(0).getMentionList()) {
+    for (EntityMention em : afpProcessedComm.getEntityMentionSetList().get(0).getMentionList())
       numWithout += (em.getTokens().anchorTokenIndex >= 0 ? 0 : 1);
-      // logger.info("In memory, token head via member" + em.getTokenList().anchorTokenIndex);
-      // logger.info("In memory, token head via function " + em.getTokenList().getAnchorTokenIndex());
-    }
+
     assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
 
     assertTrue("Error in serializing processed communication",
         new CommunicationSerialization().toBytes(afpProcessedComm) != null);
+  }
+  
+  private void testNDependencyParses(int expected, Communication target) {
+    for (Section nsect : target.getSectionList()) {
+      if (nsect.isSetSentenceList())
+        for (Sentence nsent : nsect.getSentenceList()) {
+          Tokenization tokenization = nsent.getTokenization();
+          assertEquals(expected, tokenization.getDependencyParseList().size());
+          for (DependencyParse depParse : tokenization.getDependencyParseList())
+            assertTrue("Shouldn't get an empty DepParse.", depParse.getDependencyList().size() > 0);
+        }
+    }
   }
 
   /**
