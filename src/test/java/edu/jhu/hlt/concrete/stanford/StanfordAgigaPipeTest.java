@@ -325,6 +325,7 @@ public class StanfordAgigaPipeTest {
             "Local and international rights groups have accused Rajapakse of cracking down on\n" + "dissent, a charge the government has denied." };
         int sentIdx = 0;
         for (Section sect : afpProcessedComm.getSectionList()) {
+          if (sect.isSetSentenceList())
                 for (Sentence st : sect.getSentenceList()) {
                     TextSpan span = st.getRawTextSpan();
                     String grabbed = processedRawText.substring(span.getStart(), span.getEnding()).trim();
@@ -349,6 +350,7 @@ public class StanfordAgigaPipeTest {
         int numOkay = 0;
         int numTot = 0;
         for (Section sect : afpProcessedComm.getSectionList()) {
+          if (sect.isSetSentenceList())
                 for (Sentence st : sect.getSentenceList()) {
                     TextSpan span = st.getTextSpan();
                     String grabbed = processedText.substring(span.getStart(), span.getEnding()).trim();
