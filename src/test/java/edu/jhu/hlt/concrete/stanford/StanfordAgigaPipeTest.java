@@ -270,6 +270,11 @@ public class StanfordAgigaPipeTest {
     }
     assertTrue(atLeastOne);
   }
+  
+  private void testTextSpan(TextSpan ts, int expectedStart, int expectedEnd) {
+    assertEquals(expectedStart, ts.getStart());
+    assertEquals(expectedEnd, ts.getEnding());
+  }
 
   @Test
   public void processAFPComm() throws Exception {
@@ -286,46 +291,23 @@ public class StanfordAgigaPipeTest {
     assertEquals("Should have found 8 sections.", 8, nsects.size());
     
     // Sentences
-    {
-        int numSents = 0;
-        for (Section sect : nsects) {
-                numSents += sect.getSentenceList().size();
-        }
-        assertEquals("Should have found 8 sentences.", 8, numSents);
-    }
+    int numSents = 0;
+    for (Section sect : nsects)
+      if (sect.isSetSentenceList())
+        numSents += sect.getSentenceList().size();
+
+    assertEquals("Should have found 8 sentences.", 8, numSents);
     
     // First sentence span test wrt RAW
-    {
-        int begin = 60;
-        int end = 242;
-        Sentence sent = afpProcessedComm.getSectionList().get(1)
-            .getSentenceList().get(0);
-        TextSpan tts = sent.getRawTextSpan();
-        assertEquals("Start should be " + begin, begin, tts.getStart());
-        assertEquals("End should be " + end, end, tts.getEnding());
-    }
+    Sentence ofInterest = afpProcessedComm.getSectionList().get(1).getSentenceList().get(0);
+    TextSpan raw = ofInterest.getRawTextSpan();
+    this.testTextSpan(raw, 60, 242);
 
     // First sentence span test wrt processed
-    {
-        int begin = 0;
-        int end = 184;
-        Sentence sent = afpProcessedComm.getSectionList().get(1).getSentenceList().get(0);
-        TextSpan tts = sent.getTextSpan();
-        assertEquals("Start should be " + begin, begin, tts.getStart());
-        assertEquals("End should be " + end, end, tts.getEnding());
-    }
+    this.testTextSpan(afpProcessedComm.getSectionList().get(1).getSentenceList().get(0).getTextSpan(), 0, 184);
+
     // Second sentence span test wrt processed
-    {
-        int begin = 186;
-        int end = 332;
-        Sentence sent = afpProcessedComm
-            .getSectionList().get(2)
-            
-            .getSentenceList().get(0);
-        TextSpan tts = sent.getTextSpan();
-        assertEquals("Start should be " + begin, begin, tts.getStart());
-        assertEquals("End should be " + end, end, tts.getEnding());
-    }
+    this.testTextSpan(afpProcessedComm.getSectionList().get(2).getSentenceList().get(0).getTextSpan(), 186, 332);
     
     // Sentences test
     {
