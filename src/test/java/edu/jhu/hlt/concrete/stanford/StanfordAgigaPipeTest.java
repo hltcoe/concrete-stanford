@@ -116,7 +116,7 @@ public class StanfordAgigaPipeTest {
    * @throws AnnotationException 
    */
   @Test
-  public void processNonPassages() throws TException, InvalidInputException, IOException, ConcreteException, AnnotationException {
+  public void processPassages() throws TException, InvalidInputException, IOException, ConcreteException, AnnotationException {
     SuperCommunication sc = new SuperCommunication(this.randomTestComm);
     assertTrue(sc.hasSections());
 
