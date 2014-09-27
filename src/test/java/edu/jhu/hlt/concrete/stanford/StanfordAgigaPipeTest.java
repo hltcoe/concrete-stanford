@@ -430,100 +430,30 @@ public class StanfordAgigaPipeTest {
     assertEquals("Should have found 15 sections (including title): has " + nsects.size(), 15, nsects.size());
 
     // Verify tokens wrt RAW
-    {
-      int numEq = 0;
-      int numTot = 0;
-      // wrt the raw text
-      for (Section nsect : nytProcessedComm.getSectionList()) {
-        for (Sentence nsent : nsect.getSentenceList()) {
-          for (Token token : nsent.getTokenization().getTokenList().getTokenList()) {
-            TextSpan span = token.getRawTextSpan();
-            String substr = processedRawText.substring(span.getStart(), span.getEnding());
-            boolean areEq = token.getText().equals(substr);
-            if (!areEq) {
-              logger.warn("verifying raw tokens: expected = [" + token.getText() + "];" + "docText(" + span + ") = [" + substr + "]");
-            } else {
-              numEq++;
-            }
-            numTot++;
-          }
-        }
-      }
-      double fracPassing = ((double) numEq / (double) numTot);
-      assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing >= 0.8);
-    }
+    this.verifyTokens(nytProcessedComm, true);
     // Verify tokens wrt PROCESSED
-    {
-      int numEq = 0;
-      int numTot = 0;
-      // wrt the processed text
-      for (Section nsect : nytProcessedComm.getSectionList()) {
-        for (Sentence nsent : nsect.getSentenceList()) {
-          for (Token token : nsent.getTokenization().getTokenList().getTokenList()) {
-            assertTrue("token " + token.getTokenIndex() + " shouldn't have null textspan", token.isSetTextSpan());
-            TextSpan span = token.getTextSpan();
-            assertTrue("ending " + span.getEnding() + " is out of range (" + processedText.length() + ")", span.getEnding() < processedText.length());
-            String substr = processedText.substring(span.getStart(), span.getEnding());
-            boolean areEq = token.getText().equals(substr);
-            if (!areEq) {
-              logger.warn("verifying procesed tokens: expected = [" + token.getText() + "];" + " docText(" + span + ") = [" + substr + "]");
-            } else {
-              numEq++;
-            }
-            numTot++;
-          }
-        }
-      }
-      double fracPassing = ((double) numEq / (double) numTot);
-      assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing == 1.0);
-    }
+    this.verifyTokens(nytProcessedComm, false);
 
     // Dependency parses
-    {
-      int expNumDepParses = 3;
-      for (Section nsect : nytProcessedComm.getSectionList()) {
-        for (Sentence nsent : nsect.getSentenceList()) {
-          Tokenization tokenization = nsent.getTokenization();
-          assertEquals(expNumDepParses, tokenization.getDependencyParseList().size());
-        }
-      }
-    }
-
     // Verify non-empty dependency parses
-    {
-      for (Section nsect : nytProcessedComm.getSectionList()) {
-        for (Sentence nsent : nsect.getSentenceList()) {
-          Tokenization tokenization = nsent.getTokenization();
-          for (DependencyParse depParse : tokenization.getDependencyParseList()) {
-            assertTrue("DependencyParse " + depParse.getMetadata().getTool() + " is empty", depParse.getDependencyList().size() > 0);
-          }
-        }
-      }
-    }
+    this.testNDependencyParses(3, nytProcessedComm);
 
     // Verify some NEs
-    {
-      assertTrue(nytProcessedComm.getEntitySetList().size() > 0);
-      assertTrue(nytProcessedComm.getEntitySetList().get(0).getEntityList().size() > 0);
-      boolean allSet = true;
-      for (Entity entity : nytProcessedComm.getEntitySetList().get(0).getEntityList()) {
-        allSet &= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
-      }
-      assertTrue(allSet);
-    }
-
+    assertTrue(nytProcessedComm.getEntitySetList().size() > 0);
+    assertTrue(nytProcessedComm.getEntitySetList().get(0).getEntityList().size() > 0);
+    boolean allSet = true;
+    for (Entity entity : nytProcessedComm.getEntitySetList().get(0).getEntityList())
+      allSet &= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
+    
+    assertTrue(allSet);
+    
     // Verify anchor tokens
-    {
-      int numWithout = 0;
-      for (EntityMention em : nytProcessedComm.getEntityMentionSetList().get(0).getMentionList()) {
-        numWithout += (em.getTokens().anchorTokenIndex >= 0 ? 0 : 1);
-      }
-      assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
-    }
-
-    {
-      assertTrue("Error in serializing processed communication", new CommunicationSerialization().toBytes(nytProcessedComm) != null);
-    }
+    int numWithout = 0;
+    for (EntityMention em : nytProcessedComm.getEntityMentionSetList().get(0).getMentionList())
+      numWithout += (em.getTokens().anchorTokenIndex >= 0 ? 0 : 1);
+    
+    assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
+    assertTrue("Error in serializing processed communication", new CommunicationSerialization().toBytes(nytProcessedComm) != null);
   }
 
   // @Test
