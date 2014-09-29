@@ -21,8 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import concrete.tools.AnnotationException;
 import concrete.util.data.ConcreteFactory;
-import edu.jhu.hlt.asphalt.AsphaltException;
-import edu.jhu.hlt.ballast.InvalidInputException;
 import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.DependencyParse;
@@ -116,7 +114,7 @@ public class StanfordAgigaPipeTest {
    * @throws AnnotationException
    */
   @Test
-  public void processPassages() throws TException, InvalidInputException, IOException, ConcreteException, AnnotationException {
+  public void processPassages() throws TException, IOException, ConcreteException, AnnotationException {
     SuperCommunication sc = new SuperCommunication(this.randomTestComm);
     assertTrue(sc.hasSections());
 
@@ -137,7 +135,7 @@ public class StanfordAgigaPipeTest {
    * @throws AnnotationException
    */
   @Test
-  public void testNoMentions() throws TException, InvalidInputException, IOException, ConcreteException, AnnotationException {
+  public void testNoMentions() throws TException, IOException, ConcreteException, AnnotationException {
     Communication c = new ConcreteFactory().randomCommunication().setText("gobljsfoewj");
     c.addToSectionList(new SuperCommunication(c).singleSection("Passage"));
     SuperCommunication sc = new SuperCommunication(c);
@@ -160,7 +158,7 @@ public class StanfordAgigaPipeTest {
    * @throws AnnotationException
    */
   @Test
-  public void processHandshakeCommunication() throws TException, InvalidInputException, IOException, ConcreteException, AnnotationException {
+  public void processHandshakeCommunication() throws TException, IOException, ConcreteException, AnnotationException {
     Communication shakeHandComm = this.cf.randomCommunication().setText(SHAKE_HAND_TEXT_STRING);
     AnnotationMetadata md = new AnnotationMetadata().setTool("concrete-stanford:test").setTimestamp(System.currentTimeMillis() / 1000);
     shakeHandComm.setMetadata(md);
