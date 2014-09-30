@@ -8,6 +8,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang.time.StopWatch;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,8 +50,11 @@ public class CallableConcreteServer implements Callable<Communication> {
   public Communication call() throws Exception {
     try {
       logger.debug("Processing communication: {}", c.getId());
+      StopWatch sw = new StopWatch();
+      sw.start();
       Communication proced = this.pipe.process(this.c);
-      logger.debug("Finished.");
+      sw.stop();
+      logger.debug("Finished. Took :: {} ms", sw.getTime());
       return proced;
     } catch (IOException | TException | ConcreteException | AnnotationException e) {
       logger.error("Caught an exception processing {}: ", c.getId());
