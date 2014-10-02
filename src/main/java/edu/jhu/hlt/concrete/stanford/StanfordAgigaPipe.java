@@ -27,7 +27,6 @@ import edu.jhu.hlt.concrete.EntitySet;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Tokenization;
-import edu.jhu.hlt.concrete.UUID;
 import edu.jhu.hlt.concrete.communications.PerspectiveCommunication;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.ConcreteException;
@@ -489,6 +488,10 @@ public class StanfordAgigaPipe {
     SimpleEntry<EntityMentionSet, EntitySet> tuple = agigaToConcrete.convertCoref(comm, agigaDoc, tokenizations);
     comm.addToEntityMentionSetList(tuple.getKey());
     comm.addToEntitySetList(tuple.getValue());
+  }
+  
+  public Set<String> getSectionTypesToAnnotate() {
+    return new HashSet<>(this.annotateNames);
   }
 
   /**

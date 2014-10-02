@@ -74,6 +74,7 @@ public class StanfordAgigaPipeTest {
   Communication nyt1999;
 
   StanfordAgigaPipe pipe;
+  Set<String> kindsToAnnotate;
 
   /**
    * @throws java.lang.Exception
@@ -81,6 +82,7 @@ public class StanfordAgigaPipeTest {
   @Before
   public void setUp() throws Exception {
     this.pipe = new StanfordAgigaPipe();
+    this.kindsToAnnotate = this.pipe.getSectionTypesToAnnotate();
 
     Communication c = new ConcreteFactory().randomCommunication();
     c.addToSectionList(new SuperCommunication(c).singleSection("Passage"));
@@ -309,15 +311,15 @@ public class StanfordAgigaPipeTest {
     assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing >= 0.8);
   }
 
-  private void testSectionOffsetsSet(List<Section> nsects) {
-      int i = 0;
-      for(Section sect : nsects) {
-          if(sect.isSetSentenceList()) {
-                  assertTrue("section #"+i + " (uuid = " + sect.getUuid()+") doesn't have text spans set",
-                             sect.isSetTextSpan());
-          }
-          i++;
+  private void testSectionOffsetsSet(List<Section> nsects, Set<String> kindsThatShouldHaveSections) {
+    int i = 0;
+    for (Section sect : nsects) {
+      assertTrue(sect.isSetKind());
+      if (kindsThatShouldHaveSections.contains(sect.getKind())) {
+        assertTrue("section #" + i + " (uuid = " + sect.getUuid() + ") doesn't have text spans set", sect.isSetTextSpan());
+        i++;
       }
+    }
   }
 
   @Test
@@ -334,7 +336,7 @@ public class StanfordAgigaPipeTest {
     List<Section> nsects = afpProcessedComm.getSectionList();
     assertEquals("Should have found 8 sections.", 8, nsects.size());
 
-    this.testSectionOffsetsSet(nsects);
+    this.testSectionOffsetsSet(nsects, this.kindsToAnnotate);
     this.testTextSpan(nsects.get(1).getTextSpan(), 0, 184);
     this.testTextSpan(nsects.get(2).getTextSpan(), 186, 332);
 
@@ -442,7 +444,7 @@ public class StanfordAgigaPipeTest {
     List<Section> nsects = nytProcessedComm.getSectionList();
     assertEquals("Should have found 15 sections (including title): has " + nsects.size(), 15, nsects.size());
 
-    this.testSectionOffsetsSet(nsects);
+    this.testSectionOffsetsSet(nsects, this.kindsToAnnotate);
     this.testTextSpan(nsects.get(1).getTextSpan(), 0, 218);
 
     // Verify tokens wrt RAW
