@@ -28,6 +28,7 @@ import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.communications.PerspectiveCommunication;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
+import edu.jhu.hlt.concrete.util.CommunicationSerialization;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.Serialization;
 import edu.jhu.hlt.concrete.util.ThriftIO;
@@ -118,7 +119,7 @@ public class StanfordAgigaPipe {
 
       ThriftIO.writeFile(outputPath, processedComms);
     } else {
-      final Communication communication = new Serialization().fromPathString(new Communication(), inputPath);
+      final Communication communication = new CommunicationSerialization().fromPathString(inputPath);
       logger.info("Beginning annotation.");
       Communication annotated = sap.process(communication);
       logger.info("Finished.");
@@ -142,51 +143,18 @@ public class StanfordAgigaPipe {
     this.pipeline = new InMemoryAnnoPipeline();
   }
 
-//  public void parseArgs(String[] args) {
-//    int i = 0;
-//    boolean userAddedAnnotations = false;
-//    try {
-//      while (i < args.length) {
-//        if (args[i].equals("--annotate-sections")) {
-//          String[] toanno = args[++i].split(",");
-//          for (String t : toanno)
-//            annotateNames.add(SectionKind.valueOf(t));
-//          userAddedAnnotations = true;
-//        }
-//        // if(args[i].equals("--aggregate-by-first-section-number"))
-//        // aggregateSectionsByFirst = args[++i].equals("t");
-//        else if (args[i].equals("--input"))
-//          inputFile = args[++i];
-//        else if (args[i].equals("--output"))
-//          outputFile = args[++i];
-//        else {
-//          logger.debug("Invalid option: " + args[i]);
-//          logger.debug(usage);
-//          System.exit(1);
-//        }
-//        i++;
-//      }
-//    } catch (Exception e) {
-//      logger.debug(usage);
-//      System.exit(1);
-//    }
-//    if (!userAddedAnnotations)
-//      annotateNames.add(SectionKind.PASSAGE);
-//  }
-
   public List<Communication> process(ZipFile zf) throws TException, IOException, ConcreteException, AnnotationException {
-      Enumeration<? extends ZipEntry> e = zf.entries();
-      List<Communication> outList = new LinkedList<Communication>();
-      Serialization ser = new Serialization();
-      while(e.hasMoreElements()){
-          ZipEntry ze = e.nextElement();
-          final Communication communication = ser.fromInputStream(new Communication(), zf.getInputStream(ze));
-          final Communication nComm = process(communication);
-          outList.add(nComm);
-      }
-      return outList;
+    Enumeration<? extends ZipEntry> e = zf.entries();
+    List<Communication> outList = new LinkedList<Communication>();
+    Serialization ser = new Serialization();
+    while (e.hasMoreElements()) {
+      ZipEntry ze = e.nextElement();
+      final Communication communication = ser.fromInputStream(new Communication(), zf.getInputStream(ze));
+      final Communication nComm = process(communication);
+      outList.add(nComm);
+    }
+    return outList;
   }
-
 
   public Communication process(Communication c) throws TException, IOException, ConcreteException, AnnotationException {
     if (!c.isSetText())
