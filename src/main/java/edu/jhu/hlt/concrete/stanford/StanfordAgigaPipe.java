@@ -1,8 +1,6 @@
 package edu.jhu.hlt.concrete.stanford;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
@@ -19,6 +17,7 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.server.concurrent.SystemErrDisabler;
 import concrete.tools.AnnotationException;
 import edu.jhu.agiga.AgigaDocument;
 import edu.jhu.hlt.concrete.Communication;
@@ -104,36 +103,30 @@ public class StanfordAgigaPipe {
     }
 
     // this is silly, but needed for stanford logging disable.
-    PrintStream err = System.err;
-
-    System.setErr(new PrintStream(new OutputStream() {
-      public void write(int b) { }
-    }));
-
+    SystemErrDisabler disabler = new SystemErrDisabler();
+    disabler.disable();
     StanfordAgigaPipe sap = new StanfordAgigaPipe();
 
     final String inputPath = args[0];
     final String outputPath = args[1];
     String inputType = Files.probeContentType(Paths.get(inputPath));
-    if(inputType.equals("application/zip")){
-        ZipFile zf = new ZipFile(inputPath);
-        logger.info("Beginning annotation.");
-        List<Communication> processedComms = sap.process(zf);
-        logger.info("Finished.");
-        System.setErr(err);
-        ThriftIO.writeFile(outputPath, processedComms);
-        //new SuperCommunication(annotated).writeToFile(outputPath, true);
+    if (inputType.equals("application/zip")) {
+      ZipFile zf = new ZipFile(inputPath);
+      logger.info("Beginning annotation.");
+      List<Communication> processedComms = sap.process(zf);
+      logger.info("Finished.");
 
+      ThriftIO.writeFile(outputPath, processedComms);
     } else {
-        final Communication communication = new Serialization().fromPathString(new Communication(), inputPath);
-        logger.info("Beginning annotation.");
-        Communication annotated = sap.process(communication);
-        logger.info("Finished.");
-        System.setErr(err);
+      final Communication communication = new Serialization().fromPathString(new Communication(), inputPath);
+      logger.info("Beginning annotation.");
+      Communication annotated = sap.process(communication);
+      logger.info("Finished.");
 
-        new SuperCommunication(annotated).writeToFile(outputPath, true);
-
+      new SuperCommunication(annotated).writeToFile(outputPath, true);
     }
+
+    disabler.enable();
   }
 
   public StanfordAgigaPipe() {
@@ -450,7 +443,7 @@ public class StanfordAgigaPipe {
    * Given a particular section {@link Section} from a {@link Communication}, further locally process
    * {@link Annotation}; add those new annotations to an
    * aggregating {@link Annotation} to use for later global processing.
-   * @param sectionSegmentationUUID TODO
+   * 
    * @throws AnnotationException 
    */
   public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, int sectionOffset, StringBuilder sb) throws AnnotationException {
