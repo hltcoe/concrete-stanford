@@ -64,6 +64,8 @@ public class StanfordAgigaPipe {
   private InMemoryAnnoPipeline pipeline;
   private Set<String> annotateNames;
 
+  private ConcreteStanfordProperties concStanProps;
+
   /**
    * The global character offset. The exact meaning is determined by
    * {@code usingOriginalCharOffsets()}. When true, this counter is 
@@ -130,16 +132,18 @@ public class StanfordAgigaPipe {
     disabler.enable();
   }
 
-  public StanfordAgigaPipe() {
+  public StanfordAgigaPipe() throws IOException {
     annotateNames = new HashSet<>();
     annotateNames.add("Passage");
     annotateNames.add("Other");
+    this.concStanProps = new ConcreteStanfordProperties();
     this.pipeline = new InMemoryAnnoPipeline();
   }
 
-  public StanfordAgigaPipe(Set<String> typesToAnnotate) {
+  public StanfordAgigaPipe(Set<String> typesToAnnotate) throws IOException {
     this.annotateNames = new HashSet<>();
     this.annotateNames.addAll(typesToAnnotate);
+    this.concStanProps = new ConcreteStanfordProperties();
     this.pipeline = new InMemoryAnnoPipeline();
   }
 
@@ -426,7 +430,8 @@ public class StanfordAgigaPipe {
       logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
     
     transferAnnotations(sentenceSplitText, docAnnotation);
-    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
+    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets(),
+                                                                        concStanProps);
     agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb);
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
   }
@@ -445,7 +450,7 @@ public class StanfordAgigaPipe {
 
   public void processCoref(Communication comm, Annotation docAnnotation, List<Tokenization> tokenizations) throws AnnotationException {
     AgigaDocument agigaDoc = annotateCoref(docAnnotation);
-    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
+    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets(), concStanProps);
     SimpleEntry<EntityMentionSet, EntitySet> tuple = agigaToConcrete.convertCoref(comm, agigaDoc, tokenizations);
     comm.addToEntityMentionSetList(tuple.getKey());
     comm.addToEntitySetList(tuple.getValue());

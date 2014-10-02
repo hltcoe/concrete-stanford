@@ -44,7 +44,7 @@ public class BulkConversion {
    * @param args
    * @throws AnnotationException 
    */
-  public static void main(String[] args) throws AnnotationException {
+  public static void main(String[] args) throws AnnotationException, IOException {
     if (args.length != 3) {
       logger.info("Usage: <path-to-sectioned-comm-list> <path-to-out-dir> <delete-old-dir>");
       System.exit(1);

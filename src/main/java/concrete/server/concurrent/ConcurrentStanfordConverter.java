@@ -4,6 +4,7 @@
 package concrete.server.concurrent;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -58,11 +59,11 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
     this.srv = new ExecutorCompletionService<Communication>(this.runner);
   }
 
-  public Future<Communication> annotate(Future<Communication> fc) throws InterruptedException, ExecutionException {
+  public Future<Communication> annotate(Future<Communication> fc) throws InterruptedException, ExecutionException, IOException {
     return this.srv.submit(new CallableConcreteServer(fc));
   }
 
-  public Future<Communication> annotate(Communication c) throws InterruptedException, ExecutionException {
+  public Future<Communication> annotate(Communication c) throws InterruptedException, ExecutionException, IOException {
     return this.srv.submit(new CallableConcreteServer(c));
   }
 
@@ -220,6 +221,8 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       logger.error("An InterruptedException was caught while processing documents.", ex);
     } catch (ExecutionException e) {
       logger.error("An ExecutionException was caught during task submission or queue retrieval.", e);
+    } catch (IOException e) {
+      logger.error("An IOException was caught during task submission or queue retrieval.", e);
     }
   }
 

@@ -1,5 +1,6 @@
 package edu.jhu.hlt.concrete.stanford;
 
+import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,24 +34,37 @@ public class AgigaConcreteAnnotator {
 
   private static final Logger logger = LoggerFactory.getLogger(AgigaConcreteAnnotator.class);
   private final ConcreteUUIDFactory idFactory = new ConcreteUUIDFactory();
-
+  private ConcreteStanfordProperties csProps;
   private AgigaConverter ag;
 
-  public AgigaConcreteAnnotator(boolean setSpans) {
-    ag = new AgigaConverter(setSpans);
+  // public AgigaConcreteAnnotator(boolean setSpans) throws IOException {
+  //   ag = new AgigaConverter(setSpans, false);
+  //   csProps = new ConcreteStanfordProperties();
+  //   ag.setToolName(csProps.getToolName());
+  // }
+
+  public AgigaConcreteAnnotator(boolean setSpans, ConcreteStanfordProperties csp) {
+    this.csProps = csp;
+    ag = new AgigaConverter(setSpans, this.csProps.getAllowEmptyMentions(),
+                            csProps.getToolName(), this.csProps.getProperties());
   }
 
   public AnnotationMetadata metadata() {
-    return new AnnotationMetadata().setTool("anno-pipeline-v2").setTimestamp(System.currentTimeMillis() / 1000);
+    return new AnnotationMetadata().setTool(this.csProps.getToolName()).setTimestamp(System.currentTimeMillis() / 1000);
+  }
+
+  public AnnotationMetadata metadata(String name) {
+    String n = this.csProps.getToolName() +": "+ name;
+    return new AnnotationMetadata().setTool(n).setTimestamp(System.currentTimeMillis() / 1000);
   }
 
   public SimpleEntry<EntityMentionSet, EntitySet> convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations)
-      throws AnnotationException {
+    throws AnnotationException {
     EntityMentionSet ems = new EntityMentionSet().setUuid(this.idFactory.getConcreteUUID());
     TheoryDependencies td = new TheoryDependencies();
     for (Tokenization t : tokenizations)
       td.addToTokenizationTheoryList(t.getUuid());
-    AnnotationMetadata md = this.metadata().setDependencies(td);
+    AnnotationMetadata md = this.metadata(this.csProps.getCorefToolName()).setDependencies(td);
     ems.setMetadata(md);
 
     List<Entity> elist = new ArrayList<Entity>();

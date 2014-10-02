@@ -44,6 +44,14 @@
         </executions>
       </plugin>
     </plugins>
+
+    <!-- this is to copy the properties file over -->
+    <resources>
+      <resource>
+	<directory>src/main/resources</directory>
+	<filtering>true</filtering>
+      </resource>
+    </resources>
   </build>
 
   <dependencies>
