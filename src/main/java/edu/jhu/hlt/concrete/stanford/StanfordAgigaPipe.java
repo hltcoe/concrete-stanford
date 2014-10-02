@@ -472,15 +472,14 @@ public class StanfordAgigaPipe {
   }
 
   public void setSectionTextSpan(Section section, int start, int end, boolean compensate) throws AnnotationException {
-    if(section.isSetTextSpan()){
-        logger.warn("Section " + section.getUuid() + " already has a textspan set");
-    } else {
-        int compE = compensate ? (end - 1) : end;
-        if(compE <= start) {
-            throw new AnnotationException("Cannot create compensated textspan for section " + section.getUuid() + "; provided offsets = ("+start+","+end+"), compensated offsets = ("+start+","+compE+")");
-        }
-        TextSpan txs = new TextSpan().setStart(start).setEnding(compE);
-        section.setTextSpan(txs);
+    if (!section.isSetTextSpan()) {
+      int compE = compensate ? (end - 1) : end;
+      if (compE <= start)
+        throw new AnnotationException("Cannot create compensated textspan for section " + section.getUuid() + "; provided offsets = (" + start + "," + end
+            + "), compensated offsets = (" + start + "," + compE + ")");
+
+      TextSpan txs = new TextSpan().setStart(start).setEnding(compE);
+      section.setTextSpan(txs);
     }
   }
 
@@ -511,85 +510,4 @@ public class StanfordAgigaPipe {
     }
     return sb.toString().trim();
   }
-
-  /*
-   * This method contains code for transforming lists of Stanford's CoreLabels into Concrete tokenizations. We might want to use it if we get rid of agiga.
-   */
-  // private Tokenization coreLabelsToTokenization(List<CoreLabel> coreLabels) {
-  // List<Token> tokens = new ArrayList<Token>();
-  // List<TaggedToken> lemmas = new ArrayList<TaggedToken>();
-  // List<TaggedToken> nerTags = new ArrayList<TaggedToken>();
-  // List<TaggedToken> posTags = new ArrayList<TaggedToken>();
-
-  // int tokenId = 0;
-  // for (CoreLabel coreLabel : coreLabels) {
-  // if (coreLabel.lemma() != null) {
-  // lemmas.add(
-  // TaggedToken.newBuilder()
-  // .setTag(coreLabel.lemma())
-  // .setTokenId(tokenId)
-  // .build()
-  // );
-  // }
-
-  // if (coreLabel.ner() != null) {
-  // nerTags.add(
-  // TaggedToken.newBuilder()
-  // .setTag(coreLabel.ner())
-  // .setTokenId(tokenId)
-  // .build()
-  // );
-  // }
-
-  // if (coreLabel.tag() != null) {
-  // posTags.add(
-  // TaggedToken.newBuilder()
-  // .setTag(coreLabel.tag())
-  // .setTokenId(tokenId)
-  // .build()
-  // );
-  // }
-
-  // tokens.add(
-  // Token.newBuilder()
-  // .setTokenId(tokenId)
-  // .setTextSpan(
-  // TextSpan.newBuilder()
-  // .setStart(coreLabel.beginPosition())
-  // .setEnd(coreLabel.endPosition())
-  // .build()
-  // )
-  // .setText(coreLabel.value())
-  // .build()
-  // );
-
-  // tokenId++;
-  // }
-
-  // Tokenization tokenization = Tokenization.newBuilder()
-  // .setUuid(IdUtil.generateUUID())
-  // .setKind(Kind.TOKEN_LIST)
-  // .addPosTags(
-  // TokenTagging.newBuilder()
-  // .setUuid(IdUtil.generateUUID())
-  // .addAllTaggedToken(posTags)
-  // .build()
-  // )
-  // .addNerTags(
-  // TokenTagging.newBuilder()
-  // .setUuid(IdUtil.generateUUID())
-  // .addAllTaggedToken(nerTags)
-  // .build()
-  // )
-  // .addLemmas(
-  // TokenTagging.newBuilder()
-  // .setUuid(IdUtil.generateUUID())
-  // .addAllTaggedToken(lemmas)
-  // .build()
-  // )
-  // .addAllToken(tokens)
-  // .build();
-
-  // return tokenization;
-  // }
 }
