@@ -26,11 +26,15 @@ import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.DependencyParse;
 import edu.jhu.hlt.concrete.Entity;
 import edu.jhu.hlt.concrete.EntityMention;
+import edu.jhu.hlt.concrete.EntityMentionSet;
+import edu.jhu.hlt.concrete.EntitySet;
+import edu.jhu.hlt.concrete.Parse;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
+import edu.jhu.hlt.concrete.TokenTagging;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.CommunicationSerialization;
 import edu.jhu.hlt.concrete.util.ConcreteException;
@@ -263,6 +267,69 @@ public class StanfordAgigaPipeTest {
       atLeastOne |= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
     }
     assertTrue(atLeastOne);
+
+    // Verify metadata toolnames
+    ConcreteStanfordProperties props = new ConcreteStanfordProperties();
+    verifyToolNames(processedShakeHandComm, props);    
+  }
+
+  private void verifyToolNamesSub(String given, String prefix, String expected) {
+    String joined = prefix + ": " + expected;
+    assertTrue("expected toolname = " + joined + ", received = " + given,
+               given.equals(joined));
+  }
+
+  private void verifyToolNames(Communication comm, ConcreteStanfordProperties csp) {
+    String toolNamePrefix = csp.getToolName();
+    for(Section section : comm.getSectionList()) {
+      // we don't verify section toolnames
+      if(!section.isSetSentenceList()) continue;
+      for(Sentence sentence : section.getSentenceList()) {
+        if(!sentence.isSetTokenization()) continue;
+        Tokenization tokenization = sentence.getTokenization();
+        verifyToolNamesSub(tokenization.getMetadata().getTool(), toolNamePrefix, csp.getTokenizerToolName()); 
+        if(tokenization.isSetTokenTaggingList()){
+          for(TokenTagging tokenTagging : tokenization.getTokenTaggingList()) {
+            switch(tokenTagging.getTaggingType()) {
+            case "POS":
+              verifyToolNamesSub(tokenTagging.getMetadata().getTool(), toolNamePrefix, csp.getPOSToolName());
+              break;
+            case "LEMMA":
+              verifyToolNamesSub(tokenTagging.getMetadata().getTool(), toolNamePrefix, csp.getLemmatizerToolName());
+              break;
+            case "NER":
+              verifyToolNamesSub(tokenTagging.getMetadata().getTool(), toolNamePrefix, csp.getNERToolName());
+              break;
+            default:
+              assertTrue("unknown tagging type " + tokenTagging.getTaggingType(), false);
+              break;
+            }
+          }
+        }
+        if(tokenization.isSetParseList()) {
+          for(Parse parse : tokenization.getParseList()) {
+            verifyToolNamesSub(parse.getMetadata().getTool(), toolNamePrefix, csp.getCParseToolName());
+          }
+        }
+        if(tokenization.isSetDependencyParseList()) {
+          for(DependencyParse dparse : tokenization.getDependencyParseList()) {
+            String[] wsSplit = dparse.getMetadata().getTool().trim().split(" ");
+            verifyToolNamesSub(dparse.getMetadata().getTool(), toolNamePrefix, csp.getDParseToolName()+" " + wsSplit[wsSplit.length - 1]);
+          }
+        }
+      }
+    }
+    //verify coref
+    if(comm.isSetEntityMentionSetList()) {
+      for(EntityMentionSet ems : comm.getEntityMentionSetList()) {
+        verifyToolNamesSub(ems.getMetadata().getTool(), toolNamePrefix, csp.getCorefToolName());
+      }
+    }
+    if(comm.isSetEntitySetList()) {
+      for(EntitySet es : comm.getEntitySetList()) {
+        verifyToolNamesSub(es.getMetadata().getTool(), toolNamePrefix, csp.getCorefToolName());
+      }
+    }
   }
 
   private void testTextSpan(TextSpan ts, int expectedStart, int expectedEnd) {
