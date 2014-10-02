@@ -309,6 +309,17 @@ public class StanfordAgigaPipeTest {
     assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing >= 0.8);
   }
 
+  private void testSectionOffsetsSet(List<Section> nsects) {
+      int i = 0;
+      for(Section sect : nsects) {
+          if(sect.isSetSentenceList()) {
+                  assertTrue("section #"+i + " (uuid = " + sect.getUuid()+") doesn't have text spans set",
+                             sect.isSetTextSpan());
+          }
+          i++;
+      }
+  }
+
   @Test
   public void processAFPComm() throws Exception {
     Communication afpProcessedComm = this.pipe.process(this.mapped);
@@ -322,6 +333,10 @@ public class StanfordAgigaPipeTest {
     // Sections
     List<Section> nsects = afpProcessedComm.getSectionList();
     assertEquals("Should have found 8 sections.", 8, nsects.size());
+
+    this.testSectionOffsetsSet(nsects);
+    this.testTextSpan(nsects.get(1).getTextSpan(), 0, 184);
+    this.testTextSpan(nsects.get(2).getTextSpan(), 186, 332);
 
     // Sentences
     int numSents = 0;
@@ -426,6 +441,9 @@ public class StanfordAgigaPipeTest {
     // Sections
     List<Section> nsects = nytProcessedComm.getSectionList();
     assertEquals("Should have found 15 sections (including title): has " + nsects.size(), 15, nsects.size());
+
+    this.testSectionOffsetsSet(nsects);
+    this.testTextSpan(nsects.get(1).getTextSpan(), 0, 218);
 
     // Verify tokens wrt RAW
     this.verifyTokens(nytProcessedComm, true);

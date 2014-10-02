@@ -468,6 +468,20 @@ public class StanfordAgigaPipe {
     transferAnnotations(sentenceSplitText, docAnnotation);
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
     agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb);
+    setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
+  }
+
+  public void setSectionTextSpan(Section section, int start, int end, boolean compensate) throws AnnotationException {
+    if(section.isSetTextSpan()){
+        logger.warn("Section " + section.getUuid() + " already has a textspan set");
+    } else {
+        int compE = compensate ? (end - 1) : end;
+        if(compE <= start) {
+            throw new AnnotationException("Cannot create compensated textspan for section " + section.getUuid() + "; provided offsets = ("+start+","+end+"), compensated offsets = ("+start+","+compE+")");
+        }
+        TextSpan txs = new TextSpan().setStart(start).setEnding(compE);
+        section.setTextSpan(txs);
+    }
   }
 
   public void processCoref(Communication comm, Annotation docAnnotation, List<Tokenization> tokenizations) throws AnnotationException {
