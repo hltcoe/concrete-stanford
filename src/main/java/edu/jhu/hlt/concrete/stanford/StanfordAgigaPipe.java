@@ -516,7 +516,7 @@ public class StanfordAgigaPipe {
     AgigaDocument agigaDoc = getAgigaDoc(sentenceSplitText, true);
     logger.debug("after annotating");
     for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class))
-      logger.error(cm.get(SentenceIndexAnnotation.class).toString());
+      logger.debug("sentence index: " + cm.get(SentenceIndexAnnotation.class).toString());
 
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
     agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb, true);
