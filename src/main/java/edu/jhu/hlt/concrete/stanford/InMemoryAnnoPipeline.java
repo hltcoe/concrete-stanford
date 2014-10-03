@@ -182,6 +182,27 @@ public class InMemoryAnnoPipeline {
     return agigaDoc;
   }
 
+  public AgigaDocument getAgigaDoc(Annotation annotation, boolean tokensOnly) throws IOException {
+    logger.debug("Local processing annotation keys :: {}", annotation.keySet().toString());
+    // Convert to an XML document.
+    Document xmlDoc = this.stanfordToXML(pipeline, annotation, tokensOnly);
+    AgigaPrefs prefs = new AgigaPrefs();
+    if(tokensOnly) {
+      prefs.setAll(false);
+      prefs.setWord(true);
+      prefs.setOffsets(true);
+    } else {
+      prefs.setAll(true);
+    }
+    AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc, prefs);
+
+    logger.debug("agigaDoc has " + agigaDoc.getSents().size() + " sentences");
+    logger.debug("annotation has " + annotation.get(SentencesAnnotation.class).size());
+    logger.debug("annotation has " + annotation.get(SentencesAnnotation.class));
+
+    return agigaDoc;
+  }
+
   public AgigaDocument annotateCoref(StanfordCoreNLP pipeline, Annotation annotation) throws IOException {
     String stage = "dcoref";
     logger.debug("DEBUG: annotation stage = " + stage);
@@ -189,14 +210,19 @@ public class InMemoryAnnoPipeline {
     try {
       (StanfordCoreNLP.getExistingAnnotator(stage)).annotate(annotation);
     } catch (Exception e) {
-      logger.debug("Error annotating: {}", stage);
-      logger.debug(e.getMessage(), e);
+      logger.error("Error annotating: {}", stage);
+      logger.error(e.getMessage(), e);
     }
     
     logger.debug("annotation keys :: " + annotation.keySet().toString());
     // Convert to an XML document.
     Document xmlDoc = this.stanfordToXML(pipeline, annotation);
-    AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc);
+    AgigaPrefs agigaPrefs = new AgigaPrefs();
+    agigaPrefs.setAll(false);
+    agigaPrefs.setCoref(true);
+    agigaPrefs.setWord(true);
+    agigaPrefs.setOffsets(true);
+    AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc, agigaPrefs);
     logger.debug("agigaDoc has " + agigaDoc.getSents().size() + " sentences");
     logger.debug("annotation has " + annotation.get(SentencesAnnotation.class).size());
     logger.debug("annotation has " + annotation.get(SentencesAnnotation.class));
@@ -216,8 +242,18 @@ public class InMemoryAnnoPipeline {
     }
   }
 
-  /** This method assumes only one <DOC/> is contained in the xmlDoc. */
+  /**
+   * This method assumes only one <DOC/> is contained in the xmlDoc.
+   * This also sets AgigaPrefs.setAll(true)
+   */
   private static AgigaDocument xmlToAgigaDoc(Document xmlDoc) throws UnsupportedEncodingException, IOException {
+    AgigaPrefs prefs = new AgigaPrefs();
+    prefs.setAll(true);
+    return xmlToAgigaDoc(xmlDoc, prefs);
+  }
+
+  /** This method assumes only one <DOC/> is contained in the xmlDoc. */
+  private static AgigaDocument xmlToAgigaDoc(Document xmlDoc, AgigaPrefs agigaPrefs) throws UnsupportedEncodingException, IOException {
     // Serialize to a byte array.
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     Serializer ser = new Serializer(baos, "UTF-8");
@@ -231,8 +267,6 @@ public class InMemoryAnnoPipeline {
 
     logger.debug(baos.toString("UTF-8"));
 
-    AgigaPrefs agigaPrefs = new AgigaPrefs();
-    agigaPrefs.setAll(true);
     BytesAgigaDocumentReader adr = new BytesAgigaDocumentReader(baos.toByteArray(), agigaPrefs);
     if (!adr.hasNext()) {
       throw new IllegalStateException("No documents found.");
@@ -250,6 +284,19 @@ public class InMemoryAnnoPipeline {
 
   /**
    * NOTICE: Copied and modified version from edu.jhu.annotation.GigawordAnnotator.
+   *
+   * Create the XML document, using the base StanfordCoreNLP default and adding custom dependency representations (to include root elements)
+   *
+   * @param anno
+   *          Document to be output as XML
+   * @throws IOException
+   */
+  public Document stanfordToXML(StanfordCoreNLP pipeline, Annotation anno) {
+    return stanfordToXML(pipeline, anno, false);
+  }
+
+  /**
+   * NOTICE: Copied and modified version from edu.jhu.annotation.GigawordAnnotator.
    * 
    * Create the XML document, using the base StanfordCoreNLP default and adding custom dependency representations (to include root elements)
    * 
@@ -257,7 +304,7 @@ public class InMemoryAnnoPipeline {
    *          Document to be output as XML
    * @throws IOException
    */
-  public Document stanfordToXML(StanfordCoreNLP pipeline, Annotation anno) {
+  public Document stanfordToXML(StanfordCoreNLP pipeline, Annotation anno, boolean tokensOnly) {
     Document xmlDoc = XMLOutputter.annotationToDoc(anno, pipeline);
 
     Element root = xmlDoc.getRootElement();
@@ -296,7 +343,9 @@ public class InMemoryAnnoPipeline {
       // AnnotatedGigaword)
       for (CoreMap sentence : anno.get(SentencesAnnotation.class)) {
         try {
-          fillInParseAnnotations(false, sentence, sentence.get(TreeAnnotation.class));
+          if(sentence.containsKey(TreeAnnotation.class)) {
+            fillInParseAnnotations(false, sentence, sentence.get(TreeAnnotation.class));
+          }
         } catch (Exception e) {
           logger.warn("Error filling in parse annotation for sentence " + sentence);
         }
@@ -315,19 +364,24 @@ public class InMemoryAnnoPipeline {
           String type = att.getValue();
           if (type == null)
             throw new RuntimeException("null type in dependency element");
-          depElem.removeChildren();
-          depElem.setLocalName(type);
-          SemanticGraph semGraph;
-          if (type.equals("basic-dependencies"))
-            semGraph = sentences.get(i).get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
-          else if (type.equals("collapsed-dependencies"))
-            semGraph = sentences.get(i).get(SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation.class);
-          else if (type.equals("collapsed-ccprocessed-dependencies"))
-            semGraph = sentences.get(i).get(SemanticGraphCoreAnnotations.CollapsedCCProcessedDependenciesAnnotation.class);
-          else
-            throw new RuntimeException("unknown dependency type " + type);
-          addDependencyToXML(semGraph, depElem);
-          depElem.removeAttribute(att);
+          boolean atLeastOne = sentences.get(i).containsKey(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class) |
+            sentences.get(i).containsKey(SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation.class) |
+            sentences.get(i).containsKey(SemanticGraphCoreAnnotations.CollapsedCCProcessedDependenciesAnnotation.class);
+          if(atLeastOne) {
+            depElem.removeChildren();
+            depElem.setLocalName(type);
+            SemanticGraph semGraph;
+            if (type.equals("basic-dependencies"))
+              semGraph = sentences.get(i).get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
+            else if (type.equals("collapsed-dependencies"))
+              semGraph = sentences.get(i).get(SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation.class);
+            else if (type.equals("collapsed-ccprocessed-dependencies"))
+              semGraph = sentences.get(i).get(SemanticGraphCoreAnnotations.CollapsedCCProcessedDependenciesAnnotation.class);
+            else
+              throw new RuntimeException("unknown dependency type " + type);
+            addDependencyToXML(semGraph, depElem);
+            depElem.removeAttribute(att);
+          }
         }
       }
     }
