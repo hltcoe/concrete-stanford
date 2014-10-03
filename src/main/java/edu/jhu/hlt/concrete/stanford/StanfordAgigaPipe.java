@@ -28,6 +28,7 @@ import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.EntityMentionSet;
 import edu.jhu.hlt.concrete.EntitySet;
 import edu.jhu.hlt.concrete.Section;
+import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.communications.PerspectiveCommunication;
@@ -70,7 +71,8 @@ public class StanfordAgigaPipe {
 
   private final InMemoryAnnoPipeline pipeline;
   private final Set<String> kindsToProcessSet;
-  private final Set<String> tokenizeOnlyAnnotate;
+  private final Set<String> kindsToTokenizeOnly;
+  
 
   private final ConcreteStanfordProperties concStanProps;
 
@@ -150,8 +152,8 @@ public class StanfordAgigaPipe {
     this.kindsToProcessSet = new HashSet<>();
     this.kindsToProcessSet.addAll(typesToAnnotate);
     
-    this.tokenizeOnlyAnnotate = new HashSet<>();
-    this.tokenizeOnlyAnnotate.addAll(typesToTokenizeOnly);
+    this.kindsToTokenizeOnly = new HashSet<>();
+    this.kindsToTokenizeOnly.addAll(typesToTokenizeOnly);
 
     this.concStanProps = new ConcreteStanfordProperties();
     this.pipeline = new InMemoryAnnoPipeline();
@@ -225,72 +227,79 @@ public class StanfordAgigaPipe {
     logger.debug("\treading from " + (comm.isSetText() ? "text" : "raw text"));
     logger.debug("\tfull = " + commText);
 
-      List<Section> sections = comm.getSectionList();
-      // List<Integer> numberOfSentences = new ArrayList<Integer>();
-      Annotation documentAnnotation = getSeededDocumentAnnotation();
-      logger.debug("documentAnnotation = " + documentAnnotation);
 
-      for (Section section : sections) {
-        int sectionStartCharOffset = processedCharOffset;
-        logger.debug("new section, processed offset = " + sectionStartCharOffset);
-        TextSpan sts = section.getRawTextSpan();
-        // 1) First *perform* the tokenization & sentence splits
-        // Note we do this first, even before checking the content-type
-        String sectionText = commText.substring(sts.getStart(), sts.getEnding());
-        Annotation sectionAnnotation = pipeline.splitAndTokenizeText(sectionText);
-        logger.debug("Annotating Section: {}", section.getUuid());
-        logger.debug("\ttext = " + sectionText);
-        logger.debug("\tkind = " + section.getKind() + " in annotateNames: " + this.kindsToProcessSet);
-        if (!kindsToProcessSet.contains(section.getKind()) &&
-            !tokenizeOnlyAnnotate.contains(section.getKind())) {
-          // We MUST update the character offset
-          logger.debug("no good section: from " + charOffset + " to ");
-          // NOTE: It's possible we want to account for sentences in non-contentful sections
-          // If that's the case, then we need to update the globalToken and sentence offset
-          // variables correctly.
-          if (sectionAnnotation == null) {
-            logger.debug(""+charOffset);
-            continue;
-          }
+    List<Tokenization> tokenizations = new ArrayList<>();
+    List<Section> sections = comm.getSectionList();
+    // List<Integer> numberOfSentences = new ArrayList<Integer>();
+    Annotation documentAnnotation = getSeededDocumentAnnotation();
+    logger.debug("documentAnnotation = " + documentAnnotation);
 
-          //Note that we need to update the global character offset...
-          List<CoreLabel> sentTokens = sectionAnnotation.get(TokensAnnotation.class);
-          int tokCount = 0;
+    for (Section section : sections) {
+      int sectionStartCharOffset = processedCharOffset;
+      logger.debug("new section, processed offset = " + sectionStartCharOffset);
+      TextSpan sts = section.getRawTextSpan();
+      // 1) First *perform* the tokenization & sentence splits
+      // Note we do this first, even before checking the content-type
+      String sectionText = commText.substring(sts.getStart(), sts.getEnding());
+      Annotation sectionAnnotation = pipeline.splitAndTokenizeText(sectionText);
+      logger.debug("Annotating Section: {}", section.getUuid());
+      logger.debug("\ttext = " + sectionText);
+      logger.debug("\tkind = " + section.getKind() + " in annotateNames: " + this.kindsToProcessSet);
+      if (!kindsToProcessSet.contains(section.getKind()) &&
+          !kindsToTokenizeOnly.contains(section.getKind())) {
+        // We MUST update the character offset
+        logger.debug("no good section: from " + charOffset + " to ");
+        // NOTE: It's possible we want to account for sentences in non-contentful sections
+        // If that's the case, then we need to update the globalToken and sentence offset
+        // variables correctly.
+        if (sectionAnnotation == null) {
+          logger.debug(""+charOffset);
+          continue;
+        }
 
-          for(CoreLabel badToken : sentTokens) { 
+        //Note that we need to update the global character offset...
+        List<CoreLabel> sentTokens = sectionAnnotation.get(TokensAnnotation.class);
+        int tokCount = 0;
+        for(CoreLabel badToken : sentTokens) { 
           updateCharOffsetSetToken(badToken, false, false);
         }
 
-          logger.debug(""+charOffset);
-          logger.debug("\t"+  sectionText);
-        } else if(tokenizeOnlyAnnotate.contains(section.getKind())) {
-          // Only tokenize & sentence split
-          logger.warn("Special handling for section type {} section: {}",
-                      section.getKind(), section.getUuid());
-          logger.debug(">> SectionText=["+sectionText+"]");
-          processSectionTokenize(section, sectionAnnotation,
-                         sectionStartCharOffset, sb);
-        } else {
-          // 2) Second, perform the other localized processing
-          logger.debug("Additional processing on section: {}", section.getUuid());
-          logger.debug(">> SectionText=["+sectionText+"]");
-          processSection(section, sectionAnnotation, documentAnnotation,
-                         sectionStartCharOffset, sb);
-        }
-
-        // between sections are two line feeds
-        // one is counted for in the sentTokens loop above
-        processedCharOffset++;
+        logger.debug(""+charOffset);
+        logger.debug("\t"+  sectionText);
+      } else if(kindsToTokenizeOnly.contains(section.getKind())) {
+        // Only tokenize & sentence split
+        logger.warn("Special handling for section type {} section: {}",
+                    section.getKind(), section.getUuid());
+        logger.debug(">> SectionText=["+sectionText+"]");
+        processSectionTokenize(section, sectionAnnotation,
+                               sectionStartCharOffset, sb);
+      } else {
+        // 2) Second, perform the other localized processing
+        logger.debug("Additional processing on section: {}", section.getUuid());
+        logger.debug(">> SectionText=["+sectionText+"]");
+        processSection(section, sectionAnnotation, documentAnnotation,
+                       sectionStartCharOffset, sb);
+        addTokenizations(section, tokenizations);
       }
+      // between sections are two line feeds
+      // one is counted for in the sentTokens loop above
+      processedCharOffset++;
+    }
 
-      comm.setText(sb.toString());
+    comm.setText(sb.toString());
 
-      // 3) Third, do coref; cross-reference against sectionUUIDs
-      logger.debug("Running coref.");
-      SuperCommunication sc = new SuperCommunication(comm);
-      List<Tokenization> toks = new ArrayList<>(sc.generateTokenizationIdToTokenizationMap().values());
-      processCoref(comm, documentAnnotation, toks);
+    // 3) Third, do coref; cross-reference against sectionUUIDs
+    logger.debug("Running coref.");
+    SuperCommunication sc = new SuperCommunication(comm);
+    processCoref(comm, documentAnnotation, tokenizations);
+  }
 
+  private void addTokenizations(Section section, List<Tokenization> tokenizations) {
+    if(!section.isSetSentenceList()) return;
+    for(Sentence sentence : section.getSentenceList()) {
+      if(sentence.isSetTokenization())
+        tokenizations.add(sentence.getTokenization());
+    }
   }
 
   /**
