@@ -8,6 +8,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.agiga.util.ConcreteAgigaProperties;
 import concrete.tools.AnnotationException;
 import edu.jhu.agiga.AgigaCoref;
 import edu.jhu.agiga.AgigaDocument;
@@ -22,7 +23,6 @@ import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TheoryDependencies;
 import edu.jhu.hlt.concrete.Tokenization;
-import edu.jhu.hlt.concrete.UUID;
 import edu.jhu.hlt.concrete.agiga.AgigaConverter;
 import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
 
@@ -33,9 +33,11 @@ import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
 public class AgigaConcreteAnnotator {
 
   private static final Logger logger = LoggerFactory.getLogger(AgigaConcreteAnnotator.class);
+  
   private final ConcreteUUIDFactory idFactory = new ConcreteUUIDFactory();
-  private ConcreteStanfordProperties csProps;
-  private AgigaConverter ag;
+  private final ConcreteAgigaProperties agigaProps;
+  private final ConcreteStanfordProperties csProps;
+  private final AgigaConverter ag;
 
   // public AgigaConcreteAnnotator(boolean setSpans) throws IOException {
   //   ag = new AgigaConverter(setSpans, false);
@@ -43,19 +45,15 @@ public class AgigaConcreteAnnotator {
   //   ag.setToolName(csProps.getToolName());
   // }
 
-  public AgigaConcreteAnnotator(boolean setSpans, ConcreteStanfordProperties csp) {
-    this.csProps = csp;
-    ag = new AgigaConverter(setSpans, this.csProps.getAllowEmptyMentions(),
-                            csProps.getToolName(), this.csProps.getProperties());
-  }
-
-  public AnnotationMetadata metadata() {
-    return new AnnotationMetadata().setTool(this.csProps.getToolName()).setTimestamp(System.currentTimeMillis() / 1000);
+  public AgigaConcreteAnnotator(boolean setSpans) throws IOException {
+    this.agigaProps = new ConcreteAgigaProperties();
+    this.csProps = new ConcreteStanfordProperties();
+    
+    ag = new AgigaConverter(setSpans, this.csProps.getAllowEmptyMentions());
   }
 
   public AnnotationMetadata metadata(String name) {
-    String n = this.csProps.getToolName() +": "+ name;
-    return new AnnotationMetadata().setTool(n).setTimestamp(System.currentTimeMillis() / 1000);
+    return new AnnotationMetadata().setTool(name).setTimestamp(System.currentTimeMillis() / 1000);
   }
 
   public SimpleEntry<EntityMentionSet, EntitySet> convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations)
@@ -64,7 +62,7 @@ public class AgigaConcreteAnnotator {
     TheoryDependencies td = new TheoryDependencies();
     for (Tokenization t : tokenizations)
       td.addToTokenizationTheoryList(t.getUuid());
-    AnnotationMetadata md = this.metadata(this.csProps.getCorefToolName()).setDependencies(td);
+    AnnotationMetadata md = this.metadata(this.agigaProps.getCorefToolName()).setDependencies(td);
     ems.setMetadata(md);
 
     List<Entity> elist = new ArrayList<Entity>();

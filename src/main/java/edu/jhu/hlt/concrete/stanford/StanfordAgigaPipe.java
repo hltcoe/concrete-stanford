@@ -9,6 +9,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import concrete.server.concurrent.SystemErrDisabler;
 import concrete.tools.AnnotationException;
 import edu.jhu.agiga.AgigaDocument;
+import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.EntityMentionSet;
 import edu.jhu.hlt.concrete.EntitySet;
@@ -64,7 +66,7 @@ public class StanfordAgigaPipe {
   private InMemoryAnnoPipeline pipeline;
   private Set<String> annotateNames;
 
-  private ConcreteStanfordProperties concStanProps;
+  private final ConcreteStanfordProperties concStanProps;
 
   /**
    * The global character offset. The exact meaning is determined by
@@ -166,6 +168,19 @@ public class StanfordAgigaPipe {
 
     PerspectiveCommunication pc = new PerspectiveCommunication(c, "PerspectiveCreator");
     Communication persp = pc.getPerspective();
+    
+    // hopefully MD is never null
+    AnnotationMetadata md = Optional.ofNullable(persp.getMetadata()).orElse(new AnnotationMetadata());
+    String csToolName = this.concStanProps.getToolName();
+    String newToolName = csToolName + " perspective";
+    
+    String mdToolName = md.isSetTool() ? md.getTool() : "";
+    if (!mdToolName.isEmpty())
+      newToolName += " on old tool: " + mdToolName;
+    
+    md.setTool(newToolName);
+    persp.setMetadata(md);
+    // String newToolName = 
     // Communication cp = this.copyToRaw.copyCommunication(c);
     resetGlobals();
     this.runPipelineOnCommunicationSectionsAndSentences(persp);
@@ -187,8 +202,9 @@ public class StanfordAgigaPipe {
    * This steps through the given communication. For each section segmentation, it will go through each of the sections, first doing what localized processing
    * it can (i.e., all but coref resolution), and then doing the global processing (coref).
    * @throws AnnotationException 
+   * @throws IOException 
    */
-  public void runPipelineOnCommunicationSectionsAndSentences(Communication comm) throws AnnotationException {
+  public void runPipelineOnCommunicationSectionsAndSentences(Communication comm) throws AnnotationException, IOException {
     // if called multiple times, reset the sentence count
     sentenceCount = 1;
     String commText = comm.isSetText() ? comm.getText() : comm.getOriginalText();
@@ -231,8 +247,8 @@ public class StanfordAgigaPipe {
           List<CoreLabel> sentTokens = sectionAnnotation.get(TokensAnnotation.class);
           int tokCount = 0;
           for(CoreLabel badToken : sentTokens) { 
-              updateCharOffsetSetToken(badToken, false, false);
-          }
+          updateCharOffsetSetToken(badToken, false, false);
+        }
 
           logger.debug(""+charOffset);
           logger.debug("\t"+  sectionText);
@@ -417,8 +433,9 @@ public class StanfordAgigaPipe {
    * aggregating {@link Annotation} to use for later global processing.
    * 
    * @throws AnnotationException 
+   * @throws IOException 
    */
-  public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, int sectionOffset, StringBuilder sb) throws AnnotationException {
+  public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, int sectionOffset, StringBuilder sb) throws AnnotationException, IOException {
     sentencesToSection(sentenceSplitText, docAnnotation);
     logger.debug("after sentencesToSection, before annotating");
     for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class)) 
@@ -430,8 +447,7 @@ public class StanfordAgigaPipe {
       logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
     
     transferAnnotations(sentenceSplitText, docAnnotation);
-    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets(),
-                                                                        concStanProps);
+    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
     agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb);
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
   }
@@ -448,9 +464,9 @@ public class StanfordAgigaPipe {
     }
   }
 
-  public void processCoref(Communication comm, Annotation docAnnotation, List<Tokenization> tokenizations) throws AnnotationException {
+  public void processCoref(Communication comm, Annotation docAnnotation, List<Tokenization> tokenizations) throws AnnotationException, IOException {
     AgigaDocument agigaDoc = annotateCoref(docAnnotation);
-    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets(), concStanProps);
+    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
     SimpleEntry<EntityMentionSet, EntitySet> tuple = agigaToConcrete.convertCoref(comm, agigaDoc, tokenizations);
     comm.addToEntityMentionSetList(tuple.getKey());
     comm.addToEntitySetList(tuple.getValue());
