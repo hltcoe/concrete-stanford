@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -51,7 +52,8 @@ import edu.stanford.nlp.util.CoreMap;
 public class StanfordAgigaPipe {
 
   private static final Logger logger = LoggerFactory.getLogger(StanfordAgigaPipe.class);
-
+  private static final String[] DEFAULT_KINDS_TO_ANNOTATE = new String[] { "Title", "Passage", "Other" };
+  
   static final String usage = "You must specify an input path: java edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe --input path/to/input/file --output path/to/output/file\n"
       + "  Optional arguments: \n"
       + "       --annotate-sections <comma-separated-list of type names> (default: PASSAGE)\n"
@@ -135,11 +137,7 @@ public class StanfordAgigaPipe {
   }
 
   public StanfordAgigaPipe() throws IOException {
-    annotateNames = new HashSet<>();
-    annotateNames.add("Passage");
-    annotateNames.add("Other");
-    this.concStanProps = new ConcreteStanfordProperties();
-    this.pipeline = new InMemoryAnnoPipeline();
+    this(new HashSet<String>(Arrays.asList(DEFAULT_KINDS_TO_ANNOTATE)));
   }
 
   public StanfordAgigaPipe(Set<String> typesToAnnotate) throws IOException {
