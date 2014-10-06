@@ -90,7 +90,7 @@ public class AgigaConcreteAnnotator {
       // the second argument is the estimated character provenance offset.
       // We're not filling the optional textSpan fields, so the exact parameter
       // value doesn't matter.
-      Sentence st = this.ag.convertSentence(asent, currOffset);
+      Sentence st = this.ag.convertSentence(asent, currOffset, true);
       String sentText = this.ag.flattenText(asent);
       sb.append(sentText);
       currOffset += sentText.length();
