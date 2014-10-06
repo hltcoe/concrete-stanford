@@ -52,7 +52,7 @@ import edu.stanford.nlp.util.CoreMap;
 public class StanfordAgigaPipe {
 
   private static final Logger logger = LoggerFactory.getLogger(StanfordAgigaPipe.class);
-  private static final String[] DEFAULT_KINDS_TO_ANNOTATE = new String[] { "Title", "Passage", "Other" };
+  private static final String[] DEFAULT_KINDS_TO_ANNOTATE = new String[] { "Passage", "Other" };
   
   static final String usage = "You must specify an input path: java edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe --input path/to/input/file --output path/to/output/file\n"
       + "  Optional arguments: \n"
