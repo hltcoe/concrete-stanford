@@ -11,8 +11,12 @@ import org.junit.Test;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.Dependency;
 import edu.jhu.hlt.concrete.DependencyParse;
+import edu.jhu.hlt.concrete.Section;
+import edu.jhu.hlt.concrete.Sentence;
+import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
+import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
 
 /**
  * Using the example from the online demo at
@@ -39,10 +43,32 @@ import edu.jhu.hlt.concrete.Tokenization;
  * @author travis
  */
 public class BasicDepParseTest {
+	private static final ConcreteUUIDFactory cuf = new ConcreteUUIDFactory();
 
 	public static Communication getTestCommunication() {
+		return unsectionedCommunicationFromText(
+				"My dog also likes eating sausage.");
+	}
+
+	public static Communication unsectionedCommunicationFromText(String text) {
+		TextSpan span = new TextSpan();
+		span.setStart(0);
+		span.setEnding(text.length());
+
+		Sentence sent = new Sentence();
+		sent.setUuid(cuf.getConcreteUUID());
+		sent.setRawTextSpan(span);
+		sent.setTextSpan(span);
+
+		Section sect = new Section();
+		sect.setUuid(cuf.getConcreteUUID());
+		sect.setTextSpan(span);
+		sect.addToSentenceList(sent);
+
 		Communication c = new Communication();
-		c.setText("My dog also likes eating sausage.");
+		c.setUuid(cuf.getConcreteUUID());
+		c.addToSectionList(sect);
+		c.setText(text);
 		return c;
 	}
 
@@ -83,10 +109,10 @@ public class BasicDepParseTest {
 	}
 
 	@Test
-	public void test() {
+	public void test() throws Exception {
 		Communication c = getTestCommunication();
-		AnnotateTokenizedConcrete anno = new AnnotateTokenizedConcrete();
-		anno.annotateWithStanfordNlp(c);
+		StanfordAgigaPipe pipe = new StanfordAgigaPipe();
+		c = pipe.process(c);
 		Set<String> gold = getExpectedBasicDependencies();
 		Set<String> hyp = getObservedBasicDependencies(c);
 		Assert.assertTrue(gold.equals(hyp));
