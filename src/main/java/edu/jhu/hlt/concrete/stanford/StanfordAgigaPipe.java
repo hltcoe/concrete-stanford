@@ -205,12 +205,9 @@ public class StanfordAgigaPipe {
   /**
    * This steps through the given communication. For each section segmentation, it will go through each of the sections, first doing what localized processing
    * it can (i.e., all but coref resolution), and then doing the global processing (coref).
-<<<<<<< HEAD
-   * @throws AnnotationException
-=======
+   *
    * @throws AnnotationException 
    * @throws IOException 
->>>>>>> 4d08b31a10d5167bba6ed60a6cab8374b05e6374
    */
   public void runPipelineOnCommunicationSectionsAndSentences(Communication comm) throws AnnotationException, IOException {
     // if called multiple times, reset the sentence count
