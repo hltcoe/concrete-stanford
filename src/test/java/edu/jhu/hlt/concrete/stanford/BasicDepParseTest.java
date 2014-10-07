@@ -14,7 +14,6 @@ import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.Dependency;
 import edu.jhu.hlt.concrete.DependencyParse;
 import edu.jhu.hlt.concrete.Section;
-import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
@@ -24,17 +23,13 @@ import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
  * Using the example from the online demo at
  * http://nlp.stanford.edu:8080/parser/index.jsp
  * 
+ * NOTE: It actually fails this example, but the version online appears to be
+ * an older version of the parser than we are using. I'm using another simple
+ * sentence, which it gets right.
+ * 
  * sentence: "My dog also likes eating sausage."
  * 
  * basic dependencies:
- *   poss(dog-2, My-1)
- *   nsubj(likes-4, dog-2)
- *   advmod(likes-4, also-3)
- *   root(ROOT-0, likes-4)
- *   xcomp(likes-4, eating-5)
- *   dobj(eating-5, sausage-6)
- *
- * collapsed dependencies:
  *   poss(dog-2, My-1)
  *   nsubj(likes-4, dog-2)
  *   advmod(likes-4, also-3)
@@ -48,23 +43,23 @@ public class BasicDepParseTest {
   private static final ConcreteUUIDFactory cuf = new ConcreteUUIDFactory();
 
   public static Communication getTestCommunication() {
-    return unsectionedCommunicationFromText("My dog also likes eating sausage.");
+    return unsectionedCommunicationFromText(
+        //"My dog also likes eating sausage.");
+        "The Stanford Parser is a very precise piece of equipment.");
   }
 
+  /**
+   * NOTE: Do not make a Sentence, or else the annotator will not run
+   */
   public static Communication unsectionedCommunicationFromText(String text) {
     TextSpan span = new TextSpan();
     span.setStart(0);
     span.setEnding(text.length());
 
-    Sentence sent = new Sentence();
-    sent.setUuid(cuf.getConcreteUUID());
-    sent.setRawTextSpan(span);
-    sent.setTextSpan(span);
-
     Section sect = new Section();
+    sect.setKind("Passage");
     sect.setUuid(cuf.getConcreteUUID());
     sect.setTextSpan(span);
-    sect.addToSentenceList(sent);
 
     Communication c = new Communication();
     c.setUuid(cuf.getConcreteUUID());
@@ -75,36 +70,68 @@ public class BasicDepParseTest {
 
   public static Set<String> getExpectedBasicDependencies() {
     Set<String> deps = new HashSet<>();
+    /*
     deps.add("poss(dog-2, My-1)");
     deps.add("nsubj(likes-4, dog-2)");
     deps.add("advmod(likes-4, also-3)");
     deps.add("root(ROOT-0, likes-4)");
     deps.add("xcomp(likes-4, eating-5)");
     deps.add("dobj(eating-5, sausage-6)");
+    */
+    deps.add("det(Parser-3, The-1)");
+    deps.add("nn(Parser-3, Stanford-2)");
+    deps.add("nsubj(piece-8, Parser-3)");
+    deps.add("cop(piece-8, is-4)");
+    deps.add("det(piece-8, a-5)");
+    deps.add("advmod(precise-7, very-6)");
+    deps.add("amod(piece-8, precise-7)");
+    deps.add("root(ROOT-0, piece-8)");
+    deps.add("prep(piece-8, of-9)");
+    deps.add("pobj(of-9, equipment-10)");
     return deps;
   }
 
   public static Set<String> getObservedBasicDependencies(Communication c) {
     Set<String> deps = new HashSet<>();
-    Tokenization toks = c.getSectionList().get(0).getSentenceList().get(0).getTokenization();
-    List<DependencyParse> dps = toks.getDependencyParseList().stream().filter(dp -> dp.getMetadata().getTool().contains("basic")).collect(Collectors.toList());
-    Assert.assertEquals(dps.size(), 1);
+    Assert.assertEquals(c.getSectionListSize(), 1);
+    Section sect = c.getSectionList().get(0);
+    Tokenization toks = sect
+        .getSentenceList().get(0).getTokenization();
+    Assert.assertNotNull(toks);
+    Assert.assertNotNull(toks.getDependencyParseList());
+    List<DependencyParse> dps = toks.getDependencyParseList()
+        .stream()
+        .filter(dp -> dp.getMetadata().getTool().contains("basic"))
+        .collect(Collectors.toList());
+    Assert.assertEquals(1, dps.size());
     for (Dependency e : dps.get(0).getDependencyList()) {
+      Assert.assertTrue(e.getDep() >= 0);
       Token word = toks.getTokenList().getTokenList().get(e.getDep());
-      Token head = toks.getTokenList().getTokenList().get(e.getGov());
-      String dep = String.format("%s(%s-%d, %s-%d)", e.getEdgeType(), word.getText(), e.getDep(), head.getText(), e.getGov());
+      String h = "ROOT-0";
+      if (e.isSetGov()) {
+        h = String.format("%s-%d",
+            toks.getTokenList().getTokenList().get(e.getGov()).getText(),
+            e.getGov() + 1);
+      }
+      String dep = String.format("%s(%s, %s-%d)",
+          e.getEdgeType(),
+          h,
+          word.getText(),
+          e.getDep() + 1);
       deps.add(dep);
     }
     return deps;
   }
 
-//  @Test
-//  public void test() throws Exception {
-//    Communication c = getTestCommunication();
-//    StanfordAgigaPipe pipe = new StanfordAgigaPipe();
-//    c = pipe.process(c);
-//    Set<String> gold = getExpectedBasicDependencies();
-//    Set<String> hyp = getObservedBasicDependencies(c);
-//    assertTrue(gold.equals(hyp));
-//  }
+  @Test
+  public void test() throws Exception {
+    Communication c = getTestCommunication();
+    StanfordAgigaPipe pipe = new StanfordAgigaPipe();
+    c = pipe.process(c);
+    Set<String> gold = getExpectedBasicDependencies();
+    Set<String> hyp = getObservedBasicDependencies(c);
+    System.out.println("gold = " + gold);
+    System.out.println("hyp = " + hyp);
+    assertTrue(gold.equals(hyp));
+  }
 }
