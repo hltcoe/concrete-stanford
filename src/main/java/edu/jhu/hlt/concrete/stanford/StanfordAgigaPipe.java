@@ -311,29 +311,30 @@ public class StanfordAgigaPipe {
    * <li>named entity recognition.</li>
    * </ul>
    * Note that corefence resolution is done only once all contentful sections have been properly annotated.
+   * @throws AnnotationException 
    *
    */
-  public AgigaDocument annotate(Annotation annotation) {
+  public AgigaDocument annotate(Annotation annotation) throws AnnotationException {
     try {
       return pipeline.annotate(annotation);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new AnnotationException(e);
     }
   }
 
-  public AgigaDocument getAgigaDoc(Annotation annotation, boolean tokensOnly) {
+  public AgigaDocument getAgigaDoc(Annotation annotation, boolean tokensOnly) throws AnnotationException {
     try {
       return pipeline.getAgigaDoc(annotation, tokensOnly);
     } catch(IOException e) {
-      throw new RuntimeException(e);
+      throw new AnnotationException(e);
     }
   }
 
-  public AgigaDocument annotateCoref(Annotation annotation) {
+  public AgigaDocument annotateCoref(Annotation annotation) throws AnnotationException {
     try {
       return pipeline.annotateCoref(annotation);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new AnnotationException(e);
     }
   }
 
