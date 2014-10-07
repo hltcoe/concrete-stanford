@@ -490,6 +490,7 @@ public class StanfordAgigaPipeTest {
 
     // Sentences test
     String[] sentences = {
+        "Protest over arrest of Sri Lanka reporter linked to Fonseka",
         "Sri Lankan media groups Thursday protested against the arrest of a reporter\n"
             + "close to Sarath Fonseka, the detained ex-army chief who tried to unseat the\n"
             + "president in recent elections.",
@@ -507,7 +508,6 @@ public class StanfordAgigaPipeTest {
         "The case was adjourned.",
         "Local and international rights groups have accused Rajapakse of cracking down on\n"
             + "dissent, a charge the government has denied." };
-    this.testSentenceText(sentences, afpProcessedComm);
 
     // test sentences wrt processed
     String[] processedSentences = {
@@ -520,6 +520,8 @@ public class StanfordAgigaPipeTest {
       "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation Tigers of Tamil Eelam -LRB- LTTE -RRB- were crushed in May , but the two men later fell out and contested the presidency in January 's elections .",
       "Fonseka was arrested soon after losing the poll and appeared in front of a court martial this week .", "The case was adjourned .",
       "Local and international rights groups have accused Rajapakse of cracking down on dissent , a charge the government has denied ." };
+    
+    this.testSentenceText(sentences, afpProcessedComm);
 
     // TODO: fix this failure
     // this.testSentenceText(processedSentences, afpProcessedComm);

@@ -88,15 +88,15 @@ public class AgigaConcreteAnnotator {
 
   public void convertSection(Section section, AgigaDocument agigaDoc, int charOffset,
 
-                             StringBuilder sb, boolean tokensOnly) throws AnnotationException {
-    this.addSentences(section, agigaDoc, charOffset, sb, tokensOnly);
+                             StringBuilder sb, boolean preserveTokenTaggings) throws AnnotationException {
+    this.addSentences(section, agigaDoc, charOffset, sb, preserveTokenTaggings);
     sb.append("\n\n");
   }
 
   // add all Sentences
 
   private void addSentences(Section in, AgigaDocument ad, int charOffset,
-                            StringBuilder sb, boolean tokensOnly)
+                            StringBuilder sb, boolean preserveTokenTaggings)
     throws AnnotationException {
     logger.debug("f4");
     final int n = ad.getSents().size();
@@ -108,7 +108,7 @@ public class AgigaConcreteAnnotator {
       // the second argument is the estimated character provenance offset.
       // We're not filling the optional textSpan fields, so the exact parameter
       // value doesn't matter.
-      Sentence st = this.ag.convertSentence(asent, currOffset, tokensOnly);
+      Sentence st = this.ag.convertSentence(asent, currOffset, preserveTokenTaggings);
       String sentText = this.ag.flattenText(asent);
       sb.append(sentText);
       currOffset += sentText.length();

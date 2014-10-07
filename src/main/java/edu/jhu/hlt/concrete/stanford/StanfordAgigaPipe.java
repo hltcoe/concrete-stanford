@@ -528,7 +528,7 @@ public class StanfordAgigaPipe {
       logger.debug("sentence index: " + cm.get(SentenceIndexAnnotation.class).toString());
 
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
-    agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb, true);
+    agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb, false);
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
   }
 
@@ -553,7 +553,7 @@ public class StanfordAgigaPipe {
 
     transferAnnotations(sentenceSplitText, docAnnotation);
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
-    agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb, false);
+    agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb, true);
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
   }
 
