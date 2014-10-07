@@ -45,7 +45,7 @@ public class ProfilableStanfordServer {
   /**
    * @param args
    */
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
     if (args.length != 1) {
       logger.info("This program takes 1 argument: the path to a .gz file with giga documents.");
       System.exit(1);

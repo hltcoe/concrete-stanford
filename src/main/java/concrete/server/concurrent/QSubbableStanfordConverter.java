@@ -43,7 +43,7 @@ public class QSubbableStanfordConverter {
   /**
    * @param args
    */
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
     SystemErrDisabler sed = new SystemErrDisabler();
     sed.disable();
 

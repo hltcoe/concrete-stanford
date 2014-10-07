@@ -32,7 +32,7 @@ public class CallableConcreteServer implements Callable<Communication> {
   /**
    * 
    */
-  public CallableConcreteServer(Communication c) {
+  public CallableConcreteServer(Communication c) throws IOException {
     this.pipe = new StanfordAgigaPipe();
     this.c = c;
   }
@@ -41,7 +41,7 @@ public class CallableConcreteServer implements Callable<Communication> {
    * @throws ExecutionException 
    * @throws InterruptedException
    */
-  public CallableConcreteServer(Future<Communication> fc) throws InterruptedException, ExecutionException {
+  public CallableConcreteServer(Future<Communication> fc) throws InterruptedException, ExecutionException, IOException {
     this.pipe = new StanfordAgigaPipe();
     this.c = fc.get();
   }

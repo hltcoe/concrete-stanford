@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.agiga.util.ConcreteAgigaProperties;
 import concrete.tools.AnnotationException;
 import concrete.util.data.ConcreteFactory;
 import edu.jhu.hlt.concrete.AnnotationMetadata;
@@ -26,10 +27,14 @@ import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.DependencyParse;
 import edu.jhu.hlt.concrete.Entity;
 import edu.jhu.hlt.concrete.EntityMention;
+import edu.jhu.hlt.concrete.EntityMentionSet;
+import edu.jhu.hlt.concrete.EntitySet;
+import edu.jhu.hlt.concrete.Parse;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
+import edu.jhu.hlt.concrete.TokenTagging;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.CommunicationSerialization;
@@ -49,17 +54,22 @@ public class StanfordAgigaPipeTest {
   public static final String SHAKE_HAND_TEXT_STRING = "The man ran to shake the U.S. \nPresident's hand. ";
   public static final String AFP_0623_TEXT = "" + "Protest over arrest of Sri Lanka reporter linked to Fonseka"
       + "\nSri Lankan media groups Thursday protested against the arrest of a reporter\n"
-      + "close to Sarath Fonseka, the detained ex-army chief who tried to unseat the\n" + "president in recent elections.\n"
+      + "close to Sarath Fonseka, the detained ex-army chief who tried to unseat the\n"
+      + "president in recent elections.\n"
       + "\nThe groups issued a joint statement demanding the release of Ruwan Weerakoon, a\n"
       + "reporter with the Nation newspaper, who was arrested this week.\n"
       + "\n\"We request the Inspector General of Police to disclose the reasons behind the\n"
-      + "arrest and detention of Ruwan Weerakoon and make arrangements for him to receive\n" + "legal aid immediately,\" the statement added.\n"
+      + "arrest and detention of Ruwan Weerakoon and make arrangements for him to receive\n"
+      + "legal aid immediately,\" the statement added.\n"
       + "\nWeerakoon maintained close contact with Fonseka when the general led the\n"
       + "military during the final phase of last year's war against Tamil Tiger rebels.\n"
       + "\nFonseka was an ally of President Mahinda Rajapakse when the rebel Liberation\n"
-      + "Tigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out\n" + "and contested the presidency in January's elections.\n"
-      + "\nFonseka was arrested soon after losing the poll and appeared in front of a court\n" + "martial this week. The case was adjourned.\n"
-      + "\nLocal and international rights groups have accused Rajapakse of cracking down on\n" + "dissent, a charge the government has denied.\n";
+      + "Tigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out\n"
+      + "and contested the presidency in January's elections.\n"
+      + "\nFonseka was arrested soon after losing the poll and appeared in front of a court\n"
+      + "martial this week. The case was adjourned.\n"
+      + "\nLocal and international rights groups have accused Rajapakse of cracking down on\n"
+      + "dissent, a charge the government has denied.\n";
 
   final String pathToAFPComm = "./src/test/resources/AFP_ENG_20100318.0623.xml";
   final String pathToNYTComm = "./src/test/resources/NYT_ENG_20070319.0077.xml";
@@ -162,16 +172,19 @@ public class StanfordAgigaPipeTest {
   @Test
   public void processHandshakeCommunication() throws TException, IOException, ConcreteException, AnnotationException {
     Communication shakeHandComm = this.cf.randomCommunication().setText(SHAKE_HAND_TEXT_STRING);
-    AnnotationMetadata md = new AnnotationMetadata().setTool("concrete-stanford:test").setTimestamp(System.currentTimeMillis() / 1000);
+    AnnotationMetadata md = new AnnotationMetadata().setTool("concrete-stanford:test").setTimestamp(
+        System.currentTimeMillis() / 1000);
     shakeHandComm.setMetadata(md);
-    Section section = new Section().setUuid(cuf.getConcreteUUID()).setTextSpan(new TextSpan().setStart(0).setEnding(SHAKE_HAND_TEXT_STRING.length()))
-        .setKind("Passage");
+    Section section = new Section().setUuid(cuf.getConcreteUUID())
+        .setTextSpan(new TextSpan().setStart(0).setEnding(SHAKE_HAND_TEXT_STRING.length())).setKind("Passage");
     shakeHandComm.addToSectionList(section);
 
-    assertTrue("Error in creating original communication", new CommunicationSerialization().toBytes(shakeHandComm) != null);
+    assertTrue("Error in creating original communication",
+        new CommunicationSerialization().toBytes(shakeHandComm) != null);
 
     Communication processedShakeHandComm = pipe.process(shakeHandComm);
-    assertTrue("Error in serializing processed communication", new CommunicationSerialization().toBytes(processedShakeHandComm) != null);
+    assertTrue("Error in serializing processed communication",
+        new CommunicationSerialization().toBytes(processedShakeHandComm) != null);
     final String docText = processedShakeHandComm.getOriginalText();
     final String[] stokens = { "The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
 
@@ -198,14 +211,17 @@ public class StanfordAgigaPipeTest {
     for (Token tok : firstTokenization.getTokenList().getTokenList()) {
       actualTokensSB.append("(" + tok.text + ", " + tok.tokenIndex + ") ");
     }
-    assertTrue("Expected tokens length = " + stokens.length + ";" + "Actual   tokens length = " + firstTokenization.getTokenList().getTokenList().size() + "; "
-        + "Actual tokens = " + actualTokensSB.toString(), firstTokenization.getTokenList().getTokenList().size() == stokens.length);
+    assertTrue(
+        "Expected tokens length = " + stokens.length + ";" + "Actual   tokens length = "
+            + firstTokenization.getTokenList().getTokenList().size() + "; " + "Actual tokens = "
+            + actualTokensSB.toString(), firstTokenization.getTokenList().getTokenList().size() == stokens.length);
 
     // Verify tokens
     int tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       assertTrue("tokIdx = " + tokIdx + "; token.tokenIndex = " + token.tokenIndex, token.tokenIndex == tokIdx);
-      assertTrue("expected = [" + stokens[tokIdx] + "]; token.text = [" + token.text + "]", token.text.equals(stokens[tokIdx]));
+      assertTrue("expected = [" + stokens[tokIdx] + "]; token.text = [" + token.text + "]",
+          token.text.equals(stokens[tokIdx]));
       tokIdx++;
     }
 
@@ -213,7 +229,8 @@ public class StanfordAgigaPipeTest {
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
       String substr = docText.substring(tts.getStart(), tts.getEnding());
-      assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts + ") = [" + substr + "]", token.getText().equals(substr));
+      assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts + ") = [" + substr + "]", token.getText()
+          .equals(substr));
     }
 
     // Verify tokens to full seeded
@@ -221,7 +238,8 @@ public class StanfordAgigaPipeTest {
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
       String substr = docText.substring(tts.getStart(), tts.getEnding());
-      assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts + ") = [" + substr + "]", stokens[tokIdx].equals(substr));
+      assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts + ") = [" + substr + "]",
+          stokens[tokIdx].equals(substr));
       tokIdx++;
     }
 
@@ -231,14 +249,17 @@ public class StanfordAgigaPipeTest {
     tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
-      assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx], tts.getStart() == start[tokIdx]);
-      assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx], tts.getEnding() == end[tokIdx]);
+      assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx],
+          tts.getStart() == start[tokIdx]);
+      assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx],
+          tts.getEnding() == end[tokIdx]);
       tokIdx++;
     }
 
     // Verify # entities
     assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
-    assertEquals("Should be three entities.", 3, processedShakeHandComm.getEntitySetList().get(0).getEntityList().size());
+    assertEquals("Should be three entities.", 3, processedShakeHandComm.getEntitySetList().get(0).getEntityList()
+        .size());
 
     // Verify # Singleton entities
     for (Entity entity : processedShakeHandComm.getEntitySetList().get(0).getEntityList()) {
@@ -263,6 +284,73 @@ public class StanfordAgigaPipeTest {
       atLeastOne |= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
     }
     assertTrue(atLeastOne);
+
+    // Verify metadata toolnames
+    // this.verifyToolNames(processedShakeHandComm);
+  }
+
+  private void verifyToolNamesSub(String given, String prefix, String expected) {
+    String joined = prefix + ": " + expected;
+    assertEquals(joined, given);
+  }
+
+  private void verifyToolNames(Communication comm) throws IOException {
+    ConcreteAgigaProperties props = new ConcreteAgigaProperties();
+    ConcreteStanfordProperties csProps = new ConcreteStanfordProperties();
+
+    String toolNamePrefix = csProps.getToolName();
+    for (Section section : comm.getSectionList()) {
+      // we don't verify section toolnames
+      if (section.isSetSentenceList())
+        for (Sentence sentence : section.getSentenceList()) {
+          if (sentence.isSetTokenization()) {
+            Tokenization tokenization = sentence.getTokenization();
+            verifyToolNamesSub(tokenization.getMetadata().getTool(), toolNamePrefix, props.getTokenizerToolName());
+            if (tokenization.isSetTokenTaggingList()) {
+              for (TokenTagging tokenTagging : tokenization.getTokenTaggingList()) {
+                switch (tokenTagging.getTaggingType()) {
+                case "POS":
+                  verifyToolNamesSub(tokenTagging.getMetadata().getTool(), toolNamePrefix, props.getPOSToolName());
+                  break;
+                case "LEMMA":
+                  verifyToolNamesSub(tokenTagging.getMetadata().getTool(), toolNamePrefix,
+                      props.getLemmatizerToolName());
+                  break;
+                case "NER":
+                  verifyToolNamesSub(tokenTagging.getMetadata().getTool(), toolNamePrefix, props.getNERToolName());
+                  break;
+                default:
+                  assertTrue("unknown tagging type " + tokenTagging.getTaggingType(), false);
+                  break;
+                }
+              }
+            }
+
+            if (tokenization.isSetParseList())
+              for (Parse parse : tokenization.getParseList())
+                verifyToolNamesSub(parse.getMetadata().getTool(), toolNamePrefix, props.getCParseToolName());
+
+            if (tokenization.isSetDependencyParseList()) {
+              for (DependencyParse dparse : tokenization.getDependencyParseList()) {
+                String[] wsSplit = dparse.getMetadata().getTool().trim().split(" ");
+                verifyToolNamesSub(dparse.getMetadata().getTool(), toolNamePrefix, props.getDParseToolName() + " "
+                    + wsSplit[wsSplit.length - 1]);
+              }
+            }
+          }
+        }
+    }
+    // verify coref
+    if (comm.isSetEntityMentionSetList()) {
+      for (EntityMentionSet ems : comm.getEntityMentionSetList()) {
+        verifyToolNamesSub(ems.getMetadata().getTool(), toolNamePrefix, props.getCorefToolName());
+      }
+    }
+    if (comm.isSetEntitySetList()) {
+      for (EntitySet es : comm.getEntitySetList()) {
+        verifyToolNamesSub(es.getMetadata().getTool(), toolNamePrefix, props.getCorefToolName());
+      }
+    }
   }
 
   private void testTextSpan(TextSpan ts, int expectedStart, int expectedEnd) {
@@ -302,7 +390,7 @@ public class StanfordAgigaPipeTest {
               logger.warn("expected = [" + token.getText() + "];" + "docText(" + span + ") = [" + substr + "]");
             else
               numEq++;
-            
+
             numTot++;
           }
         }
@@ -316,7 +404,8 @@ public class StanfordAgigaPipeTest {
     for (Section sect : nsects) {
       assertTrue(sect.isSetKind());
       if (kindsThatShouldHaveSections.contains(sect.getKind())) {
-        assertTrue("section #" + i + " (uuid = " + sect.getUuid() + ") doesn't have text spans set", sect.isSetTextSpan());
+        assertTrue("section #" + i + " (uuid = " + sect.getUuid() + ") doesn't have text spans set",
+            sect.isSetTextSpan());
         i++;
       }
     }
@@ -362,16 +451,22 @@ public class StanfordAgigaPipeTest {
     // Sentences test
     String[] sentences = {
         "Sri Lankan media groups Thursday protested against the arrest of a reporter\n"
-            + "close to Sarath Fonseka, the detained ex-army chief who tried to unseat the\n" + "president in recent elections.",
-        "The groups issued a joint statement demanding the release of Ruwan Weerakoon, a\n" + "reporter with the Nation newspaper, who was arrested this week.",
+            + "close to Sarath Fonseka, the detained ex-army chief who tried to unseat the\n"
+            + "president in recent elections.",
+        "The groups issued a joint statement demanding the release of Ruwan Weerakoon, a\n"
+            + "reporter with the Nation newspaper, who was arrested this week.",
         "\"We request the Inspector General of Police to disclose the reasons behind the\n"
-            + "arrest and detention of Ruwan Weerakoon and make arrangements for him to receive\n" + "legal aid immediately,\" the statement added.",
+            + "arrest and detention of Ruwan Weerakoon and make arrangements for him to receive\n"
+            + "legal aid immediately,\" the statement added.",
         "Weerakoon maintained close contact with Fonseka when the general led the\n"
             + "military during the final phase of last year's war against Tamil Tiger rebels.",
         "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation\n"
-            + "Tigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out\n" + "and contested the presidency in January's elections.",
-        "Fonseka was arrested soon after losing the poll and appeared in front of a court\n" + "martial this week.", "The case was adjourned.",
-        "Local and international rights groups have accused Rajapakse of cracking down on\n" + "dissent, a charge the government has denied." };
+            + "Tigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out\n"
+            + "and contested the presidency in January's elections.",
+        "Fonseka was arrested soon after losing the poll and appeared in front of a court\n" + "martial this week.",
+        "The case was adjourned.",
+        "Local and international rights groups have accused Rajapakse of cracking down on\n"
+            + "dissent, a charge the government has denied." };
     this.testSentenceText(sentences, afpProcessedComm);
 
     // test sentences wrt processed
@@ -381,7 +476,8 @@ public class StanfordAgigaPipeTest {
         "`` We request the Inspector General of Police to disclose the reasons behind the arrest and detention of Ruwan Weerakoon and make arrangements for him to receive legal aid immediately , '' the statement added .",
         "Weerakoon maintained close contact with Fonseka when the general led the military during the final phase of last year 's war against Tamil Tiger rebels .",
         "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation Tigers of Tamil Eelam -LRB- LTTE -RRB- were crushed in May , but the two men later fell out and contested the presidency in January 's elections .",
-        "Fonseka was arrested soon after losing the poll and appeared in front of a court martial this week .", "The case was adjourned .",
+        "Fonseka was arrested soon after losing the poll and appeared in front of a court martial this week .",
+        "The case was adjourned .",
         "Local and international rights groups have accused Rajapakse of cracking down on dissent , a charge the government has denied ." };
 
     // TODO: fix this failure
@@ -412,7 +508,8 @@ public class StanfordAgigaPipeTest {
 
     assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
 
-    assertTrue("Error in serializing processed communication", new CommunicationSerialization().toBytes(afpProcessedComm) != null);
+    assertTrue("Error in serializing processed communication",
+        new CommunicationSerialization().toBytes(afpProcessedComm) != null);
   }
 
   private void testNDependencyParses(int expected, Communication target) {
@@ -462,16 +559,17 @@ public class StanfordAgigaPipeTest {
     boolean allSet = true;
     for (Entity entity : nytProcessedComm.getEntitySetList().get(0).getEntityList())
       allSet &= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
-    
+
     assertTrue(allSet);
-    
+
     // Verify anchor tokens
     int numWithout = 0;
     for (EntityMention em : nytProcessedComm.getEntityMentionSetList().get(0).getMentionList())
       numWithout += (em.getTokens().anchorTokenIndex >= 0 ? 0 : 1);
-    
+
     assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
-    assertTrue("Error in serializing processed communication", new CommunicationSerialization().toBytes(nytProcessedComm) != null);
+    assertTrue("Error in serializing processed communication",
+        new CommunicationSerialization().toBytes(nytProcessedComm) != null);
   }
 
   // @Test

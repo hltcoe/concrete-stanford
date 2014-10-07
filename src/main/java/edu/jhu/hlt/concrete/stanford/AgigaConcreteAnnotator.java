@@ -1,5 +1,6 @@
 package edu.jhu.hlt.concrete.stanford;
 
+import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.agiga.util.ConcreteAgigaProperties;
 import concrete.tools.AnnotationException;
 import edu.jhu.agiga.AgigaCoref;
 import edu.jhu.agiga.AgigaDocument;
@@ -21,7 +23,6 @@ import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TheoryDependencies;
 import edu.jhu.hlt.concrete.Tokenization;
-import edu.jhu.hlt.concrete.UUID;
 import edu.jhu.hlt.concrete.agiga.AgigaConverter;
 import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
 
@@ -32,25 +33,36 @@ import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
 public class AgigaConcreteAnnotator {
 
   private static final Logger logger = LoggerFactory.getLogger(AgigaConcreteAnnotator.class);
+  
   private final ConcreteUUIDFactory idFactory = new ConcreteUUIDFactory();
+  private final ConcreteAgigaProperties agigaProps;
+  private final ConcreteStanfordProperties csProps;
+  private final AgigaConverter ag;
 
-  private AgigaConverter ag;
+  // public AgigaConcreteAnnotator(boolean setSpans) throws IOException {
+  //   ag = new AgigaConverter(setSpans, false);
+  //   csProps = new ConcreteStanfordProperties();
+  //   ag.setToolName(csProps.getToolName());
+  // }
 
-  public AgigaConcreteAnnotator(boolean setSpans) {
-    ag = new AgigaConverter(setSpans);
+  public AgigaConcreteAnnotator(boolean setSpans) throws IOException {
+    this.agigaProps = new ConcreteAgigaProperties();
+    this.csProps = new ConcreteStanfordProperties();
+    
+    ag = new AgigaConverter(setSpans, this.csProps.getAllowEmptyMentions());
   }
 
-  public AnnotationMetadata metadata() {
-    return new AnnotationMetadata().setTool("anno-pipeline-v2").setTimestamp(System.currentTimeMillis() / 1000);
+  public AnnotationMetadata metadata(String name) {
+    return new AnnotationMetadata().setTool(name).setTimestamp(System.currentTimeMillis() / 1000);
   }
 
   public SimpleEntry<EntityMentionSet, EntitySet> convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations)
-      throws AnnotationException {
+    throws AnnotationException {
     EntityMentionSet ems = new EntityMentionSet().setUuid(this.idFactory.getConcreteUUID());
     TheoryDependencies td = new TheoryDependencies();
     for (Tokenization t : tokenizations)
       td.addToTokenizationTheoryList(t.getUuid());
-    AnnotationMetadata md = this.metadata().setDependencies(td);
+    AnnotationMetadata md = this.metadata(this.agigaProps.getCorefToolName()).setDependencies(td);
     ems.setMetadata(md);
 
     List<Entity> elist = new ArrayList<Entity>();
@@ -90,7 +102,7 @@ public class AgigaConcreteAnnotator {
       // the second argument is the estimated character provenance offset.
       // We're not filling the optional textSpan fields, so the exact parameter
       // value doesn't matter.
-      Sentence st = this.ag.convertSentence(asent, currOffset);
+      Sentence st = this.ag.convertSentence(asent, currOffset, true);
       String sentText = this.ag.flattenText(asent);
       sb.append(sentText);
       currOffset += sentText.length();
