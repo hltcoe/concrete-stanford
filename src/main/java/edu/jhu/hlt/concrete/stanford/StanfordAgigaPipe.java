@@ -268,7 +268,7 @@ public class StanfordAgigaPipe {
         logger.debug("\t"+  sectionText);
       } else if(kindsToTokenizeOnly.contains(section.getKind())) {
         // Only tokenize & sentence split
-        logger.warn("Special handling for section type {} section: {}",
+        logger.debug("Special handling for section type {} section: {}",
                     section.getKind(), section.getUuid());
         logger.debug(">> SectionText=["+sectionText+"]");
         processSectionTokenize(section, sectionAnnotation,
