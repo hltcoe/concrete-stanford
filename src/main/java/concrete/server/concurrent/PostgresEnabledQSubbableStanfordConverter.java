@@ -59,15 +59,31 @@ public class PostgresEnabledQSubbableStanfordConverter {
     boolean docsAvailable = true;
     while (docsAvailable && backoffCounter <= 100000) {
       try (PostgresClient pc = new PostgresClient(host, dbName, user, pass)) {
+        StopWatch pgsq = new StopWatch();
+        pgsq.start();
         docsAvailable = pc.availableUnannotatedCommunications();
+        pgsq.stop();
+        logger.info("Checked document availability in: {} ms", pgsq.getTime());
         while (docsAvailable) {
+          pgsq.start();
           ProxyCommunication comm = pc.getUnannotatedCommunication();
+          pgsq.stop();
+          logger.info("Got a document to annotate in: {} ms", pgsq.getTime());
           logger.info("Annotating comm: {}", comm.getId());
+          pgsq.start();
           Communication c = new ProxyCommunicationConverter(comm).toCommunication();
-          docsAvailable = pc.availableUnannotatedCommunications();
+          pgsq.stop();
+          logger.info("Converted document to Communication in: {} ms", pgsq.getTime());
           try {
+            pgsq.start();
             Communication postStanford = pipe.process(c);
+            pgsq.stop();
+            logger.info("Annotated document in: {} ms", pgsq.getTime());
+            pgsq.start();
             pc.insertCommunication(postStanford);
+            pgsq.stop();
+            logger.info("Inserted document in: {} ms", pgsq.getTime());
+            docsAvailable = pc.availableUnannotatedCommunications();
           } catch (IOException | TException | ConcreteException | AnnotationException e) {
             logger.warn("Caught an exception while annotating a document.", e);
             logger.warn("Document in question: {}", comm.getId());
