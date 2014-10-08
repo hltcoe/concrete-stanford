@@ -71,7 +71,7 @@ public class PostgresClient implements AutoCloseable {
     
     this.conn = this.getConnector();
     this.insertPS = this.conn.prepareStatement("INSERT INTO " + ANNOTATED_TABLE + " (id, bytez) VALUES (?,?)");
-    this.isAnnotatedPS = this.conn.prepareStatement("SELECT id FROM annotated WHERE ID = ?");
+    this.isAnnotatedPS = this.conn.prepareStatement("SELECT documents_id FROM annotated WHERE documents_id = ?");
     this.nextCommPS = this.conn.prepareStatement(randQuery);
   }
   
