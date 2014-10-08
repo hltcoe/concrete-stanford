@@ -25,6 +25,7 @@ import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.CommunicationSerialization;
 import edu.jhu.hlt.concrete.util.ConcreteException;
+import edu.jhu.hlt.gigaword.ClojureIngester;
 
 /**
  * @author max
@@ -36,8 +37,6 @@ public class PostgresClient implements AutoCloseable {
   
   public static final String DOCUMENTS_TABLE = "documents_raw";
   public static final String ANNOTATED_TABLE = "annotated";
-  
-  private IFn proxyToProxyCommFx;
   
   private final String randQuery = "SELECT raw FROM " + DOCUMENTS_TABLE + " WHERE id NOT IN"
        + " (SELECT documents_id FROM " + ANNOTATED_TABLE + " ) AND random() < 0.01 LIMIT 100";
@@ -54,6 +53,8 @@ public class PostgresClient implements AutoCloseable {
   private final PreparedStatement isAnnotatedPS;
   private final PreparedStatement nextCommPS;
   
+  private final ClojureIngester ci = new ClojureIngester();
+  
   /**
    * @throws SQLException 
    * 
@@ -62,8 +63,6 @@ public class PostgresClient implements AutoCloseable {
     IFn req = Clojure.var("clojure.core", "require");
     // req.invoke(Clojure.read("gigaword-ingester.giga"));
     req.invoke(Clojure.read("gigaword-ingester.giga"));
-    
-    this.proxyToProxyCommFx = Clojure.var("gigaword-ingester.giga", "proxy->map");
     
     this.host = host;
     this.dbName = dbName;
@@ -93,7 +92,7 @@ public class PostgresClient implements AutoCloseable {
     try (ResultSet rs = this.nextCommPS.executeQuery()) {
       if (rs.next()) {
         String rawDoc = rs.getString("raw");
-        return (ProxyCommunication) this.proxyToProxyCommFx.invoke(rawDoc);
+        return this.ci.proxyStringToProxyCommunication(rawDoc);
       } else {
         throw new SQLException("Thought a document would come back, but got no results.");
       }
