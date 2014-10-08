@@ -91,8 +91,12 @@ public class PostgresClient implements AutoCloseable {
   
   public ProxyCommunication getUnannotatedCommunication() throws SQLException {
     try (ResultSet rs = this.nextCommPS.executeQuery()) {
-      String rawDoc = rs.getString("raw");
-      return (ProxyCommunication) this.proxyToProxyCommFx.invoke(rawDoc);
+      if (rs.next()) {
+        String rawDoc = rs.getString("raw");
+        return (ProxyCommunication) this.proxyToProxyCommFx.invoke(rawDoc);
+      } else {
+        throw new SQLException("Thought a document would come back, but got no results.");
+      }
     }
   }
 
