@@ -97,6 +97,7 @@ public class PostgresEnabledQSubbableStanfordConverter {
         } catch (IOException | TException | ConcreteException | AnnotationException e) {
           logger.warn("Caught an exception while annotating a document.", e);
           logger.warn("Document in question: {}", id.get());
+          id = Optional.ofNullable(jedis.spop(RedisLoader.IDS_KEY));
         } catch (SQLException sqe) {
           logger.info("Waiting for a bit, then attempting to reconnect.");
           backoffCounter *= 10;
