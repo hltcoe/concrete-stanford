@@ -56,45 +56,46 @@ public class PostgresEnabledQSubbableStanfordConverter {
     byte[] pass = System.getenv("GIGAWORD_PASS").getBytes();
 
     int backoffCounter = 1;
-    while (backoffCounter <= 100000) {
+    boolean docsAvailable = true;
+    while (docsAvailable && backoffCounter <= 100000) {
       try (PostgresClient pc = new PostgresClient(host, dbName, user, pass)) {
-        if (pc.availableUnannotatedCommunications()) {
+        while (docsAvailable) {
           ProxyCommunication comm = pc.getUnannotatedCommunication();
           logger.info("Annotating comm: {}", comm.getId());
           Communication c = new ProxyCommunicationConverter(comm).toCommunication();
           try {
             Communication postStanford = pipe.process(c);
             pc.insertCommunication(postStanford);
+            docsAvailable = pc.availableUnannotatedCommunications();
           } catch (IOException | TException | ConcreteException | AnnotationException e) {
             logger.warn("Caught an exception while annotating a document.", e);
             logger.warn("Document in question: {}", comm.getId());
           } catch (SQLException sqe) {
-            logger.warn("Caught SQLException during insertion:", sqe);
+            logger.warn("Caught SQLException during insertion or querying next:", sqe);
             logger.warn("Document in question: {}", comm.getId());
           }
-        } else {
-          logger.info("No documents available. Exiting.");
-          break;
         }
       } catch (SQLException e1) {
         logger.error("Caught SQLEx during annotation.", e1);
       }
       
-      logger.info("Waiting for a bit, then attempting to reconnect.");
-      backoffCounter *= 10;
-      // 600, 6000, 60000, 600000, 6000000
-      try {
-        Thread.sleep(backoffCounter * backoffMulti);
-      } catch (InterruptedException e) {
-        logger.warn("Won't happen.");
-      }
       
-      logger.info("Trying again.");
+      if (docsAvailable) {
+        logger.info("Waiting for a bit, then attempting to reconnect.");
+        backoffCounter *= 10;
+        // 600, 6000, 60000, 600000, 6000000
+        try {
+          Thread.sleep(backoffCounter * backoffMulti);
+        } catch (InterruptedException e) {
+          logger.warn("Won't happen.");
+        }
+        
+        logger.info("Trying again.");
+      }
     }
 
     sw.stop();
     logger.info("Finished (or backoffs exceeded). Took {} ms.", sw.getTime());
-
     sed.enable();
   }
 }
