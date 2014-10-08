@@ -6,11 +6,7 @@
 package concrete.server.concurrent;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.util.Iterator;
 
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.thrift.TException;
@@ -22,10 +18,8 @@ import concrete.interfaces.ProxyCommunication;
 import concrete.server.sql.PostgresClient;
 import concrete.tools.AnnotationException;
 import edu.jhu.hlt.concrete.Communication;
-import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe;
 import edu.jhu.hlt.concrete.util.ConcreteException;
-import edu.jhu.hlt.gigaword.ClojureIngester;
 import edu.jhu.hlt.gigaword.ProxyCommunicationConverter;
 
 /**
@@ -50,18 +44,7 @@ public class PostgresEnabledQSubbableStanfordConverter {
     SystemErrDisabler sed = new SystemErrDisabler();
     sed.disable();
 
-    ClojureIngester ci = new ClojureIngester();
     StanfordAgigaPipe pipe = new StanfordAgigaPipe();
-    Path inGz = Paths.get(args[0]);
-    Path name = inGz.getFileName();
-    Path out = Paths.get("/home/max/data/agiga2").resolve(name);
-    try {
-      Files.createDirectories(out);
-    } catch (IOException e1) {
-      // ?
-      logger.error("Got IOEx.", e1);
-    }
-
     logger.info("Ingest beginning at: {}", new DateTime().toString());
     StopWatch sw = new StopWatch();
     sw.start();
