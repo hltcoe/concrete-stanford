@@ -59,14 +59,15 @@ public class PostgresEnabledQSubbableStanfordConverter {
     boolean docsAvailable = true;
     while (docsAvailable && backoffCounter <= 100000) {
       try (PostgresClient pc = new PostgresClient(host, dbName, user, pass)) {
+        docsAvailable = pc.availableUnannotatedCommunications();
         while (docsAvailable) {
           ProxyCommunication comm = pc.getUnannotatedCommunication();
           logger.info("Annotating comm: {}", comm.getId());
           Communication c = new ProxyCommunicationConverter(comm).toCommunication();
+          docsAvailable = pc.availableUnannotatedCommunications();
           try {
             Communication postStanford = pipe.process(c);
             pc.insertCommunication(postStanford);
-            docsAvailable = pc.availableUnannotatedCommunications();
           } catch (IOException | TException | ConcreteException | AnnotationException e) {
             logger.warn("Caught an exception while annotating a document.", e);
             logger.warn("Document in question: {}", comm.getId());
