@@ -54,23 +54,23 @@ public class StanfordAgigaPipeTest {
 
   public static final String SHAKE_HAND_TEXT_STRING = "The man ran to shake the U.S. \nPresident's hand. ";
   public static final String AFP_0623_TEXT = "" + "Protest over arrest of Sri Lanka reporter linked to Fonseka"
-      + "\nSri Lankan media groups Thursday protested against the arrest of a reporter\n"
-      + "close to Sarath Fonseka, the detained ex-army chief who tried to unseat the\n"
-      + "president in recent elections.\n"
-      + "\nThe groups issued a joint statement demanding the release of Ruwan Weerakoon, a\n"
-      + "reporter with the Nation newspaper, who was arrested this week.\n"
-      + "\n\"We request the Inspector General of Police to disclose the reasons behind the\n"
-      + "arrest and detention of Ruwan Weerakoon and make arrangements for him to receive\n"
-      + "legal aid immediately,\" the statement added.\n"
-      + "\nWeerakoon maintained close contact with Fonseka when the general led the\n"
-      + "military during the final phase of last year's war against Tamil Tiger rebels.\n"
-      + "\nFonseka was an ally of President Mahinda Rajapakse when the rebel Liberation\n"
-      + "Tigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out\n"
-      + "and contested the presidency in January's elections.\n"
-      + "\nFonseka was arrested soon after losing the poll and appeared in front of a court\n"
-      + "martial this week. The case was adjourned.\n"
-      + "\nLocal and international rights groups have accused Rajapakse of cracking down on\n"
-      + "dissent, a charge the government has denied.\n";
+      + "\nSri Lankan media groups Thursday protested against the arrest of a reporter"
+      + "\nclose to Sarath Fonseka, the detained ex-army chief who tried to unseat the"
+      + "\npresident in recent elections."
+      + "\nThe groups issued a joint statement demanding the release of Ruwan Weerakoon, a"
+      + "\nreporter with the Nation newspaper, who was arrested this week."
+      + "\n\"We request the Inspector General of Police to disclose the reasons behind the"
+      + "\narrest and detention of Ruwan Weerakoon and make arrangements for him to receive"
+      + "\nlegal aid immediately,\" the statement added."
+      + "\nWeerakoon maintained close contact with Fonseka when the general led the"
+      + "\nmilitary during the final phase of last year's war against Tamil Tiger rebels."
+      + "\nFonseka was an ally of President Mahinda Rajapakse when the rebel Liberation"
+      + "\nTigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out"
+      + "\nand contested the presidency in January's elections."
+      + "\nFonseka was arrested soon after losing the poll and appeared in front of a court"
+      + "\nmartial this week. The case was adjourned."
+      + "\nLocal and international rights groups have accused Rajapakse of cracking down on"
+      + "\ndissent, a charge the government has denied.\n";
 
   final String pathToAFPComm = "./src/test/resources/AFP_ENG_20100318.0623.xml";
   final String pathToNYTComm = "./src/test/resources/NYT_ENG_20070319.0077.xml";
