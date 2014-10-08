@@ -67,20 +67,24 @@ public class PostgresEnabledQSubbableStanfordConverter {
         pgsq.stop();
         logger.info("Checked document availability in: {} ms", pgsq.getTime());
         while (docsAvailable) {
+          pgsq.reset();
           pgsq.start();
           ProxyCommunication comm = pc.getUnannotatedCommunication();
           pgsq.stop();
           logger.info("Got a document to annotate in: {} ms", pgsq.getTime());
           logger.info("Annotating comm: {}", comm.getId());
+          pgsq.reset();
           pgsq.start();
           Communication c = new ProxyCommunicationConverter(comm).toCommunication();
           pgsq.stop();
           logger.info("Converted document to Communication in: {} ms", pgsq.getTime());
           try {
+            pgsq.reset();
             pgsq.start();
             Communication postStanford = pipe.process(c);
             pgsq.stop();
             logger.info("Annotated document in: {} ms", pgsq.getTime());
+            pgsq.reset();
             pgsq.start();
             pc.insertCommunication(postStanford);
             pgsq.stop();
