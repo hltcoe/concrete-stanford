@@ -15,5 +15,5 @@ java \
     -XX:+UseSerialGC \
     -Xmx10G \
     -Dlog4j.configurationFile=/home/hltcoe/mthomas/git/concrete-stanford/src/main/resources/log4j2.json \
-    -cp /home/hltcoe/mthomas/git/concrete-stanford/target/concrete-stanford-3.6.7-jar-with-dependencies.jar \
-    concrete.server.concurrent.QSubbableStanfordConverter
+    -cp /home/hltcoe/mthomas/git/concrete-stanford/target/concrete-stanford-3.6.7-SNAPSHOT-jar-with-dependencies.jar \
+    concrete.server.concurrent.PostgresEnabledQSubbableStanfordConverter
