@@ -19,8 +19,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import proxy.interfaces.ProxyCommunication;
 import concrete.agiga.util.ConcreteAgigaProperties;
-import concrete.interfaces.ProxyCommunication;
 import concrete.tools.AnnotationException;
 import concrete.util.data.ConcreteFactory;
 import edu.jhu.hlt.concrete.AnnotationMetadata;

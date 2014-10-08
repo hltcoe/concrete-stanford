@@ -4,15 +4,14 @@
 
   <groupId>edu.jhu.hlt.concrete</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>3.6.7-SNAPSHOT</version>
+  <version>3.7.0</version>
   <packaging>jar</packaging>
 
   <name>Concrete Stanford</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <!-- <concrete.version>3.6.2</concrete.version> -->
-    <concrete.agiga.version>3.6.4</concrete.agiga.version>
+    <concrete.agiga.version>3.7.0</concrete.agiga.version>
   </properties>
 
   <build>
@@ -64,7 +63,7 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>gigaword-json-ingest</artifactId>
-      <version>3.6.7</version>
+      <version>3.7.0</version>
     </dependency>
 
     <!-- <dependency> -->

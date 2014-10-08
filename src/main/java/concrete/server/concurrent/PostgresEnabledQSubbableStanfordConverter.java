@@ -15,9 +15,9 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import proxy.interfaces.ProxyCommunication;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import concrete.interfaces.ProxyCommunication;
 import concrete.server.LoggedUncaughtExceptionHandler;
 import concrete.server.RedisLoader;
 import concrete.server.sql.PostgresClient;

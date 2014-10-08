@@ -18,9 +18,9 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import proxy.interfaces.ProxyCommunication;
 import clojure.java.api.Clojure;
 import clojure.lang.IFn;
-import concrete.interfaces.ProxyCommunication;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.CommunicationSerialization;
