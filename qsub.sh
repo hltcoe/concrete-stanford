@@ -5,8 +5,8 @@
 #$ -l h_rt=50:00:00            # runtime limit
 #$ -l mem_free=15G             # expected amount of mem
 #$ -l num_proc=2
-#$ -M maxjthomas@gmail.com
-#$ -o /home/hltcoe/mthomas/job-logs/agiga2-rc4    # log here
+#$ -M max.thomas@jhuapl.edu
+#$ -o /home/hltcoe/mthomas/job-logs/agiga2-rc5    # log here
 #$ -m ase                       # a=aborted b=begining e=end s=suspended
 #$ -S /bin/bash
 #$ -N agiga2                    # job name
@@ -15,5 +15,5 @@ java \
     -XX:+UseSerialGC \
     -Xmx10G \
     -Dlog4j.configurationFile=/home/hltcoe/mthomas/git/concrete-stanford/src/main/resources/log4j2.json \
-    -cp /home/hltcoe/mthomas/git/concrete-stanford/target/concrete-stanford-3.6.7-SNAPSHOT-jar-with-dependencies.jar \
+    -cp /home/hltcoe/mthomas/git/concrete-stanford/target/concrete-stanford-3.7.0-jar-with-dependencies.jar \
     concrete.server.concurrent.PostgresEnabledQSubbableStanfordConverter
