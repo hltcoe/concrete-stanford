@@ -29,6 +29,7 @@ import edu.jhu.hlt.gigaword.ProxyCommunicationConverter;
 public class PostgresEnabledQSubbableStanfordConverter {
 
   private static final Logger logger = LoggerFactory.getLogger(PostgresEnabledQSubbableStanfordConverter.class);
+  private static final int backoffMulti = 60;
 
   /**
    * 
@@ -48,34 +49,51 @@ public class PostgresEnabledQSubbableStanfordConverter {
     logger.info("Ingest beginning at: {}", new DateTime().toString());
     StopWatch sw = new StopWatch();
     sw.start();
-    
+
     String host = System.getenv("GIGAWORD_HOST");
     String dbName = System.getenv("GIGAWORD_DB");
     String user = System.getenv("GIGAWORD_USER");
     byte[] pass = System.getenv("GIGAWORD_PASS").getBytes();
 
-    try (PostgresClient pc = new PostgresClient(host, dbName, user, pass)) {
-      while (pc.availableUnannotatedCommunications()) {
-        ProxyCommunication comm = pc.getUnannotatedCommunication();
-        logger.info("Annotating comm: {}", comm.getId());
-        Communication c = new ProxyCommunicationConverter(comm).toCommunication();
-        try {
-          Communication postStanford = pipe.process(c);
-          pc.insertCommunication(postStanford);
-        } catch (IOException | TException | ConcreteException | AnnotationException e) {
-          logger.warn("Caught an exception while annotating a document.", e);
-          logger.warn("Document in question: {}", comm.getId());
-        } catch (SQLException sqe) {
-          logger.warn("Caught SQLException:", sqe);
-          logger.warn("Document in question: {}", comm.getId());
+    int backoffCounter = 1;
+    while (backoffCounter <= 100000) {
+      try (PostgresClient pc = new PostgresClient(host, dbName, user, pass)) {
+        if (pc.availableUnannotatedCommunications()) {
+          ProxyCommunication comm = pc.getUnannotatedCommunication();
+          logger.info("Annotating comm: {}", comm.getId());
+          Communication c = new ProxyCommunicationConverter(comm).toCommunication();
+          try {
+            Communication postStanford = pipe.process(c);
+            pc.insertCommunication(postStanford);
+          } catch (IOException | TException | ConcreteException | AnnotationException e) {
+            logger.warn("Caught an exception while annotating a document.", e);
+            logger.warn("Document in question: {}", comm.getId());
+          } catch (SQLException sqe) {
+            logger.warn("Caught SQLException during insertion:", sqe);
+            logger.warn("Document in question: {}", comm.getId());
+          }
+        } else {
+          logger.info("No documents available. Exiting.");
+          break;
         }
+      } catch (SQLException e1) {
+        logger.error("Caught SQLEx during annotation.", e1);
       }
-    } catch (SQLException e1) {
-      logger.error("Caught SQLEx retrieving documents.", e1);
+      
+      logger.info("Waiting for a bit, then attempting to reconnect.");
+      backoffCounter *= 10;
+      // 600, 6000, 60000, 600000, 6000000
+      try {
+        Thread.sleep(backoffCounter * backoffMulti);
+      } catch (InterruptedException e) {
+        logger.warn("Won't happen.");
+      }
+      
+      logger.info("Trying again.");
     }
 
     sw.stop();
-    logger.info("Finished. Took {} ms.", sw.getTime());
+    logger.info("Finished (or backoffs exceeded). Took {} ms.", sw.getTime());
 
     sed.enable();
   }
