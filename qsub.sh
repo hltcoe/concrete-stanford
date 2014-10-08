@@ -6,15 +6,14 @@
 #$ -l mem_free=15G             # expected amount of mem
 #$ -l num_proc=2
 #$ -M maxjthomas@gmail.com
-#$ -o /home/hltcoe/mthomas/job-logs/agiga2-rc2    # log here
+#$ -o /home/hltcoe/mthomas/job-logs/agiga2-rc4    # log here
 #$ -m ase                       # a=aborted b=begining e=end s=suspended
 #$ -S /bin/bash
 #$ -N agiga2                    # job name
 #$ -b y                         # run command line vs batch (?)
-echo "Got argument: $1"
 java \
     -XX:+UseSerialGC \
     -Xmx10G \
     -Dlog4j.configurationFile=/home/hltcoe/mthomas/git/concrete-stanford/src/main/resources/log4j2.json \
-    -cp /home/hltcoe/mthomas/git/concrete-stanford/target/concrete-stanford-3.6.4-jar-with-dependencies.jar \
-    concrete.server.concurrent.QSubbableStanfordConverter $1
+    -cp /home/hltcoe/mthomas/git/concrete-stanford/target/concrete-stanford-3.6.7-jar-with-dependencies.jar \
+    concrete.server.concurrent.QSubbableStanfordConverter
