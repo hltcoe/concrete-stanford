@@ -41,6 +41,7 @@ public class RedisLoader {
    */
   public static void main(String[] args) {
     // TODO Auto-generated method stub
+    Thread.setDefaultUncaughtExceptionHandler(new LoggedUncaughtExceptionHandler());
     String redisHost = args[0];
     int redisPort = Integer.parseInt(args[1]);
 

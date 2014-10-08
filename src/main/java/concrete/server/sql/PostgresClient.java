@@ -51,6 +51,7 @@ public class PostgresClient implements AutoCloseable {
   
   private final PreparedStatement insertPS;
   private final PreparedStatement isAnnotatedPS;
+  private final PreparedStatement getDocumentPS;
   private final PreparedStatement nextCommPS;
   
   private final ClojureIngester ci = new ClojureIngester();
@@ -72,6 +73,7 @@ public class PostgresClient implements AutoCloseable {
     this.conn = this.getConnector();
     this.insertPS = this.conn.prepareStatement("INSERT INTO " + ANNOTATED_TABLE + " (documents_id, bytez) VALUES (?,?)");
     this.isAnnotatedPS = this.conn.prepareStatement("SELECT documents_id FROM annotated WHERE documents_id = ?");
+    this.getDocumentPS = this.conn.prepareStatement("SELECT raw FROM documents_raw WHERE id = ?");
     this.nextCommPS = this.conn.prepareStatement(randQuery);
   }
   
@@ -90,6 +92,18 @@ public class PostgresClient implements AutoCloseable {
   
   public ProxyCommunication getUnannotatedCommunication() throws SQLException {
     try (ResultSet rs = this.nextCommPS.executeQuery()) {
+      if (rs.next()) {
+        String rawDoc = rs.getString("raw");
+        return this.ci.proxyStringToProxyCommunication(rawDoc);
+      } else {
+        throw new SQLException("Thought a document would come back, but got no results.");
+      }
+    }
+  }
+  
+  public ProxyCommunication getDocument(String id) throws SQLException {
+    this.getDocumentPS.setString(1, id);
+    try (ResultSet rs = this.getDocumentPS.executeQuery()) {
       if (rs.next()) {
         String rawDoc = rs.getString("raw");
         return this.ci.proxyStringToProxyCommunication(rawDoc);
@@ -130,7 +144,7 @@ public class PostgresClient implements AutoCloseable {
   }
 
   public Set<String> getIngestedDocIds() throws SQLException {
-    Set<String> idSet = new HashSet<String>(1000000);
+    Set<String> idSet = new HashSet<String>(12000000);
     
     try (Connection conn = this.getConnector();
         PreparedStatement ps = conn.prepareStatement("SELECT id FROM documents_raw");) {

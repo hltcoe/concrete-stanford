@@ -7,6 +7,7 @@ package concrete.server.concurrent;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Optional;
 
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.thrift.TException;
@@ -14,8 +15,11 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import concrete.interfaces.ProxyCommunication;
 import concrete.server.LoggedUncaughtExceptionHandler;
+import concrete.server.RedisLoader;
 import concrete.server.sql.PostgresClient;
 import concrete.tools.AnnotationException;
 import edu.jhu.hlt.concrete.Communication;
@@ -48,6 +52,7 @@ public class PostgresEnabledQSubbableStanfordConverter {
     sed.disable();
 
     StanfordAgigaPipe pipe = new StanfordAgigaPipe();
+    JedisPool jp = new JedisPool("test4", 45445);
     logger.info("Ingest beginning at: {}", new DateTime().toString());
     StopWatch sw = new StopWatch();
     sw.start();
@@ -58,67 +63,62 @@ public class PostgresEnabledQSubbableStanfordConverter {
     byte[] pass = System.getenv("GIGAWORD_PASS").getBytes();
 
     int backoffCounter = 1;
-    boolean docsAvailable = true;
-    while (docsAvailable && backoffCounter <= 100000) {
-      try (PostgresClient pc = new PostgresClient(host, dbName, user, pass)) {
-        StopWatch pgsq = new StopWatch();
-        pgsq.start();
-        docsAvailable = pc.availableUnannotatedCommunications();
-        pgsq.stop();
-        logger.info("Checked document availability in: {} ms", pgsq.getTime());
-        while (docsAvailable) {
+
+    try (Jedis jedis = jp.getResource(); 
+        PostgresClient pc = new PostgresClient(host, dbName, user, pass)) {
+      StopWatch pgsq = new StopWatch();
+      pgsq.start();
+      // IF null, stop - nothing left.
+      Optional<String> id = Optional.ofNullable(jedis.spop(RedisLoader.IDS_KEY));
+      pgsq.stop();
+      logger.info("Got document ID in: {} ms", pgsq.getTime());
+      while (id.isPresent() && backoffCounter <= 100000) {
+        try {
+          if (pc.isDocumentAnnotated(id.get())) {
+            logger.info("Document: {} already annotated. Trying again.", id.get());
+            id = Optional.ofNullable(jedis.spop(RedisLoader.IDS_KEY));
+            continue;
+          }
+
           pgsq.reset();
           pgsq.start();
-          ProxyCommunication comm = pc.getUnannotatedCommunication();
+          ProxyCommunication comm = pc.getDocument(id.get());
           pgsq.stop();
           logger.info("Got a document to annotate in: {} ms", pgsq.getTime());
           logger.info("Annotating comm: {}", comm.getId());
+          Communication c = new ProxyCommunicationConverter(comm).toCommunication();
           pgsq.reset();
           pgsq.start();
-          Communication c = new ProxyCommunicationConverter(comm).toCommunication();
+          Communication postStanford = pipe.process(c);
           pgsq.stop();
-          logger.info("Converted document to Communication in: {} ms", pgsq.getTime());
+          logger.info("Annotated document in: {} ms", pgsq.getTime());
+          pc.insertCommunication(postStanford);
+          id = Optional.ofNullable(jedis.spop(RedisLoader.IDS_KEY));
+        } catch (IOException | TException | ConcreteException | AnnotationException e) {
+          logger.warn("Caught an exception while annotating a document.", e);
+          logger.warn("Document in question: {}", id.get());
+        } catch (SQLException sqe) {
+          logger.info("Waiting for a bit, then attempting to reconnect.");
+          backoffCounter *= 10;
+          // 600, 6000, 60000, 600000, 6000000
           try {
-            pgsq.reset();
-            pgsq.start();
-            Communication postStanford = pipe.process(c);
-            pgsq.stop();
-            logger.info("Annotated document in: {} ms", pgsq.getTime());
-            pgsq.reset();
-            pgsq.start();
-            pc.insertCommunication(postStanford);
-            pgsq.stop();
-            logger.info("Inserted document in: {} ms", pgsq.getTime());
-            docsAvailable = pc.availableUnannotatedCommunications();
-          } catch (IOException | TException | ConcreteException | AnnotationException e) {
-            logger.warn("Caught an exception while annotating a document.", e);
-            logger.warn("Document in question: {}", comm.getId());
-          } catch (SQLException sqe) {
-            logger.warn("Caught SQLException during insertion or querying next:", sqe);
-            logger.warn("Document in question: {}", comm.getId());
+            Thread.sleep(backoffCounter * backoffMulti);
+          } catch (InterruptedException ie) {
+            logger.warn("Won't happen.");
           }
-        }
-      } catch (SQLException e1) {
-        logger.error("Caught SQLEx during annotation.", e1);
-      }
-      
-      
-      if (docsAvailable) {
-        logger.info("Waiting for a bit, then attempting to reconnect.");
-        backoffCounter *= 10;
-        // 600, 6000, 60000, 600000, 6000000
-        try {
-          Thread.sleep(backoffCounter * backoffMulti);
-        } catch (InterruptedException e) {
-          logger.warn("Won't happen.");
-        }
-        
-        logger.info("Trying again.");
-      }
-    }
 
+          logger.info("Trying again.");
+        }
+      }
+    } catch (SQLException e1) {
+      logger.error("SQLexception during setup. Not trying to reconnect.", e1);
+    }
+    
     sw.stop();
     logger.info("Finished (or backoffs exceeded). Took {} ms.", sw.getTime());
     sed.enable();
+    
+    jp.close();
+    jp.destroy();
   }
 }
