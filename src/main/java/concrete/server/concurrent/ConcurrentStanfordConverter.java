@@ -194,8 +194,8 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
             logger.debug("Retrieved communication: {}", docId);
             pgc.insertCommunication(ac);
             kProcessed++;
-            if (kProcessed % 100 == 0)
-              pgc.commit();
+//            if (kProcessed % 100 == 0)
+//              pgc.commit();
           } catch (InterruptedException | ExecutionException e1) {
             logger.error("Caught an Exception, likely when waiting for a Communication to process.", e1);
             logger.error("Remaining doc IDs:");
