@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import concrete.agiga.util.ConcreteAgigaProperties;
+import concrete.interfaces.ProxyCommunication;
 import concrete.tools.AnnotationException;
 import concrete.util.data.ConcreteFactory;
 import edu.jhu.hlt.concrete.AnnotationMetadata;
@@ -41,7 +42,7 @@ import edu.jhu.hlt.concrete.util.CommunicationSerialization;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
 import edu.jhu.hlt.gigaword.ClojureIngester;
-import edu.jhu.hlt.gigaword.ProxyDocument;
+import edu.jhu.hlt.gigaword.ProxyCommunicationConverter;
 
 /**
  * @author max
@@ -98,13 +99,13 @@ public class StanfordAgigaPipeTest {
     c.addToSectionList(new SuperCommunication(c).singleSection("Passage"));
 
     ClojureIngester ci = new ClojureIngester();
-    ProxyDocument pdc = ci.proxyDocPathToProxyDoc(this.pathToAFPComm);
-    this.mapped = pdc.sectionedCommunication();
+    ProxyCommunication pdc = ci.proxyCommPathToProxyCommunication(this.pathToAFPComm);
+    this.mapped = new ProxyCommunicationConverter(pdc).toCommunication();
     this.randomTestComm = new Communication(c);
 
-    this.wonkyNYT = ci.proxyDocPathToProxyDoc(this.pathToNYTComm).sectionedCommunication();
+    this.wonkyNYT = new ProxyCommunicationConverter(ci.proxyCommPathToProxyCommunication(this.pathToNYTComm)).toCommunication();
 
-    this.nyt1999 = ci.proxyDocPathToProxyDoc(this.pathTo1999NYTComm).sectionedCommunication();
+    this.nyt1999 = new ProxyCommunicationConverter(ci.proxyCommPathToProxyCommunication(this.pathTo1999NYTComm)).toCommunication();
   }
 
   /**

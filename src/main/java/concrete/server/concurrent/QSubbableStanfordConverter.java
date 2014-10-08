@@ -17,13 +17,14 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.interfaces.ProxyCommunication;
 import concrete.tools.AnnotationException;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.gigaword.ClojureIngester;
-import edu.jhu.hlt.gigaword.ProxyDocument;
+import edu.jhu.hlt.gigaword.ProxyCommunicationConverter;
 
 /**
  * @author max
@@ -63,12 +64,12 @@ public class QSubbableStanfordConverter {
     StopWatch sw = new StopWatch();
     sw.start();
 
-    Iterator<ProxyDocument> pdIter = ci.proxyGZipPathToProxyDocIter(args[0]);
+    Iterator<ProxyCommunication> pdIter = ci.getProxyCommunicationIteratable(args[0]);
     logger.info("Got document iterator.");
     while (pdIter.hasNext()) {
-      ProxyDocument pd = pdIter.next();
+      ProxyCommunication pd = pdIter.next();
       try {
-        Communication wSections = pd.sectionedCommunication();
+        Communication wSections = new ProxyCommunicationConverter(pd).toCommunication();
         Communication postStanford = pipe.process(wSections);
         Path fileOut = out.resolve(pd.getId() + ".concrete");
         new SuperCommunication(postStanford).writeToFile(fileOut, true);

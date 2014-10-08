@@ -30,12 +30,13 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.interfaces.ProxyCommunication;
 import concrete.server.LoggedUncaughtExceptionHandler;
 import concrete.server.sql.PostgresClient;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe;
 import edu.jhu.hlt.gigaword.ClojureIngester;
-import edu.jhu.hlt.gigaword.ProxyDocument;
+import edu.jhu.hlt.gigaword.ProxyCommunicationConverter;
 
 /**
  * @author max
@@ -153,14 +154,14 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
         Set<String> docIdsToProcess = new HashSet<String>(12000);
 
         logger.info("Processing file: {}", pathStr);
-        Iterator<ProxyDocument> iter = ci.proxyGZipPathToProxyDocIter(pathStr);
+        Iterator<ProxyCommunication> iter = ci.getProxyCommunicationIteratable(pathStr);
         while (iter.hasNext()) {
-          ProxyDocument pd = iter.next();
+          ProxyCommunication pd = iter.next();
           String pId = pd.getId();
           if (idSet.contains(pId))
             continue;
 
-          Communication c = pd.sectionedCommunication();
+          Communication c = new ProxyCommunicationConverter(pd).toCommunication();
           dq.push(c);
         }
 

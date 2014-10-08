@@ -1,5 +1,5 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	       xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>edu.jhu.hlt.concrete</groupId>
@@ -11,7 +11,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <concrete.version>3.6.2</concrete.version>
+    <!-- <concrete.version>3.6.2</concrete.version> -->
     <concrete.agiga.version>3.6.4-SNAPSHOT</concrete.agiga.version>
   </properties>
 
@@ -48,8 +48,8 @@
     <!-- this is to copy the properties file over -->
     <resources>
       <resource>
-	      <directory>src/main/resources</directory>
-	      <filtering>true</filtering>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
       </resource>
     </resources>
   </build>
@@ -64,18 +64,19 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>gigaword-json-ingest</artifactId>
-      <version>3.6.2</version>
+      <version>3.6.3</version>
     </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>concrete-core</artifactId>
-      <version>${concrete.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>concrete-util</artifactId>
-      <version>${concrete.version}</version>
-    </dependency>
+
+    <!-- <dependency> -->
+    <!--   <groupId>edu.jhu.hlt</groupId> -->
+    <!--   <artifactId>concrete-core</artifactId> -->
+    <!--   <version>${concrete.version}</version> -->
+    <!-- </dependency> -->
+    <!-- <dependency> -->
+    <!--   <groupId>edu.jhu.hlt</groupId> -->
+    <!--   <artifactId>concrete-util</artifactId> -->
+    <!--   <version>${concrete.version}</version> -->
+    <!-- </dependency> -->
 
     <dependency>
       <groupId>edu.stanford.nlp</groupId>
