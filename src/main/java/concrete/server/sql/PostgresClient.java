@@ -61,7 +61,7 @@ public class PostgresClient implements AutoCloseable {
   public PostgresClient(String host, String dbName, String userName, byte[] pass) throws SQLException {
     IFn req = Clojure.var("clojure.core", "require");
     // req.invoke(Clojure.read("gigaword-ingester.giga"));
-    req.invoke(Clojure.read("gigaword-ingester.interop"));
+    req.invoke(Clojure.read("gigaword-ingester.giga"));
     
     this.proxyToProxyCommFx = Clojure.var("gigaword-ingester.giga", "proxy->map");
     
