@@ -66,6 +66,9 @@ public class AgigaConcreteAnnotator {
     ems.setMetadata(md);
 
     List<Entity> elist = new ArrayList<Entity>();
+    if(agigaDoc.getCorefs().size() == 0) {
+      logger.warn("There were no coref chains found");
+    }
     for (AgigaCoref coref : agigaDoc.getCorefs()) {
       if (!coref.getMentions().isEmpty()) {
         Entity e = this.ag.convertCoref(ems, coref, agigaDoc, tokenizations);
@@ -84,14 +87,17 @@ public class AgigaConcreteAnnotator {
   }
 
   public void convertSection(Section section, AgigaDocument agigaDoc, int charOffset,
-      StringBuilder sb) throws AnnotationException {
-    this.addSentences(section, agigaDoc, charOffset, sb);
+
+                             StringBuilder sb, boolean preserveTokenTaggings) throws AnnotationException {
+    this.addSentences(section, agigaDoc, charOffset, sb, preserveTokenTaggings);
     sb.append("\n\n");
   }
 
   // add all Sentences
-  private void addSentences(Section in, AgigaDocument ad, int charOffset, StringBuilder sb)
-      throws AnnotationException {
+
+  private void addSentences(Section in, AgigaDocument ad, int charOffset,
+                            StringBuilder sb, boolean preserveTokenTaggings)
+    throws AnnotationException {
     logger.debug("f4");
     final int n = ad.getSents().size();
     int sentPtr = 0;
@@ -102,7 +108,7 @@ public class AgigaConcreteAnnotator {
       // the second argument is the estimated character provenance offset.
       // We're not filling the optional textSpan fields, so the exact parameter
       // value doesn't matter.
-      Sentence st = this.ag.convertSentence(asent, currOffset, true);
+      Sentence st = this.ag.convertSentence(asent, currOffset, preserveTokenTaggings);
       String sentText = this.ag.flattenText(asent);
       sb.append(sentText);
       currOffset += sentText.length();

@@ -6,6 +6,8 @@ import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -27,6 +29,7 @@ import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.EntityMentionSet;
 import edu.jhu.hlt.concrete.EntitySet;
 import edu.jhu.hlt.concrete.Section;
+import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.communications.PerspectiveCommunication;
@@ -53,11 +56,14 @@ public class StanfordAgigaPipe {
 
   private static final Logger logger = LoggerFactory.getLogger(StanfordAgigaPipe.class);
   private static final String[] DEFAULT_KINDS_TO_ANNOTATE = new String[] { "Passage", "Other" };
-  
+
   static final String usage = "You must specify an input path: java edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe --input path/to/input/file --output path/to/output/file\n"
       + "  Optional arguments: \n"
       + "       --annotate-sections <comma-separated-list of type names> (default: PASSAGE)\n"
       + "       --debug\n\t\tto print debugging messages (default: false)\n";
+
+  private static final String[] defaultKindsToProcess = new String[] { "Passage", "Other" };
+  private static final String[] defaultKindsToOnlyTokenize = new String[] { "Title" };
 
   private int sentenceCount = 1; // for flat files, no document structure
 
@@ -65,42 +71,42 @@ public class StanfordAgigaPipe {
   // private boolean tokenize = true;
   // private boolean parse = false;
 
-  private InMemoryAnnoPipeline pipeline;
-  private Set<String> annotateNames;
+  private final InMemoryAnnoPipeline pipeline;
+  private final Set<String> kindsToProcessSet;
+  private final Set<String> kindsToTokenizeOnly;
 
   private final ConcreteStanfordProperties concStanProps;
 
   /**
-   * The global character offset. The exact meaning is determined by
-   * {@code usingOriginalCharOffsets()}. When true, this counter is 
-   * with respect to the <em>original</em> text; when false, this counter
-   * is updated according to the processed text.
+   * The global character offset. The exact meaning is determined by {@code usingOriginalCharOffsets()}. When true, this counter is with respect to the
+   * <em>original</em> text; when false, this counter is updated according to the processed text.
    */
   private int charOffset = 0;
   private int processedCharOffset = 0;
 
   /**
-   * Whether {@code charOffset} should refer to the original text (true) 
-   * or the processed text (false). By default, this is true.
+   * Whether {@code charOffset} should refer to the original text (true) or the processed text (false). By default, this is true.
    */
-  private boolean useOriginalCharOffsets = true;
+  private final boolean useOriginalCharOffsets = true;
 
-  public boolean usingOriginalCharOffsets(){
-      return useOriginalCharOffsets;
+  private final boolean allowEmptyEntitiesAndEntityMentions;
+
+  public boolean usingOriginalCharOffsets() {
+    return useOriginalCharOffsets;
   }
 
   // public void setUsingOriginalCharOffsets(boolean b){
-  //     this.useOriginalCharOffsets = b;
+  // this.useOriginalCharOffsets = b;
   // }
 
   private int globalTokenOffset = 0;
 
   public void resetGlobals() {
-      globalTokenOffset = 0;
-      sentenceCount = 1;
-      charOffset = 0;
-      processedCharOffset = 0;
-      pipeline.prepForNext();
+    globalTokenOffset = 0;
+    sentenceCount = 1;
+    charOffset = 0;
+    processedCharOffset = 0;
+    pipeline.prepForNext();
   }
 
   public static void main(String[] args) throws TException, IOException, ConcreteException, AnnotationException {
@@ -137,14 +143,19 @@ public class StanfordAgigaPipe {
   }
 
   public StanfordAgigaPipe() throws IOException {
-    this(new HashSet<String>(Arrays.asList(DEFAULT_KINDS_TO_ANNOTATE)));
+    this(Arrays.asList(defaultKindsToProcess), Arrays.asList(defaultKindsToOnlyTokenize), true);
   }
 
-  public StanfordAgigaPipe(Set<String> typesToAnnotate) throws IOException {
-    this.annotateNames = new HashSet<>();
-    this.annotateNames.addAll(typesToAnnotate);
+  public StanfordAgigaPipe(Collection<String> typesToAnnotate, Collection<String> typesToTokenizeOnly, boolean allowEmptyMentions) throws IOException {
+    this.kindsToProcessSet = new HashSet<>();
+    this.kindsToProcessSet.addAll(typesToAnnotate);
+
+    this.kindsToTokenizeOnly = new HashSet<>();
+    this.kindsToTokenizeOnly.addAll(typesToTokenizeOnly);
+
     this.concStanProps = new ConcreteStanfordProperties();
     this.pipeline = new InMemoryAnnoPipeline();
+    this.allowEmptyEntitiesAndEntityMentions = allowEmptyMentions;
   }
 
   public List<Communication> process(ZipFile zf) throws TException, IOException, ConcreteException, AnnotationException {
@@ -166,19 +177,19 @@ public class StanfordAgigaPipe {
 
     PerspectiveCommunication pc = new PerspectiveCommunication(c, "PerspectiveCreator");
     Communication persp = pc.getPerspective();
-    
+
     // hopefully MD is never null
     AnnotationMetadata md = Optional.ofNullable(persp.getMetadata()).orElse(new AnnotationMetadata());
     String csToolName = this.concStanProps.getToolName();
     String newToolName = csToolName + " perspective";
-    
+
     String mdToolName = md.isSetTool() ? md.getTool() : "";
     if (!mdToolName.isEmpty())
       newToolName += " on old tool: " + mdToolName;
-    
+
     md.setTool(newToolName);
     persp.setMetadata(md);
-    // String newToolName = 
+    // String newToolName =
     // Communication cp = this.copyToRaw.copyCommunication(c);
     resetGlobals();
     this.runPipelineOnCommunicationSectionsAndSentences(persp);
@@ -199,8 +210,9 @@ public class StanfordAgigaPipe {
   /**
    * This steps through the given communication. For each section segmentation, it will go through each of the sections, first doing what localized processing
    * it can (i.e., all but coref resolution), and then doing the global processing (coref).
-   * @throws AnnotationException 
-   * @throws IOException 
+   *
+   * @throws AnnotationException
+   * @throws IOException
    */
   public void runPipelineOnCommunicationSectionsAndSentences(Communication comm) throws AnnotationException, IOException {
     // if called multiple times, reset the sentence count
@@ -213,72 +225,75 @@ public class StanfordAgigaPipe {
     logger.debug("\treading from " + (comm.isSetText() ? "text" : "raw text"));
     logger.debug("\tfull = " + commText);
 
-      List<Section> sections = comm.getSectionList();
-      // List<Integer> numberOfSentences = new ArrayList<Integer>();
-      Annotation documentAnnotation = getSeededDocumentAnnotation();
-      logger.debug("documentAnnotation = " + documentAnnotation);
+    List<Tokenization> tokenizations = new ArrayList<>();
+    List<Section> sections = comm.getSectionList();
+    // List<Integer> numberOfSentences = new ArrayList<Integer>();
+    Annotation documentAnnotation = getSeededDocumentAnnotation();
+    logger.debug("documentAnnotation = " + documentAnnotation);
 
-      for (Section section : sections) {
-        int sectionStartCharOffset = processedCharOffset;
-        logger.debug("new section, processed offset = " + sectionStartCharOffset);
-        TextSpan sts = section.getRawTextSpan();
-        // 1) First *perform* the tokenization & sentence splits
-        // Note we do this first, even before checking the content-type
-        String sectionText = commText.substring(sts.getStart(), sts.getEnding());
-        Annotation sectionAnnotation = pipeline.splitAndTokenizeText(sectionText);
-        logger.debug("Annotating Section: {}", section.getUuid());
-        logger.debug("\ttext = " + sectionText);
-        logger.debug("\tkind = ");
-        logger.debug(section.getKind() + " in annotateNames: " + annotateNames);
-        if (!annotateNames.contains(section.getKind())) {
-          // We MUST update the character offset
-          logger.debug("no good section: from " + charOffset + " to ");
-          // NOTE: It's possible we want to account for sentences in non-contentful sections
-          // If that's the case, then we need to update the globalToken and sentence offset
-          // variables correctly.
-          if (sectionAnnotation == null) {
-              logger.debug(""+charOffset);
-            continue;
-          }
+    for (Section section : sections) {
+      int sectionStartCharOffset = processedCharOffset;
+      logger.debug("new section, processed offset = " + sectionStartCharOffset);
+      TextSpan sts = section.getRawTextSpan();
+      // 1) First *perform* the tokenization & sentence splits
+      // Note we do this first, even before checking the content-type
+      String sectionText = commText.substring(sts.getStart(), sts.getEnding());
+      Annotation sectionAnnotation = pipeline.splitAndTokenizeText(sectionText);
+      logger.debug("Annotating Section: {}", section.getUuid());
+      logger.debug("\ttext = " + sectionText);
+      logger.debug("\tkind = " + section.getKind() + " in annotateNames: " + this.kindsToProcessSet);
+      if (!kindsToProcessSet.contains(section.getKind()) && !kindsToTokenizeOnly.contains(section.getKind())) {
+        // We MUST update the character offset
+        logger.debug("no good section: from " + charOffset + " to ");
+        // NOTE: It's possible we want to account for sentences in non-contentful sections
+        // If that's the case, then we need to update the globalToken and sentence offset
+        // variables correctly.
+        if (sectionAnnotation == null) {
+          logger.debug("" + charOffset);
+          continue;
+        }
 
-          //Note that we need to update the global character offset...
-          List<CoreLabel> sentTokens = sectionAnnotation.get(TokensAnnotation.class);
-          int tokCount = 0;
-          for(CoreLabel badToken : sentTokens) { 
+        // Note that we need to update the global character offset...
+        List<CoreLabel> sentTokens = sectionAnnotation.get(TokensAnnotation.class);
+        int tokCount = 0;
+        for (CoreLabel badToken : sentTokens) {
           updateCharOffsetSetToken(badToken, false, false);
         }
 
-          logger.debug(""+charOffset);
-          logger.debug("\t"+  sectionText);
-          //int tokenEnd = tokenOffset + sentTokens.size();
-          //sentAnno.set(SentenceIndexAnnotation.class, sentIndex);
-          // sentIndex++;
-          // sentenceCount++;
-          // tokenOffset = tokenEnd;
-          // document.set(TokensAnnotation.class, docTokens);
-
-          continue;
-        }
-        
+        logger.debug("" + charOffset);
+        logger.debug("\t" + sectionText);
+      } else if (kindsToTokenizeOnly.contains(section.getKind())) {
+        // Only tokenize & sentence split
+        logger.debug("Special handling for section type {} section: {}", section.getKind(), section.getUuid());
+        logger.debug(">> SectionText=[" + sectionText + "]");
+        processSectionTokenize(section, sectionAnnotation, sectionStartCharOffset, sb);
+      } else {
         // 2) Second, perform the other localized processing
         logger.debug("Additional processing on section: {}", section.getUuid());
-        logger.debug(">> SectionText=["+sectionText+"]");
-        processSection(section, sectionAnnotation, documentAnnotation, 
-                       sectionStartCharOffset,
-                       sb);
-        // between sections are two line feeds
-        // one is counted for in the sentTokens loop above
-        processedCharOffset++;
+        logger.debug(">> SectionText=[" + sectionText + "]");
+        processSection(section, sectionAnnotation, documentAnnotation, sectionStartCharOffset, sb);
+        addTokenizations(section, tokenizations);
       }
+      // between sections are two line feeds
+      // one is counted for in the sentTokens loop above
+      processedCharOffset++;
+    }
 
-      comm.setText(sb.toString());
+    comm.setText(sb.toString());
 
-      // 3) Third, do coref; cross-reference against sectionUUIDs
-      logger.debug("Running coref.");
-      SuperCommunication sc = new SuperCommunication(comm);
-      List<Tokenization> toks = new ArrayList<>(sc.generateTokenizationIdToTokenizationMap().values());
-      processCoref(comm, documentAnnotation, toks);
-    
+    // 3) Third, do coref; cross-reference against sectionUUIDs
+    logger.debug("Running coref.");
+    SuperCommunication sc = new SuperCommunication(comm);
+    processCoref(comm, documentAnnotation, tokenizations);
+  }
+
+  private void addTokenizations(Section section, List<Tokenization> tokenizations) {
+    if (!section.isSetSentenceList())
+      return;
+    for (Sentence sentence : section.getSentenceList()) {
+      if (sentence.isSetTokenization())
+        tokenizations.add(sentence.getTokenization());
+    }
   }
 
   /**
@@ -291,27 +306,36 @@ public class StanfordAgigaPipe {
    * </ul>
    * Note that corefence resolution is done only once all contentful sections have been properly annotated.
    *
+   * @throws AnnotationException
+   *
    */
-  public AgigaDocument annotate(Annotation annotation) {
+  public AgigaDocument annotate(Annotation annotation) throws AnnotationException {
     try {
       return pipeline.annotate(annotation);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new AnnotationException(e);
     }
   }
 
-  public AgigaDocument annotateCoref(Annotation annotation) {
+  public AgigaDocument getAgigaDoc(Annotation annotation, boolean tokensOnly) throws AnnotationException {
+    try {
+      return pipeline.getAgigaDoc(annotation, tokensOnly);
+    } catch (IOException e) {
+      throw new AnnotationException(e);
+    }
+  }
+
+  public AgigaDocument annotateCoref(Annotation annotation) throws AnnotationException {
     try {
       return pipeline.annotateCoref(annotation);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new AnnotationException(e);
     }
   }
 
   /**
    * Convert tokenized sentences (<code>sentAnno</code>) into a document Annotation.<br/>
-   * The global indexers {@code charOffset} and {@code globalTokenOffset} are updated
-   * here.
+   * The global indexers {@code charOffset} and {@code globalTokenOffset} are updated here.
    *
    */
   public void sentencesToSection(CoreMap sectAnno, Annotation document) throws AnnotationException {
@@ -340,20 +364,17 @@ public class StanfordAgigaPipe {
         // note that character offsets are global
         // String tokenText = token.get(TextAnnotation.class);
         updateCharOffsetSetToken(token, isFirst, true);
-        logger.debug("this token goes from " +
-                     token.get(CharacterOffsetBeginAnnotation.class) + " to " +
-                     token.get(CharacterOffsetEndAnnotation.class));
+        logger.debug("this token goes from " + token.get(CharacterOffsetBeginAnnotation.class) + " to " + token.get(CharacterOffsetEndAnnotation.class));
         logger.debug("\toriginal:[[" + token.originalText() + "]]");
         logger.debug("\tbefore:<<" + token.before() + ">>");
         logger.debug("\tafter:<<" + token.after() + ">>");
-        if(isFirst) {
-            isFirst = false;
+        if (isFirst) {
+          isFirst = false;
         }
       }
       sentAnno.set(TokensAnnotation.class, sentTokens);
-      sentAnno.set(CharacterOffsetBeginAnnotation.class, 
-                   sentTokens.get(0).get(CharacterOffsetBeginAnnotation.class));
-      int endingSentCOff = sentTokens.get(sentTokens.size()-1).get(CharacterOffsetEndAnnotation.class);
+      sentAnno.set(CharacterOffsetBeginAnnotation.class, sentTokens.get(0).get(CharacterOffsetBeginAnnotation.class));
+      int endingSentCOff = sentTokens.get(sentTokens.size() - 1).get(CharacterOffsetEndAnnotation.class);
       sentAnno.set(CharacterOffsetEndAnnotation.class, endingSentCOff);
 
       logger.debug("docTokens.size before = " + docTokens.size());
@@ -369,45 +390,90 @@ public class StanfordAgigaPipe {
     document.set(SentencesAnnotation.class, docSents);
     Integer oldDocCharE = document.get(CharacterOffsetEndAnnotation.class);
     if (oldDocCharE != null && maxCharEnding < oldDocCharE)
-      throw new AnnotationException("The max char ending for this section (" + maxCharEnding + ") is less than the current document char ending ( " + oldDocCharE
-          + ")");
+      throw new AnnotationException("The max char ending for this section (" + maxCharEnding + ") is less than the current document char ending ( "
+          + oldDocCharE + ")");
     document.set(CharacterOffsetEndAnnotation.class, maxCharEnding);
   }
 
-  public void updateCharOffsetSetToken(CoreLabel token, boolean isFirst, boolean updateProcessedOff){
-      if(usingOriginalCharOffsets()){
-          if(isFirst){
-              //this is because when we have text like "foo bar", foo.after == " " AND bar.before == " "
-              int beforeLength = token.before().length();
-              //if(beforeLength > 0) {
-              charOffset += beforeLength;
-              //}
-          }
-          logger.debug("["+token.before()+", " + token.before().length()+ "] " + 
-                           "["+token.originalText() + "]"+
-                           " ["+ token.after()+", " + token.after().length() + "] :: "+ 
-                           charOffset + " --> " );
-          token.set(CharacterOffsetBeginAnnotation.class, charOffset);
-          charOffset += token.originalText().length();
-          token.set(CharacterOffsetEndAnnotation.class, charOffset);
-          logger.debug((""+charOffset));
-          charOffset += token.after().length();
-      } else {
-          token.set(CharacterOffsetBeginAnnotation.class, charOffset);
-          charOffset += token.get(TextAnnotation.class).length();
-          token.set(CharacterOffsetEndAnnotation.class, charOffset);
-          charOffset++;
+  /**
+   * Update character offsets for (<code>sentAnno</code>).<br/>
+   * The global indexers {@code charOffset} and {@code globalTokenOffset} are updated here.
+   *
+   */
+  public void sentencesToSection(CoreMap sectAnno) throws AnnotationException {
+    if (sectAnno == null) {
+      logger.warn("Encountered null annotated section. Skipping.");
+      return;
+    }
+
+    logger.debug("converting list of CoreMap sentences to Annotations, starting at token offset " + globalTokenOffset);
+
+    List<CoreMap> sentAnnos = sectAnno.get(SentencesAnnotation.class);
+    int maxCharEnding = -1;
+    boolean isFirst = true;
+    for (CoreMap sentAnno : sentAnnos) {
+      List<CoreLabel> sentTokens = sentAnno.get(TokensAnnotation.class);
+      int tokenEnd = globalTokenOffset + sentTokens.size();
+      sentAnno.set(TokenBeginAnnotation.class, globalTokenOffset);
+      sentAnno.set(TokenEndAnnotation.class, tokenEnd);
+      // sentAnno.set(SentenceIndexAnnotation.class, sentenceCount++);
+      logger.debug("SENTENCEINDEXANNO = " + sentAnno.get(SentenceIndexAnnotation.class));
+      globalTokenOffset = tokenEnd;
+
+      for (CoreLabel token : sentTokens) {
+        // note that character offsets are global
+        // String tokenText = token.get(TextAnnotation.class);
+        updateCharOffsetSetToken(token, isFirst, true);
+        logger.debug("this token goes from " + token.get(CharacterOffsetBeginAnnotation.class) + " to " + token.get(CharacterOffsetEndAnnotation.class));
+        logger.debug("\toriginal:[[" + token.originalText() + "]]");
+        logger.debug("\tbefore:<<" + token.before() + ">>");
+        logger.debug("\tafter:<<" + token.after() + ">>");
+        if (isFirst) {
+          isFirst = false;
+        }
       }
-      if(updateProcessedOff) {
-          processedCharOffset += token.get(TextAnnotation.class).length() + 1;
-      }
+      sentAnno.set(TokensAnnotation.class, sentTokens);
+      sentAnno.set(CharacterOffsetBeginAnnotation.class, sentTokens.get(0).get(CharacterOffsetBeginAnnotation.class));
+      int endingSentCOff = sentTokens.get(sentTokens.size() - 1).get(CharacterOffsetEndAnnotation.class);
+      sentAnno.set(CharacterOffsetEndAnnotation.class, endingSentCOff);
+
+      if (sentAnno.get(CharacterOffsetEndAnnotation.class) > maxCharEnding)
+        maxCharEnding = sentAnno.get(CharacterOffsetEndAnnotation.class);
+
+    }
   }
 
- /**
-  * Transfer an individual section's annotations to the global
-  * accumulating document. This allows global annotators (coref)
-  * to use local information, such as parses.
-  */
+  public void updateCharOffsetSetToken(CoreLabel token, boolean isFirst, boolean updateProcessedOff) {
+    if (usingOriginalCharOffsets()) {
+      if (isFirst) {
+        // this is because when we have text like "foo bar", foo.after == " " AND bar.before == " "
+        int beforeLength = token.before().length();
+        // if(beforeLength > 0) {
+        charOffset += beforeLength;
+        // }
+      }
+      logger.debug("[" + token.before() + ", " + token.before().length() + "] " + "[" + token.originalText() + "]" + " [" + token.after() + ", "
+          + token.after().length() + "] :: " + charOffset + " --> ");
+      token.set(CharacterOffsetBeginAnnotation.class, charOffset);
+      charOffset += token.originalText().length();
+      token.set(CharacterOffsetEndAnnotation.class, charOffset);
+      logger.debug(("" + charOffset));
+      charOffset += token.after().length();
+    } else {
+      token.set(CharacterOffsetBeginAnnotation.class, charOffset);
+      charOffset += token.get(TextAnnotation.class).length();
+      token.set(CharacterOffsetEndAnnotation.class, charOffset);
+      charOffset++;
+    }
+    if (updateProcessedOff) {
+      processedCharOffset += token.get(TextAnnotation.class).length() + 1;
+    }
+  }
+
+  /**
+   * Transfer an individual section's annotations to the global accumulating document. This allows global annotators (coref) to use local information, such as
+   * parses.
+   */
   public void transferAnnotations(Annotation section, Annotation document) {
     List<CoreMap> sectionSents = section.get(SentencesAnnotation.class);
     ArrayList<CoreMap> documentSents = (ArrayList<CoreMap>) document.get(SentencesAnnotation.class);
@@ -416,37 +482,63 @@ public class StanfordAgigaPipe {
       int idx = sectSent.get(SentenceIndexAnnotation.class) - 1;
       logger.debug("My index is " + idx + " (" + sectSent.get(SentenceIndexAnnotation.class) + "), and can access up to " + documentSents.size()
           + " sentences globally");
-      CoreMap dSent = documentSents.get(idx);
-      dSent.set(TreeAnnotation.class, sectSent.get(TreeAnnotation.class));
-      logger.debug(dSent.get(TreeAnnotation.class).toString());
-      logger.debug(dSent.get(TreeAnnotation.class).getLeaves().toString());
-      logger.debug(sectSent.get(TokensAnnotation.class).toString());
-      logger.debug(idx + " --> " + dSent.get(TokensAnnotation.class));
+      if (sectSent.containsKey(TreeAnnotation.class)) {
+        CoreMap dSent = documentSents.get(idx);
+        dSent.set(TreeAnnotation.class, sectSent.get(TreeAnnotation.class));
+        logger.debug(dSent.get(TreeAnnotation.class).toString());
+        logger.debug(dSent.get(TreeAnnotation.class).getLeaves().toString());
+        logger.debug(sectSent.get(TokensAnnotation.class).toString());
+        logger.debug(idx + " --> " + dSent.get(TokensAnnotation.class));
+      }
     }
   }
-  
+
   /**
-   * Given a particular section {@link Section} from a {@link Communication}, further locally process
-   * {@link Annotation}; add those new annotations to an
+   * Given a particular section {@link Section} from a {@link Communication}, further locally process {@link Annotation}; add those new annotations to an
    * aggregating {@link Annotation} to use for later global processing.
-   * 
-   * @throws AnnotationException 
-   * @throws IOException 
+   *
+   * @throws AnnotationException
+   * @throws IOException
    */
-  public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, int sectionOffset, StringBuilder sb) throws AnnotationException, IOException {
+
+  public void processSectionTokenize(Section section, Annotation sentenceSplitText, int sectionOffset, StringBuilder sb) throws AnnotationException,
+      IOException {
+    sentencesToSection(sentenceSplitText);
+    for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class))
+      logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
+
+    AgigaDocument agigaDoc = getAgigaDoc(sentenceSplitText, true);
+    logger.debug("after annotating");
+    for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class))
+      logger.debug("sentence index: " + cm.get(SentenceIndexAnnotation.class).toString());
+
+    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
+    agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb, false);
+    setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
+  }
+
+  /**
+   * Given a particular section {@link Section} from a {@link Communication}, further locally process {@link Annotation}; add those new annotations to an
+   * aggregating {@link Annotation} to use for later global processing.
+   *
+   * @throws AnnotationException
+   * @throws IOException
+   */
+  public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, int sectionOffset, StringBuilder sb)
+      throws AnnotationException, IOException {
     sentencesToSection(sentenceSplitText, docAnnotation);
     logger.debug("after sentencesToSection, before annotating");
-    for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class)) 
+    for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class))
       logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
-    
+
     AgigaDocument agigaDoc = annotate(sentenceSplitText);
     logger.debug("after annotating");
-    for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class)) 
+    for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class))
       logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
-    
+
     transferAnnotations(sentenceSplitText, docAnnotation);
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
-    agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb);
+    agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb, true);
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
   }
 
@@ -466,12 +558,28 @@ public class StanfordAgigaPipe {
     AgigaDocument agigaDoc = annotateCoref(docAnnotation);
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
     SimpleEntry<EntityMentionSet, EntitySet> tuple = agigaToConcrete.convertCoref(comm, agigaDoc, tokenizations);
-    comm.addToEntityMentionSetList(tuple.getKey());
-    comm.addToEntitySetList(tuple.getValue());
+    EntityMentionSet ems = tuple.getKey();
+    EntitySet es = tuple.getValue();
+
+    if (ems == null || !ems.isSetMentionList())
+      throw new AnnotationException("Concrete-agiga produced a null EntityMentionSet, or a null mentionList.");
+
+    if (ems.getMentionListSize() == 0 && !this.allowEmptyEntitiesAndEntityMentions)
+      throw new AnnotationException("Empty entity mentions are disallowed and no entity mentions were produced for communication: " + comm.getId());
+    else
+      comm.addToEntityMentionSetList(ems);
+
+    if (es == null || !es.isSetEntityList())
+      throw new AnnotationException("Concrete-agiga produced a null EntitySet, or a null entityList.");
+
+    if (es.getEntityListSize() == 0 && !this.allowEmptyEntitiesAndEntityMentions)
+      throw new AnnotationException("Empty entities are disallowed and no entities were produced for communication: " + comm.getId());
+    else
+      comm.addToEntitySetList(es);
   }
-  
+
   public Set<String> getSectionTypesToAnnotate() {
-    return new HashSet<>(this.annotateNames);
+    return new HashSet<>(this.kindsToProcessSet);
   }
 
   /**
@@ -484,9 +592,9 @@ public class StanfordAgigaPipe {
   protected String getText(Tree t) throws IOException {
     if (t == null)
       return null;
-    
+
     StringBuffer sb = new StringBuffer();
-    
+
     for (Tree tt : t.getLeaves()) {
       sb.append(tt.value());
       sb.append(" ");

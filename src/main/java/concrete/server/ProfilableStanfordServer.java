@@ -19,13 +19,14 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.interfaces.ProxyCommunication;
 import concrete.server.concurrent.SystemErrDisabler;
 import concrete.tools.AnnotationException;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.gigaword.ClojureIngester;
-import edu.jhu.hlt.gigaword.ProxyDocument;
+import edu.jhu.hlt.gigaword.ProxyCommunicationConverter;
 
 /**
  * @author max
@@ -82,10 +83,10 @@ public class ProfilableStanfordServer {
     ArrayDeque<Long> times = new ArrayDeque<Long>(12000);
 
     ArrayDeque<Communication> dq = new ArrayDeque<Communication>(12000);
-    Iterator<ProxyDocument> iter = ci.proxyGZipPathToProxyDocIter(args[0]);
+    Iterator<ProxyCommunication> iter = ci.getProxyCommunicationIteratable(args[0]);
     while (iter.hasNext()) {
-      ProxyDocument pd = iter.next();
-      Communication c = pd.sectionedCommunication();
+      ProxyCommunication pd = iter.next();
+      Communication c = new ProxyCommunicationConverter(pd).toCommunication();
       dq.push(c);
     }
 

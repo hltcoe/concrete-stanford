@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import concrete.agiga.util.ConcreteAgigaProperties;
+import concrete.interfaces.ProxyCommunication;
 import concrete.tools.AnnotationException;
 import concrete.util.data.ConcreteFactory;
 import edu.jhu.hlt.concrete.AnnotationMetadata;
@@ -41,7 +42,7 @@ import edu.jhu.hlt.concrete.util.CommunicationSerialization;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
 import edu.jhu.hlt.gigaword.ClojureIngester;
-import edu.jhu.hlt.gigaword.ProxyDocument;
+import edu.jhu.hlt.gigaword.ProxyCommunicationConverter;
 
 /**
  * @author max
@@ -53,23 +54,23 @@ public class StanfordAgigaPipeTest {
 
   public static final String SHAKE_HAND_TEXT_STRING = "The man ran to shake the U.S. \nPresident's hand. ";
   public static final String AFP_0623_TEXT = "" + "Protest over arrest of Sri Lanka reporter linked to Fonseka"
-      + "\nSri Lankan media groups Thursday protested against the arrest of a reporter\n"
-      + "close to Sarath Fonseka, the detained ex-army chief who tried to unseat the\n"
-      + "president in recent elections.\n"
-      + "\nThe groups issued a joint statement demanding the release of Ruwan Weerakoon, a\n"
-      + "reporter with the Nation newspaper, who was arrested this week.\n"
-      + "\n\"We request the Inspector General of Police to disclose the reasons behind the\n"
-      + "arrest and detention of Ruwan Weerakoon and make arrangements for him to receive\n"
-      + "legal aid immediately,\" the statement added.\n"
-      + "\nWeerakoon maintained close contact with Fonseka when the general led the\n"
-      + "military during the final phase of last year's war against Tamil Tiger rebels.\n"
-      + "\nFonseka was an ally of President Mahinda Rajapakse when the rebel Liberation\n"
-      + "Tigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out\n"
-      + "and contested the presidency in January's elections.\n"
-      + "\nFonseka was arrested soon after losing the poll and appeared in front of a court\n"
-      + "martial this week. The case was adjourned.\n"
-      + "\nLocal and international rights groups have accused Rajapakse of cracking down on\n"
-      + "dissent, a charge the government has denied.\n";
+      + "\nSri Lankan media groups Thursday protested against the arrest of a reporter"
+      + "\nclose to Sarath Fonseka, the detained ex-army chief who tried to unseat the"
+      + "\npresident in recent elections."
+      + "\nThe groups issued a joint statement demanding the release of Ruwan Weerakoon, a"
+      + "\nreporter with the Nation newspaper, who was arrested this week."
+      + "\n\"We request the Inspector General of Police to disclose the reasons behind the"
+      + "\narrest and detention of Ruwan Weerakoon and make arrangements for him to receive"
+      + "\nlegal aid immediately,\" the statement added."
+      + "\nWeerakoon maintained close contact with Fonseka when the general led the"
+      + "\nmilitary during the final phase of last year's war against Tamil Tiger rebels."
+      + "\nFonseka was an ally of President Mahinda Rajapakse when the rebel Liberation"
+      + "\nTigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out"
+      + "\nand contested the presidency in January's elections."
+      + "\nFonseka was arrested soon after losing the poll and appeared in front of a court"
+      + "\nmartial this week. The case was adjourned."
+      + "\nLocal and international rights groups have accused Rajapakse of cracking down on"
+      + "\ndissent, a charge the government has denied.\n";
 
   final String pathToAFPComm = "./src/test/resources/AFP_ENG_20100318.0623.xml";
   final String pathToNYTComm = "./src/test/resources/NYT_ENG_20070319.0077.xml";
@@ -98,13 +99,13 @@ public class StanfordAgigaPipeTest {
     c.addToSectionList(new SuperCommunication(c).singleSection("Passage"));
 
     ClojureIngester ci = new ClojureIngester();
-    ProxyDocument pdc = ci.proxyDocPathToProxyDoc(this.pathToAFPComm);
-    this.mapped = pdc.sectionedCommunication();
+    ProxyCommunication pdc = ci.proxyCommPathToProxyCommunication(this.pathToAFPComm);
+    this.mapped = new ProxyCommunicationConverter(pdc).toCommunication();
     this.randomTestComm = new Communication(c);
 
-    this.wonkyNYT = ci.proxyDocPathToProxyDoc(this.pathToNYTComm).sectionedCommunication();
+    this.wonkyNYT = new ProxyCommunicationConverter(ci.proxyCommPathToProxyCommunication(this.pathToNYTComm)).toCommunication();
 
-    this.nyt1999 = ci.proxyDocPathToProxyDoc(this.pathTo1999NYTComm).sectionedCommunication();
+    this.nyt1999 = new ProxyCommunicationConverter(ci.proxyCommPathToProxyCommunication(this.pathTo1999NYTComm)).toCommunication();
   }
 
   /**
@@ -189,6 +190,9 @@ public class StanfordAgigaPipeTest {
     final String[] stokens = { "The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
 
     assertTrue(docText.equals(StanfordAgigaPipeTest.SHAKE_HAND_TEXT_STRING));
+
+    // Sections
+    verifyNumSections(shakeHandComm, processedShakeHandComm);
 
     final Section firstSection = processedShakeHandComm.getSectionList().get(0);
     final List<Sentence> firstSentList = firstSection.getSentenceList();
@@ -289,6 +293,40 @@ public class StanfordAgigaPipeTest {
     // this.verifyToolNames(processedShakeHandComm);
   }
 
+  private void verifyNumSections(Communication orig, Communication proc) {
+    assertTrue("orig comm " + orig.getUuid() + " does not have a section list",
+               orig.isSetSectionList());
+    assertTrue("processed comm " + proc.getUuid() + " does not have a section list",
+               proc.isSetSectionList());
+    assertTrue("num sections in original comm (" + orig.getUuid() + ") = " + orig.getSectionList().size() + " != num sections in processed comm (" + proc.getUuid() + ") = " + proc.getSectionList().size(),
+               orig.getSectionList().size() == proc.getSectionList().size());
+  }
+
+  private void verifyTitleSection(Communication processed) {
+    int sectionIdx = 0;
+    int foundTitleIn = -1;
+    int numFound = 0;
+    for(Section section : processed.getSectionList()) {
+      if(section.getKind().equals("Title")) {
+        numFound++;
+        foundTitleIn = sectionIdx;
+      }
+      sectionIdx++;
+    }
+    assertTrue("Found " + numFound + " title sections in " + processed.getUuid() + "/" + processed.getId(),
+               numFound == 1);
+    Section title = processed.getSectionList().get(foundTitleIn);
+    assertTrue("Title section (" + title.getUuid() +") in comm " + processed.getId() + " does not have text span set",
+               title.isSetTextSpan());
+    assertTrue("Title section (" + title.getUuid() +") in comm " + processed.getId() + " does not have sentences",
+               title.isSetSentenceList());
+    assertTrue("Title section (" + title.getUuid() +") in comm " + processed.getId() + " does not have one sentence",
+               title.getSentenceList().size() == 1);
+    Sentence sentence = title.getSentenceList().get(0);
+    assertTrue("Title sentence (" + sentence.getUuid() +") in comm " + processed.getId() + " does not have text span set",
+               title.isSetTextSpan());
+  }
+
   private void verifyToolNamesSub(String given, String prefix, String expected) {
     String joined = prefix + ": " + expected;
     assertEquals(joined, given);
@@ -366,8 +404,8 @@ public class StanfordAgigaPipeTest {
         for (Sentence st : sect.getSentenceList()) {
           TextSpan span = st.getRawTextSpan();
           String grabbed = processedOriginalText.substring(span.getStart(), span.getEnding()).trim();
-          // assertTrue("SentId = " + sentIdx + ", grabbing [[" + grabbed + "]], should be looking at <<" + sentences[sentIdx] + ">>",
-          // grabbed.equals(sentences[sentIdx]));
+          //assertTrue("SentId = " + sentIdx + ", grabbing [[" + grabbed + "]], should be looking at <<" + sentences[sentIdx] + ">>",
+          //grabbed.equals(sentences[sentIdx]));
           assertEquals(sentences[sentIdx], grabbed);
           sentIdx++;
         }
@@ -424,10 +462,13 @@ public class StanfordAgigaPipeTest {
     // Sections
     List<Section> nsects = afpProcessedComm.getSectionList();
     assertEquals("Should have found 8 sections.", 8, nsects.size());
+    verifyNumSections(this.mapped, afpProcessedComm);
+    verifyTitleSection(afpProcessedComm);
 
     this.testSectionOffsetsSet(nsects, this.kindsToAnnotate);
-    this.testTextSpan(nsects.get(1).getTextSpan(), 0, 184);
-    this.testTextSpan(nsects.get(2).getTextSpan(), 186, 332);
+    this.testTextSpan(nsects.get(0).getTextSpan(), 0, 59);
+    this.testTextSpan(nsects.get(1).getTextSpan(), 61, 245);
+    this.testTextSpan(nsects.get(2).getTextSpan(), 247, 393);
 
     // Sentences
     int numSents = 0;
@@ -435,7 +476,7 @@ public class StanfordAgigaPipeTest {
       if (sect.isSetSentenceList())
         numSents += sect.getSentenceList().size();
 
-    assertEquals("Should have found 8 sentences.", 8, numSents);
+    assertEquals("Should have found 9 sentences.", 9, numSents);
 
     // First sentence span test wrt RAW
     Sentence ofInterest = afpProcessedComm.getSectionList().get(1).getSentenceList().get(0);
@@ -443,13 +484,14 @@ public class StanfordAgigaPipeTest {
     this.testTextSpan(raw, 60, 242);
 
     // First sentence span test wrt processed
-    this.testTextSpan(afpProcessedComm.getSectionList().get(1).getSentenceList().get(0).getTextSpan(), 0, 184);
+    this.testTextSpan(afpProcessedComm.getSectionList().get(1).getSentenceList().get(0).getTextSpan(), 61, 245);
 
     // Second sentence span test wrt processed
-    this.testTextSpan(afpProcessedComm.getSectionList().get(2).getSentenceList().get(0).getTextSpan(), 186, 332);
+    this.testTextSpan(afpProcessedComm.getSectionList().get(2).getSentenceList().get(0).getTextSpan(), 247, 393);
 
     // Sentences test
     String[] sentences = {
+        "Protest over arrest of Sri Lanka reporter linked to Fonseka",
         "Sri Lankan media groups Thursday protested against the arrest of a reporter\n"
             + "close to Sarath Fonseka, the detained ex-army chief who tried to unseat the\n"
             + "president in recent elections.",
@@ -467,18 +509,20 @@ public class StanfordAgigaPipeTest {
         "The case was adjourned.",
         "Local and international rights groups have accused Rajapakse of cracking down on\n"
             + "dissent, a charge the government has denied." };
-    this.testSentenceText(sentences, afpProcessedComm);
 
     // test sentences wrt processed
     String[] processedSentences = {
-        "Sri Lankan media groups Thursday protested against the arrest of a reporter close to Sarath Fonseka , the detained ex-army chief who tried to unseat the president in recent elections .",
-        "The groups issued a joint statement demanding the release of Ruwan Weerakoon , a reporter with the Nation newspaper , who was arrested this week .",
-        "`` We request the Inspector General of Police to disclose the reasons behind the arrest and detention of Ruwan Weerakoon and make arrangements for him to receive legal aid immediately , '' the statement added .",
-        "Weerakoon maintained close contact with Fonseka when the general led the military during the final phase of last year 's war against Tamil Tiger rebels .",
-        "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation Tigers of Tamil Eelam -LRB- LTTE -RRB- were crushed in May , but the two men later fell out and contested the presidency in January 's elections .",
-        "Fonseka was arrested soon after losing the poll and appeared in front of a court martial this week .",
-        "The case was adjourned .",
-        "Local and international rights groups have accused Rajapakse of cracking down on dissent , a charge the government has denied ." };
+
+      "Protest over arrest of Sri Lanka reporter linked to Fonseka",
+      "Sri Lankan media groups Thursday protested against the arrest of a reporter close to Sarath Fonseka , the detained ex-army chief who tried to unseat the president in recent elections .",
+      "The groups issued a joint statement demanding the release of Ruwan Weerakoon , a reporter with the Nation newspaper , who was arrested this week .",
+      "`` We request the Inspector General of Police to disclose the reasons behind the arrest and detention of Ruwan Weerakoon and make arrangements for him to receive legal aid immediately , '' the statement added .",
+      "Weerakoon maintained close contact with Fonseka when the general led the military during the final phase of last year 's war against Tamil Tiger rebels .",
+      "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation Tigers of Tamil Eelam -LRB- LTTE -RRB- were crushed in May , but the two men later fell out and contested the presidency in January 's elections .",
+      "Fonseka was arrested soon after losing the poll and appeared in front of a court martial this week .", "The case was adjourned .",
+      "Local and international rights groups have accused Rajapakse of cracking down on dissent , a charge the government has denied ." };
+    
+    this.testSentenceText(sentences, afpProcessedComm);
 
     // TODO: fix this failure
     // this.testSentenceText(processedSentences, afpProcessedComm);
@@ -514,7 +558,7 @@ public class StanfordAgigaPipeTest {
 
   private void testNDependencyParses(int expected, Communication target) {
     for (Section nsect : target.getSectionList()) {
-      if (nsect.isSetSentenceList())
+      if (nsect.isSetSentenceList() && nsect.getKind().equals("Passage"))
         for (Sentence nsent : nsect.getSentenceList()) {
           Tokenization tokenization = nsent.getTokenization();
           assertEquals(expected, tokenization.getDependencyParseList().size());
@@ -540,9 +584,12 @@ public class StanfordAgigaPipeTest {
     // Sections
     List<Section> nsects = nytProcessedComm.getSectionList();
     assertEquals("Should have found 15 sections (including title): has " + nsects.size(), 15, nsects.size());
+    verifyNumSections(this.nyt1999, nytProcessedComm);
+    verifyTitleSection(nytProcessedComm);
 
     this.testSectionOffsetsSet(nsects, this.kindsToAnnotate);
-    this.testTextSpan(nsects.get(1).getTextSpan(), 0, 218);
+    this.testTextSpan(nsects.get(0).getTextSpan(), 0, 52);
+    this.testTextSpan(nsects.get(1).getTextSpan(), 54, 272);
 
     // Verify tokens wrt RAW
     this.verifyTokens(nytProcessedComm, true);
