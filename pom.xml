@@ -4,7 +4,7 @@
 
   <groupId>edu.jhu.hlt.concrete</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>3.7.0</version>
+  <version>3.7.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Concrete Stanford</name>
@@ -63,7 +63,7 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>gigaword-json-ingest</artifactId>
-      <version>3.7.0</version>
+      <version>3.7.1</version>
     </dependency>
 
     <!-- <dependency> -->
