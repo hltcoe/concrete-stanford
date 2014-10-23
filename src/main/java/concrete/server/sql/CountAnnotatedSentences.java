@@ -36,7 +36,9 @@ public class CountAnnotatedSentences {
     }
 
     try (PostgresClient cli = new PostgresClient(psqlHost.get(), psqlDBName.get(), psqlUser.get(), psqlPass.get().getBytes())) {
+      logger.info("Beginning.");
       logger.info("There were {} annotated sentences.", cli.countNumberAnnotatedSentences());
+      logger.info("Done.");
     } catch (Exception e) {
       logger.error("Caught SQL/ConcreteException.", e);
     }
