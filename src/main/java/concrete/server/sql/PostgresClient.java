@@ -180,12 +180,12 @@ public class PostgresClient implements AutoCloseable {
 
   public int countNumberAnnotatedSentences() throws Exception {
     try (Connection conn = this.getConnector();
-        PreparedStatement ps = conn.prepareStatement("SELECT * FROM annotated");) {
+        PreparedStatement ps = conn.prepareStatement("SELECT bytez FROM annotated");) {
 
       ExecutorService exec = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
       CompletionService<Integer> srv = new ExecutorCompletionService<>(exec);
       conn.setAutoCommit(false);
-      final int fetchCtr = 1000;
+      final int fetchCtr = 10000;
       ps.setFetchSize(fetchCtr);
       int nSentences = 0;
       int docCounter = 0;
