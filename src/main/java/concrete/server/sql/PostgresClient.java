@@ -29,6 +29,7 @@ import clojure.java.api.Clojure;
 import clojure.lang.IFn;
 import concrete.server.concurrent.CallableBytesToConcreteSentenceCount;
 import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.CommunicationSerialization;
 import edu.jhu.hlt.concrete.util.ConcreteException;
@@ -44,6 +45,7 @@ public class PostgresClient implements AutoCloseable {
 
   public static final String DOCUMENTS_TABLE = "documents_raw";
   public static final String ANNOTATED_TABLE = "annotated";
+  public static final String SENTENCE_COUNT_TABLE = "sentence_counts";
 
   private final String randQuery = "SELECT raw FROM " + DOCUMENTS_TABLE + " WHERE id NOT IN"
        + " (SELECT documents_id FROM " + ANNOTATED_TABLE + " ) AND random() < 0.01 LIMIT 100";
@@ -60,6 +62,7 @@ public class PostgresClient implements AutoCloseable {
   private final PreparedStatement isAnnotatedPS;
   private final PreparedStatement getDocumentPS;
   private final PreparedStatement nextCommPS;
+  private final PreparedStatement annotatedCommPS;
 
   private final ClojureIngester ci = new ClojureIngester();
 
@@ -82,6 +85,7 @@ public class PostgresClient implements AutoCloseable {
     this.isAnnotatedPS = this.conn.prepareStatement("SELECT documents_id FROM annotated WHERE documents_id = ?");
     this.getDocumentPS = this.conn.prepareStatement("SELECT raw FROM documents_raw WHERE id = ?");
     this.nextCommPS = this.conn.prepareStatement(randQuery);
+    this.annotatedCommPS = this.conn.prepareStatement("SELECT bytez FROM annotated WHERE id = ?");
   }
 
   public boolean isDocumentAnnotated(String id) throws SQLException {
@@ -105,6 +109,16 @@ public class PostgresClient implements AutoCloseable {
       } else {
         throw new SQLException("Thought a document would come back, but got no results.");
       }
+    }
+  }
+  
+  public Communication get(String id) throws SQLException, ConcreteException {
+    this.annotatedCommPS.setString(1, id);
+    try (ResultSet rs = this.annotatedCommPS.executeQuery()) {
+      if (rs.next())
+        return this.cs.fromBytes(rs.getBytes("bytez"));
+      else
+        throw new SQLException("No annotated document found for ID: " + id);
     }
   }
 
@@ -177,6 +191,22 @@ public class PostgresClient implements AutoCloseable {
       } else {
         throw new SQLException("No documents available.");
       }
+    }
+  }
+  
+  public void countSentences(String id) throws SQLException, ConcreteException {
+    int nSentences = 0;
+    try (Connection conn = this.getConnector();
+        PreparedStatement ps = conn.prepareStatement("INSERT INTO " + SENTENCE_COUNT_TABLE + " (documents_id, count) VALUES (?,?)")) {
+      Communication c = this.get(id);
+      if (c.isSetSectionList())
+        for (Section s : c.getSectionList())
+          if (s.isSetSentenceList())
+            nSentences += s.getSentenceListSize();
+      
+      ps.setString(1, id);
+      ps.setInt(2, nSentences);
+      ps.executeQuery();
     }
   }
 
