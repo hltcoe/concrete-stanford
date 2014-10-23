@@ -155,6 +155,8 @@ public class PostgresClient implements AutoCloseable {
 
     try (Connection conn = this.getConnector();
         PreparedStatement ps = conn.prepareStatement("SELECT id FROM documents_raw");) {
+      conn.setAutoCommit(false);
+      ps.setFetchSize(10000);
       ResultSet rs = ps.executeQuery();
       while (rs.next()) {
         String id = rs.getString(1);
