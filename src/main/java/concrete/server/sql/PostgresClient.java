@@ -14,14 +14,20 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import concrete.util.concurrent.ConcurrentCommunicationLoader;
 import proxy.interfaces.ProxyCommunication;
 import clojure.java.api.Clojure;
 import clojure.lang.IFn;
+import concrete.server.concurrent.CallableBytesToConcreteSentenceCount;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.CommunicationSerialization;
@@ -174,24 +180,37 @@ public class PostgresClient implements AutoCloseable {
 
   public int countNumberAnnotatedSentences() throws Exception {
     try (Connection conn = this.getConnector();
-        PreparedStatement ps = conn.prepareStatement("SELECT * FROM annotated");
-        ConcurrentCommunicationLoader loader = new ConcurrentCommunicationLoader()) {
+        PreparedStatement ps = conn.prepareStatement("SELECT * FROM annotated");) {
+      
+      ExecutorService exec = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+      CompletionService<Integer> srv = new ExecutorCompletionService<>(exec);
       conn.setAutoCommit(false);
-      ps.setFetchSize(100);
+      final int fetchCtr = 1000;
+      ps.setFetchSize(fetchCtr);
       int nSentences = 0;
       int docCounter = 0;
+      
       try (ResultSet rs = ps.executeQuery()) {
         while (rs.next()) {
           byte[] bytes = rs.getBytes("bytez");
-          Communication c = this.cs.fromBytes(bytes);
-          nSentences += new SuperCommunication(c).generateSentenceIdToSectionMap().values().size();
+          srv.submit(new CallableBytesToConcreteSentenceCount(bytes));
           docCounter++;
-
-          if (docCounter % 10000 == 0)
-            logger.info("Finished {} docs.", docCounter);
+          
+          if (docCounter == fetchCtr) {
+            logger.info("Counting {} sentences.", fetchCtr);
+            StopWatch sw = new StopWatch();
+            sw.start();
+            for (int i = 0; i < docCounter; i++)
+              nSentences += srv.poll().get();
+            
+            sw.stop();
+            logger.info("Counted sentences in {} ms.", sw.getTime());
+          }
         }
       }
 
+      exec.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+      exec.shutdown();
       return nSentences;
     }
   }
