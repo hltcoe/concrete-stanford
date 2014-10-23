@@ -200,7 +200,7 @@ public class PostgresClient implements AutoCloseable {
             logger.info("Counting {} sentences.", fetchCtr);
             StopWatch sw = new StopWatch();
             sw.start();
-            for (int i = 0; i < docCounter; i++)
+            for (int i = 0; i < fetchCtr; i++)
               nSentences += srv.take().get();
 
             sw.stop();
