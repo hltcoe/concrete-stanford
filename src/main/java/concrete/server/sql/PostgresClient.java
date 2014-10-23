@@ -179,11 +179,16 @@ public class PostgresClient implements AutoCloseable {
       conn.setAutoCommit(false);
       ps.setFetchSize(1000);
       int nSentences = 0;
+      int docCounter = 0;
       try (ResultSet rs = ps.executeQuery()) {
         while (rs.next()) {
           byte[] bytes = rs.getBytes("bytez");
           Communication c = this.cs.fromBytes(bytes);
           nSentences += new SuperCommunication(c).generateSentenceIdToSectionMap().values().size();
+          docCounter++;
+          
+          if (docCounter % 10000 == 0)
+            logger.info("Finished {} docs.", docCounter);
         }
       }
       
