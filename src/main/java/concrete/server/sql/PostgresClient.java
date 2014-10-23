@@ -18,6 +18,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.util.concurrent.ConcurrentCommunicationLoader;
 import proxy.interfaces.ProxyCommunication;
 import clojure.java.api.Clojure;
 import clojure.lang.IFn;
@@ -171,11 +172,12 @@ public class PostgresClient implements AutoCloseable {
     }
   }
   
-  public int countNumberAnnotatedSentences() throws SQLException, ConcreteException {
+  public int countNumberAnnotatedSentences() throws Exception {
     try (Connection conn = this.getConnector();
-        PreparedStatement ps = conn.prepareStatement("SELECT * FROM annotated");) {
+        PreparedStatement ps = conn.prepareStatement("SELECT * FROM annotated");
+        ConcurrentCommunicationLoader loader = new ConcurrentCommunicationLoader()) {
       conn.setAutoCommit(false);
-      ps.setFetchSize(100000);
+      ps.setFetchSize(1000);
       int nSentences = 0;
       try (ResultSet rs = ps.executeQuery()) {
         while (rs.next()) {

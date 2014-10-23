@@ -3,13 +3,10 @@
  */
 package concrete.server.sql;
 
-import java.sql.SQLException;
 import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import edu.jhu.hlt.concrete.util.ConcreteException;
 
 /**
  * @author max
@@ -40,7 +37,7 @@ public class CountAnnotatedSentences {
 
     try (PostgresClient cli = new PostgresClient(psqlHost.get(), psqlDBName.get(), psqlUser.get(), psqlPass.get().getBytes())) {
       logger.info("There were {} annotated sentences.", cli.countNumberAnnotatedSentences());
-    } catch (SQLException | ConcreteException e) {
+    } catch (Exception e) {
       logger.error("Caught SQL/ConcreteException.", e);
     }
   }
