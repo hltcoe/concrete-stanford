@@ -196,7 +196,7 @@ public class PostgresClient implements AutoCloseable {
           srv.submit(new CallableBytesToConcreteSentenceCount(bytes));
           docCounter++;
           
-          if (docCounter == fetchCtr) {
+          if (docCounter % fetchCtr == 0) {
             logger.info("Counting {} sentences.", fetchCtr);
             StopWatch sw = new StopWatch();
             sw.start();
