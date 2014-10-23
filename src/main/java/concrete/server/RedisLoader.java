@@ -24,6 +24,7 @@ import concrete.server.sql.PostgresClient;
 public class RedisLoader {
 
   public static final String IDS_KEY = "gigaword-ids";
+  public static final String SENTENCE_KEY = "gigaword-sents";
   public static final String ERRORS_KEY = "gigaword-error-ids";
 
   private static final Logger logger = LoggerFactory.getLogger(RedisLoader.class);

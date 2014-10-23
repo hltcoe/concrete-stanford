@@ -59,15 +59,15 @@ public class PostgresEnabledQSubbableSentenceCounter {
     try (Jedis jedis = jp.getResource(); 
         PostgresClient pc = new PostgresClient(host, dbName, user, pass)) {
       // IF null, stop - nothing left.
-      Optional<String> id = Optional.ofNullable(jedis.spop(RedisLoader.IDS_KEY));
+      Optional<String> id = Optional.ofNullable(jedis.spop(RedisLoader.SENTENCE_KEY));
       while (id.isPresent() && backoffCounter <= 100000) {
         try {
           pc.countSentences(id.get());
-          id = Optional.ofNullable(jedis.spop(RedisLoader.IDS_KEY));
+          id = Optional.ofNullable(jedis.spop(RedisLoader.SENTENCE_KEY));
         } catch (ConcreteException e) {
           logger.warn("Caught an exception while annotating a document.", e);
           logger.warn("Document in question: {}", id.get());
-          id = Optional.ofNullable(jedis.spop(RedisLoader.IDS_KEY));
+          id = Optional.ofNullable(jedis.spop(RedisLoader.SENTENCE_KEY));
         } catch (SQLException sqe) {
           logger.info("Waiting for a bit, then attempting to reconnect.");
           backoffCounter *= 10;
