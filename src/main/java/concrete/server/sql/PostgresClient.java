@@ -181,7 +181,7 @@ public class PostgresClient implements AutoCloseable {
   public int countNumberAnnotatedSentences() throws Exception {
     try (Connection conn = this.getConnector();
         PreparedStatement ps = conn.prepareStatement("SELECT * FROM annotated");) {
-      
+
       ExecutorService exec = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
       CompletionService<Integer> srv = new ExecutorCompletionService<>(exec);
       conn.setAutoCommit(false);
@@ -189,20 +189,20 @@ public class PostgresClient implements AutoCloseable {
       ps.setFetchSize(fetchCtr);
       int nSentences = 0;
       int docCounter = 0;
-      
+
       try (ResultSet rs = ps.executeQuery()) {
         while (rs.next()) {
           byte[] bytes = rs.getBytes("bytez");
           srv.submit(new CallableBytesToConcreteSentenceCount(bytes));
           docCounter++;
-          
+
           if (docCounter % fetchCtr == 0) {
             logger.info("Counting {} sentences.", fetchCtr);
             StopWatch sw = new StopWatch();
             sw.start();
             for (int i = 0; i < docCounter; i++)
-              nSentences += srv.poll().get();
-            
+              nSentences += srv.take().get();
+
             sw.stop();
             logger.info("Counted sentences in {} ms.", sw.getTime());
           }
