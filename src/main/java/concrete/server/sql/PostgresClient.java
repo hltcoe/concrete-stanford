@@ -170,6 +170,24 @@ public class PostgresClient implements AutoCloseable {
       }
     }
   }
+  
+  public int countNumberAnnotatedSentences() throws SQLException, ConcreteException {
+    try (Connection conn = this.getConnector();
+        PreparedStatement ps = conn.prepareStatement("SELECT * FROM annotated");) {
+      conn.setAutoCommit(false);
+      ps.setFetchSize(100000);
+      int nSentences = 0;
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          byte[] bytes = rs.getBytes("bytez");
+          Communication c = this.cs.fromBytes(bytes);
+          nSentences += new SuperCommunication(c).generateSentenceIdToSectionMap().values().size();
+        }
+      }
+      
+      return nSentences;
+    }
+  }
 
   /* (non-Javadoc)
    * @see java.lang.AutoCloseable#close()
