@@ -62,7 +62,6 @@ public class PostgresEnabledQSubbableSentenceCounter {
       Optional<String> id = Optional.ofNullable(jedis.spop(RedisLoader.SENTENCE_KEY));
       while (id.isPresent() && backoffCounter <= 100000) {
         try {
-
           pc.countSentences(id.get());
           id = Optional.ofNullable(jedis.spop(RedisLoader.SENTENCE_KEY));
         } catch (ConcreteException e) {

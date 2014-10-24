@@ -264,6 +264,8 @@ public class PostgresClient implements AutoCloseable {
       ps.setString(1, id);
       ps.setInt(2, nSentences);
       ps.setInt(3, nTokens);
+      
+      ps.executeUpdate();
     }
   }
 
