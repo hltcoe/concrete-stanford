@@ -30,7 +30,7 @@ public class PostgresEnabledQSubbableSentenceCounter {
   private static final int backoffMulti = 60;
 
   /**
-   * 
+   *
    */
   public PostgresEnabledQSubbableSentenceCounter() {
     // TODO Auto-generated constructor stub
@@ -56,12 +56,13 @@ public class PostgresEnabledQSubbableSentenceCounter {
 
     int backoffCounter = 1;
 
-    try (Jedis jedis = jp.getResource(); 
+    try (Jedis jedis = jp.getResource();
         PostgresClient pc = new PostgresClient(host, dbName, user, pass)) {
       // IF null, stop - nothing left.
       Optional<String> id = Optional.ofNullable(jedis.spop(RedisLoader.SENTENCE_KEY));
       while (id.isPresent() && backoffCounter <= 100000) {
         try {
+
           pc.countSentences(id.get());
           id = Optional.ofNullable(jedis.spop(RedisLoader.SENTENCE_KEY));
         } catch (ConcreteException e) {
@@ -69,7 +70,8 @@ public class PostgresEnabledQSubbableSentenceCounter {
           logger.warn("Document in question: {}", id.get());
           id = Optional.ofNullable(jedis.spop(RedisLoader.SENTENCE_KEY));
         } catch (SQLException sqe) {
-          logger.info("Waiting for a bit, then attempting to reconnect.");
+          logger.warn("Caught a SQLException.", sqe);
+          logger.warn("Waiting for a bit, then attempting to reconnect.");
           backoffCounter *= 10;
           // 600, 6000, 60000, 600000, 6000000
           try {
@@ -78,17 +80,17 @@ public class PostgresEnabledQSubbableSentenceCounter {
             logger.warn("Won't happen.");
           }
 
-          logger.info("Trying again.");
+          logger.warn("Trying again.");
         }
       }
     } catch (SQLException e1) {
       logger.error("SQLexception during setup. Not trying to reconnect.", e1);
     }
-    
+
     sw.stop();
     logger.info("Finished (or backoffs exceeded). Took {} ms.", sw.getTime());
     sed.enable();
-    
+
     jp.close();
     jp.destroy();
   }

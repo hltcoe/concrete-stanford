@@ -85,7 +85,7 @@ public class PostgresClient implements AutoCloseable {
     this.isAnnotatedPS = this.conn.prepareStatement("SELECT documents_id FROM annotated WHERE documents_id = ?");
     this.getDocumentPS = this.conn.prepareStatement("SELECT raw FROM documents_raw WHERE id = ?");
     this.nextCommPS = this.conn.prepareStatement(randQuery);
-    this.annotatedCommPS = this.conn.prepareStatement("SELECT bytez FROM annotated WHERE id = ?");
+    this.annotatedCommPS = this.conn.prepareStatement("SELECT bytez FROM annotated WHERE documents_id = ?");
   }
 
   public boolean isDocumentAnnotated(String id) throws SQLException {
@@ -111,7 +111,7 @@ public class PostgresClient implements AutoCloseable {
       }
     }
   }
-  
+
   public Communication get(String id) throws SQLException, ConcreteException {
     this.annotatedCommPS.setString(1, id);
     try (ResultSet rs = this.annotatedCommPS.executeQuery()) {
@@ -193,21 +193,16 @@ public class PostgresClient implements AutoCloseable {
       }
     }
   }
-  
+
   public void countSentences(String id) throws SQLException, ConcreteException {
     int nSentences = 0;
-    try (Connection conn = this.getConnector();
-        PreparedStatement ps = conn.prepareStatement("INSERT INTO " + SENTENCE_COUNT_TABLE + " (documents_id, count) VALUES (?,?)")) {
-      Communication c = this.get(id);
-      if (c.isSetSectionList())
-        for (Section s : c.getSectionList())
-          if (s.isSetSentenceList())
-            nSentences += s.getSentenceListSize();
-      
-      ps.setString(1, id);
-      ps.setInt(2, nSentences);
-      ps.executeQuery();
-    }
+    Communication c = this.get(id);
+    if (c.isSetSectionList())
+      for (Section s : c.getSectionList())
+        if (s.isSetSentenceList())
+          nSentences += s.getSentenceListSize();
+
+    logger.info("Document {} sentence count: {}", id, nSentences);
   }
 
   public int countNumberAnnotatedSentences() throws Exception {
