@@ -30,6 +30,9 @@ import clojure.lang.IFn;
 import concrete.server.concurrent.CallableBytesToConcreteSentenceCount;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.Section;
+import edu.jhu.hlt.concrete.Sentence;
+import edu.jhu.hlt.concrete.TokenList;
+import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.CommunicationSerialization;
 import edu.jhu.hlt.concrete.util.ConcreteException;
@@ -229,14 +232,39 @@ public class PostgresClient implements AutoCloseable {
   }
 
   public void countSentences(String id) throws SQLException, ConcreteException {
-    int nSentences = 0;
-    Communication c = this.get(id);
-    if (c.isSetSectionList())
-      for (Section s : c.getSectionList())
-        if (s.isSetSentenceList())
-          nSentences += s.getSentenceListSize();
+    try (Connection conn = this.getConnector();
+         PreparedStatement ps = conn.prepareStatement("INSERT INTO " + SENTENCE_COUNT_TABLE
+             + " (documents_id, count, token_count) VALUES (?, ?, ?)")) {
 
-    logger.info("Document {} sentence count: {}", id, nSentences);
+      int nSentences = 0;
+      int nTokens = 0;
+      Communication c = this.get(id);
+      if (c.isSetSectionList())
+        for (Section s : c.getSectionList())
+          if (s.isSetSentenceList()) {
+            nSentences += s.getSentenceListSize();
+            for (Sentence sent : s.getSentenceList()) {
+              if (sent.isSetTokenization()) {
+                Tokenization tkz = sent.getTokenization();
+                if (tkz.isSetTokenList()) {
+                  TokenList tl = tkz.getTokenList();
+                  if (tl.isSetTokenList())
+                    nTokens += tl.getTokenListSize();
+                  else
+                    logger.warn("Document: {} has an unset token list inside TokenList.");
+                } else
+                  logger.warn("Document: {} has an unset TokenList inside Tokenization.");
+              }
+            }
+          }
+
+      logger.info("Document {} sentence count: {}", id, nSentences);
+      logger.info("Document {} token count: {}", id, nTokens);
+      
+      ps.setString(1, id);
+      ps.setInt(2, nSentences);
+      ps.setInt(3, nTokens);
+    }
   }
 
   public int countNumberAnnotatedSentences() throws Exception {
