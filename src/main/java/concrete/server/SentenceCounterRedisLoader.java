@@ -43,7 +43,6 @@ public class SentenceCounterRedisLoader {
     Thread.setDefaultUncaughtExceptionHandler(new LoggedUncaughtExceptionHandler());
     String redisHost = args[0];
     int redisPort = Integer.parseInt(args[1]);
-    String keyName = args[2];
 
     logger.info("Redis loading beginning at: {}", new DateTime().toString());
     StopWatch sw = new StopWatch();
@@ -67,7 +66,7 @@ public class SentenceCounterRedisLoader {
       msw.reset();
       msw.start();
       for (String id : annotatedIds)
-        jedis.sadd(keyName, id);
+        jedis.sadd(SENTENCE_KEY, id);
       
       msw.stop();
       logger.info("Loaded document IDs in: {} ms", msw.getTime());

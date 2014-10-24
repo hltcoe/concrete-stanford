@@ -168,7 +168,7 @@ public class PostgresClient implements AutoCloseable {
     Set<String> idSet = new HashSet<String>(12000000);
 
     try (Connection conn = this.getConnector();
-        PreparedStatement ps = conn.prepareStatement("SELECT id FROM annotated");) {
+        PreparedStatement ps = conn.prepareStatement("SELECT documents_id FROM annotated");) {
       conn.setAutoCommit(false);
       ps.setFetchSize(10000);
       ResultSet rs = ps.executeQuery();
