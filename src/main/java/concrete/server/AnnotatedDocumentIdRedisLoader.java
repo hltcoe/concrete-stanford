@@ -21,18 +21,16 @@ import concrete.server.sql.PostgresClient;
  * @author max
  *
  */
-public class RedisLoader {
+public class AnnotatedDocumentIdRedisLoader {
 
   public static final String IDS_KEY = "gigaword-ids";
-  public static final String SENTENCE_KEY = "gigaword-sents";
-  public static final String ERRORS_KEY = "gigaword-error-ids";
 
-  private static final Logger logger = LoggerFactory.getLogger(RedisLoader.class);
+  private static final Logger logger = LoggerFactory.getLogger(AnnotatedDocumentIdRedisLoader.class);
   
   /**
    * 
    */
-  public RedisLoader() {
+  public AnnotatedDocumentIdRedisLoader() {
     // TODO Auto-generated constructor stub
   }
 
@@ -45,7 +43,6 @@ public class RedisLoader {
     Thread.setDefaultUncaughtExceptionHandler(new LoggedUncaughtExceptionHandler());
     String redisHost = args[0];
     int redisPort = Integer.parseInt(args[1]);
-    String keyName = args[2];
 
     logger.info("Redis loading beginning at: {}", new DateTime().toString());
     StopWatch sw = new StopWatch();
@@ -66,10 +63,11 @@ public class RedisLoader {
       ingIds.removeAll(annotatedIds);
       msw.stop();
       logger.info("Got document IDs in: {} ms", msw.getTime());
+      logger.info("Need to annotate: {} docs.", ingIds.size());
       msw.reset();
       msw.start();
       for (String id : ingIds)
-        jedis.sadd(keyName, id);
+        jedis.sadd(IDS_KEY, id);
       
       msw.stop();
       logger.info("Loaded document IDs in: {} ms", msw.getTime());

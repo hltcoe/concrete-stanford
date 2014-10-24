@@ -163,12 +163,46 @@ public class PostgresClient implements AutoCloseable {
       logger.error("Problematic document ID: {}", docId);
     }
   }
+  
+  public Set<String> getAnnotatedDocIds() throws SQLException {
+    Set<String> idSet = new HashSet<String>(12000000);
+
+    try (Connection conn = this.getConnector();
+        PreparedStatement ps = conn.prepareStatement("SELECT id FROM annotated");) {
+      conn.setAutoCommit(false);
+      ps.setFetchSize(10000);
+      ResultSet rs = ps.executeQuery();
+      while (rs.next()) {
+        String id = rs.getString(1);
+        idSet.add(id);
+      }
+    }
+
+    return idSet;
+  }
 
   public Set<String> getIngestedDocIds() throws SQLException {
     Set<String> idSet = new HashSet<String>(12000000);
 
     try (Connection conn = this.getConnector();
         PreparedStatement ps = conn.prepareStatement("SELECT id FROM documents_raw");) {
+      conn.setAutoCommit(false);
+      ps.setFetchSize(10000);
+      ResultSet rs = ps.executeQuery();
+      while (rs.next()) {
+        String id = rs.getString(1);
+        idSet.add(id);
+      }
+    }
+
+    return idSet;
+  }
+  
+  public Set<String> getCountedDocIds() throws SQLException {
+    Set<String> idSet = new HashSet<String>(12000000);
+
+    try (Connection conn = this.getConnector();
+        PreparedStatement ps = conn.prepareStatement("SELECT documents_id FROM sentence_counts");) {
       conn.setAutoCommit(false);
       ps.setFetchSize(10000);
       ResultSet rs = ps.executeQuery();

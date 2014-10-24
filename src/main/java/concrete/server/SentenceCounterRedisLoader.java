@@ -21,18 +21,16 @@ import concrete.server.sql.PostgresClient;
  * @author max
  *
  */
-public class RedisLoader {
+public class SentenceCounterRedisLoader {
 
-  public static final String IDS_KEY = "gigaword-ids";
   public static final String SENTENCE_KEY = "gigaword-sents";
-  public static final String ERRORS_KEY = "gigaword-error-ids";
 
-  private static final Logger logger = LoggerFactory.getLogger(RedisLoader.class);
+  private static final Logger logger = LoggerFactory.getLogger(SentenceCounterRedisLoader.class);
   
   /**
    * 
    */
-  public RedisLoader() {
+  public SentenceCounterRedisLoader() {
     // TODO Auto-generated constructor stub
   }
 
@@ -61,14 +59,14 @@ public class RedisLoader {
         PostgresClient pc = new PostgresClient(host, dbName, user, pass);) {
       StopWatch msw = new StopWatch();
       msw.start();
-      Set<String> ingIds = pc.getIngestedDocIds();
       Set<String> annotatedIds = pc.getAnnotatedDocIds();
-      ingIds.removeAll(annotatedIds);
+      Set<String> countedIds = pc.getCountedDocIds();
+      annotatedIds.removeAll(countedIds);
       msw.stop();
       logger.info("Got document IDs in: {} ms", msw.getTime());
       msw.reset();
       msw.start();
-      for (String id : ingIds)
+      for (String id : annotatedIds)
         jedis.sadd(keyName, id);
       
       msw.stop();
