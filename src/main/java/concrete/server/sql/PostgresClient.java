@@ -82,6 +82,7 @@ public class PostgresClient implements AutoCloseable {
   }
   
   public void commit() throws SQLException {
+    logger.info("Committing.");
     this.conn.commit();
   }
   

@@ -55,6 +55,7 @@ public class PostgresEnabledQSubbableSentenceCounter {
     byte[] pass = System.getenv("GIGAWORD_PASS").getBytes();
 
     int backoffCounter = 1;
+    int nProcessed = 0;
 
     try (Jedis jedis = jp.getResource();
         PostgresClient pc = new PostgresClient(host, dbName, user, pass)) {
@@ -64,6 +65,11 @@ public class PostgresEnabledQSubbableSentenceCounter {
       while (id.isPresent() && backoffCounter <= 100000) {
         try {
           pc.countSentences(id.get());
+          nProcessed++;
+          
+          if (nProcessed % 10000 == 0)
+            pc.commit();
+          
           id = Optional.ofNullable(jedis.spop(RedisLoader.SENTENCE_KEY));
         } catch (ConcreteException e) {
           logger.warn("Caught an exception while annotating a document.", e);
