@@ -66,9 +66,25 @@ public class PostgresClient implements AutoCloseable {
   private final PreparedStatement getDocumentPS;
   private final PreparedStatement nextCommPS;
   private final PreparedStatement annotatedCommPS;
+  private final PreparedStatement insertCountPS;
 
   private final ClojureIngester ci = new ClojureIngester();
+  
+  private boolean isAutoCommitEnabled = false;
 
+  public void setAutoCommit(boolean ac) throws SQLException {
+    this.conn.setAutoCommit(ac);
+    this.isAutoCommitEnabled = ac;
+  }
+  
+  public boolean getAutoCommitStatus() {
+    return this.isAutoCommitEnabled;
+  }
+  
+  public void commit() throws SQLException {
+    this.conn.commit();
+  }
+  
   /**
    * @throws SQLException
    *
@@ -89,6 +105,8 @@ public class PostgresClient implements AutoCloseable {
     this.getDocumentPS = this.conn.prepareStatement("SELECT raw FROM documents_raw WHERE id = ?");
     this.nextCommPS = this.conn.prepareStatement(randQuery);
     this.annotatedCommPS = this.conn.prepareStatement("SELECT bytez FROM annotated WHERE documents_id = ?");
+    this.insertCountPS = this.conn.prepareStatement("INSERT INTO " + SENTENCE_COUNT_TABLE
+        + " (documents_id, count, token_count) VALUES (?, ?, ?)");
   }
 
   public boolean isDocumentAnnotated(String id) throws SQLException {
@@ -236,43 +254,38 @@ public class PostgresClient implements AutoCloseable {
       logger.warn("Document ID {} has not been annotated - need to investigate this");
       return;
     }
-    
-    try (Connection conn = this.getConnector();
-         PreparedStatement ps = conn.prepareStatement("INSERT INTO " + SENTENCE_COUNT_TABLE
-             + " (documents_id, count, token_count) VALUES (?, ?, ?)")) {
 
-      int nSentences = 0;
-      int nTokens = 0;
-        
-      Communication c = this.get(id);
-      if (c.isSetSectionList())
-        for (Section s : c.getSectionList())
-          if (s.isSetSentenceList()) {
-            nSentences += s.getSentenceListSize();
-            for (Sentence sent : s.getSentenceList()) {
-              if (sent.isSetTokenization()) {
-                Tokenization tkz = sent.getTokenization();
-                if (tkz.isSetTokenList()) {
-                  TokenList tl = tkz.getTokenList();
-                  if (tl.isSetTokenList())
-                    nTokens += tl.getTokenListSize();
-                  else
-                    logger.warn("Document: {} has an unset token list inside TokenList.");
-                } else
-                  logger.warn("Document: {} has an unset TokenList inside Tokenization.");
-              }
+    int nSentences = 0;
+    int nTokens = 0;
+      
+    Communication c = this.get(id);
+    if (c.isSetSectionList())
+      for (Section s : c.getSectionList())
+        if (s.isSetSentenceList()) {
+          nSentences += s.getSentenceListSize();
+          for (Sentence sent : s.getSentenceList()) {
+            if (sent.isSetTokenization()) {
+              Tokenization tkz = sent.getTokenization();
+              if (tkz.isSetTokenList()) {
+                TokenList tl = tkz.getTokenList();
+                if (tl.isSetTokenList())
+                  nTokens += tl.getTokenListSize();
+                else
+                  logger.warn("Document: {} has an unset token list inside TokenList.");
+              } else
+                logger.warn("Document: {} has an unset TokenList inside Tokenization.");
             }
           }
+        }
 
-      logger.info("Document {} sentence count: {}", id, nSentences);
-      logger.info("Document {} token count: {}", id, nTokens);
-      
-      ps.setString(1, id);
-      ps.setInt(2, nSentences);
-      ps.setInt(3, nTokens);
-      
-      ps.executeUpdate();
-    }
+    logger.info("Document {} sentence count: {}", id, nSentences);
+    logger.info("Document {} token count: {}", id, nTokens);
+    
+    this.insertCountPS.setString(1, id);
+    this.insertCountPS.setInt(2, nSentences);
+    this.insertCountPS.setInt(3, nTokens);
+    
+    this.insertCountPS.executeUpdate();
   }
 
   public int countNumberAnnotatedSentences() throws Exception {
@@ -318,6 +331,8 @@ public class PostgresClient implements AutoCloseable {
   @Override
   public void close() throws SQLException {
     logger.debug("Closing.");
+    if (this.isAutoCommitEnabled)
+      this.commit();
     this.conn.close();
   }
 

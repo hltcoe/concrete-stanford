@@ -58,6 +58,7 @@ public class PostgresEnabledQSubbableSentenceCounter {
 
     try (Jedis jedis = jp.getResource();
         PostgresClient pc = new PostgresClient(host, dbName, user, pass)) {
+      pc.setAutoCommit(false);
       // IF null, stop - nothing left.
       Optional<String> id = Optional.ofNullable(jedis.spop(RedisLoader.SENTENCE_KEY));
       while (id.isPresent() && backoffCounter <= 100000) {
@@ -82,6 +83,8 @@ public class PostgresEnabledQSubbableSentenceCounter {
           logger.warn("Trying again.");
         }
       }
+      
+      pc.commit();
     } catch (SQLException e1) {
       logger.error("SQLexception during setup. Not trying to reconnect.", e1);
     }
