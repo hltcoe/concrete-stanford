@@ -232,12 +232,18 @@ public class PostgresClient implements AutoCloseable {
   }
 
   public void countSentences(String id) throws SQLException, ConcreteException {
+    if (!this.isDocumentAnnotated(id)) {
+      logger.warn("Document ID {} has not been annotated - need to investigate this");
+      return;
+    }
+    
     try (Connection conn = this.getConnector();
          PreparedStatement ps = conn.prepareStatement("INSERT INTO " + SENTENCE_COUNT_TABLE
              + " (documents_id, count, token_count) VALUES (?, ?, ?)")) {
 
       int nSentences = 0;
       int nTokens = 0;
+        
       Communication c = this.get(id);
       if (c.isSetSectionList())
         for (Section s : c.getSectionList())
