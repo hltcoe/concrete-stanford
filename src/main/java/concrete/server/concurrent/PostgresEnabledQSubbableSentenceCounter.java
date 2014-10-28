@@ -17,7 +17,10 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import concrete.server.LoggedUncaughtExceptionHandler;
 import concrete.server.RedisLoader;
+import concrete.server.sql.GigawordCreds;
 import concrete.server.sql.PostgresClient;
+import concrete.server.sql.SQLCreds;
+import concrete.server.sql.UnsetEnvironmentVariableException;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 
 /**
@@ -49,16 +52,19 @@ public class PostgresEnabledQSubbableSentenceCounter {
     StopWatch sw = new StopWatch();
     sw.start();
 
-    String host = System.getenv("GIGAWORD_HOST");
-    String dbName = System.getenv("GIGAWORD_DB");
-    String user = System.getenv("GIGAWORD_USER");
-    byte[] pass = System.getenv("GIGAWORD_PASS").getBytes();
+    SQLCreds creds = null;
+    try {
+      creds = new GigawordCreds();
+    } catch (UnsetEnvironmentVariableException e2) {
+      logger.error("Credentials were not set.", e2);
+      System.exit(1);
+    }
 
     int backoffCounter = 1;
     int nProcessed = 0;
 
     try (Jedis jedis = jp.getResource();
-        PostgresClient pc = new PostgresClient(host, dbName, user, pass)) {
+        PostgresClient pc = new PostgresClient(creds)) {
       pc.setAutoCommit(false);
       // IF null, stop - nothing left.
       Optional<String> id = Optional.ofNullable(jedis.spop(RedisLoader.SENTENCE_KEY));

@@ -15,7 +15,10 @@ import org.slf4j.LoggerFactory;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import concrete.server.sql.GigawordCreds;
 import concrete.server.sql.PostgresClient;
+import concrete.server.sql.SQLCreds;
+import concrete.server.sql.UnsetEnvironmentVariableException;
 
 /**
  * @author max
@@ -47,15 +50,18 @@ public class AnnotatedDocumentIdRedisLoader {
     logger.info("Redis loading beginning at: {}", new DateTime().toString());
     StopWatch sw = new StopWatch();
     sw.start();
-    
-    String host = System.getenv("GIGAWORD_HOST");
-    String dbName = System.getenv("GIGAWORD_DB");
-    String user = System.getenv("GIGAWORD_USER");
-    byte[] pass = System.getenv("GIGAWORD_PASS").getBytes();
+
+    SQLCreds creds = null;
+    try {
+      creds = new GigawordCreds();
+    } catch (UnsetEnvironmentVariableException e2) {
+      logger.error("Credentials were not set.", e2);
+      System.exit(1);
+    }
 
     JedisPool jp = new JedisPool(redisHost, redisPort);
     try (Jedis jedis = jp.getResource();
-        PostgresClient pc = new PostgresClient(host, dbName, user, pass);) {
+        PostgresClient pc = new PostgresClient(creds);) {
       StopWatch msw = new StopWatch();
       msw.start();
       Set<String> ingIds = pc.getIngestedDocIds();
