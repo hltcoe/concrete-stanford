@@ -15,10 +15,10 @@ import org.slf4j.LoggerFactory;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import concrete.server.sql.GigawordCreds;
-import concrete.server.sql.PostgresClient;
-import concrete.server.sql.SQLCreds;
-import concrete.server.sql.UnsetEnvironmentVariableException;
+import concrete.sql.GigawordCreds;
+import concrete.sql.PostgresClient;
+import concrete.sql.SQLCreds;
+import concrete.sql.UnsetEnvironmentVariableException;
 
 /**
  * @author max

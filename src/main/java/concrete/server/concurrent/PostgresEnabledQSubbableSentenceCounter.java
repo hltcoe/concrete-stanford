@@ -17,10 +17,10 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import concrete.server.LoggedUncaughtExceptionHandler;
 import concrete.server.RedisLoader;
-import concrete.server.sql.GigawordCreds;
-import concrete.server.sql.PostgresClient;
-import concrete.server.sql.SQLCreds;
-import concrete.server.sql.UnsetEnvironmentVariableException;
+import concrete.sql.GigawordCreds;
+import concrete.sql.PostgresClient;
+import concrete.sql.SQLCreds;
+import concrete.sql.UnsetEnvironmentVariableException;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 
 /**

@@ -3,7 +3,7 @@
  * See LICENSE in the project root directory.
  */
 
-package concrete.server.sql;
+package concrete.sql;
 
 import java.util.Collection;
 import java.util.Iterator;

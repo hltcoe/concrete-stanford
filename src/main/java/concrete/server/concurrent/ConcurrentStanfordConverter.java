@@ -32,10 +32,10 @@ import org.slf4j.LoggerFactory;
 
 import proxy.interfaces.ProxyCommunication;
 import concrete.server.LoggedUncaughtExceptionHandler;
-import concrete.server.sql.GigawordCreds;
-import concrete.server.sql.PostgresClient;
-import concrete.server.sql.SQLCreds;
-import concrete.server.sql.UnsetEnvironmentVariableException;
+import concrete.sql.GigawordCreds;
+import concrete.sql.PostgresClient;
+import concrete.sql.SQLCreds;
+import concrete.sql.UnsetEnvironmentVariableException;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe;
 import edu.jhu.hlt.gigaword.ClojureIngester;
