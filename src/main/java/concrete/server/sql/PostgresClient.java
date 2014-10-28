@@ -10,8 +10,10 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Optional;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletionService;
@@ -33,7 +35,6 @@ import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TokenList;
 import edu.jhu.hlt.concrete.Tokenization;
-import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.util.CommunicationSerialization;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.gigaword.ClojureIngester;
@@ -53,10 +54,7 @@ public class PostgresClient implements AutoCloseable {
   private final String randQuery = "SELECT raw FROM " + DOCUMENTS_TABLE + " WHERE id NOT IN"
        + " (SELECT documents_id FROM " + ANNOTATED_TABLE + " ) AND random() < 0.01 LIMIT 100";
 
-  private final String host;
-  private final String dbName;
-  private final String userName;
-  private final byte[] pass;
+  private final SQLCreds creds;
 
   private final CommunicationSerialization cs = new CommunicationSerialization();
   private final Connection conn;
@@ -90,15 +88,12 @@ public class PostgresClient implements AutoCloseable {
    * @throws SQLException
    *
    */
-  public PostgresClient(String host, String dbName, String userName, byte[] pass) throws SQLException {
+  public PostgresClient(SQLCreds creds) throws SQLException {
+    this.creds = creds;
+    
     IFn req = Clojure.var("clojure.core", "require");
     // req.invoke(Clojure.read("gigaword-ingester.giga"));
     req.invoke(Clojure.read("gigaword-ingester.giga"));
-
-    this.host = host;
-    this.dbName = dbName;
-    this.userName = userName;
-    this.pass = pass;
 
     this.conn = this.getConnector();
     this.insertPS = this.conn.prepareStatement("INSERT INTO " + ANNOTATED_TABLE + " (documents_id, bytez) VALUES (?,?)");
@@ -110,6 +105,28 @@ public class PostgresClient implements AutoCloseable {
         + " (documents_id, count, token_count) VALUES (?, ?, ?)");
   }
 
+  public List<Communication> batchSelect(List<String> ids) throws SQLException, ConcreteException {
+    if (ids.size() == 0)
+      return new ArrayList<Communication>();
+    
+    StringBuilder sb = new StringBuilder();
+    sb.append ("SELECT bytez FROM annotated WHERE ID in (?");
+    Iterator<String> stringIter = ids.iterator();
+    stringIter.next(); // "omit" first.
+    while (stringIter.hasNext())
+      sb.append(", ?");
+    sb.append(")");
+    
+    List<Communication> toRet = new ArrayList<Communication>(ids.size() + 1);
+    try (PreparedStatement ps = this.conn.prepareStatement(sb.toString())) {
+      ResultSet rs = ps.executeQuery();
+      while (rs.next()) 
+        toRet.add(this.cs.fromBytes(rs.getBytes("bytez")));
+    }
+    
+    return toRet;
+  }
+  
   public boolean isDocumentAnnotated(String id) throws SQLException {
     this.isAnnotatedPS.setString(1, id);
     try (ResultSet rs = this.isAnnotatedPS.executeQuery();) {
@@ -158,10 +175,11 @@ public class PostgresClient implements AutoCloseable {
 
   private Connection getConnector() throws SQLException {
     Properties props = new Properties();
-    props.setProperty("user", this.userName);
-    props.setProperty("password", new String(pass));
 
-    return DriverManager.getConnection("jdbc:postgresql://" + this.host + "/" + this.dbName, props);
+    props.setProperty("user", creds.getUserName());
+    props.setProperty("password", new String(creds.getPass()));
+    
+    return DriverManager.getConnection("jdbc:postgresql://" + creds.getHost() + "/" + creds.getDbName(), props);
   }
 
   public void insertCommunication(Communication c) throws SQLException {
@@ -335,32 +353,5 @@ public class PostgresClient implements AutoCloseable {
     if (this.isAutoCommitEnabled)
       this.commit();
     this.conn.close();
-  }
-
-  public static void main (String... args) {
-    if (args.length != 1) {
-      logger.info("This program takes 1 argument: a path on disk to serialize a Communication object.");
-      System.exit(1);
-    }
-
-    Optional<String> psqlHost = Optional.ofNullable(System.getenv("HURRICANE_HOST"));
-    Optional<String> psqlDBName = Optional.ofNullable(System.getenv("HURRICANE_DB"));
-    Optional<String> psqlUser = Optional.ofNullable(System.getenv("HURRICANE_USER"));
-    Optional<String> psqlPass = Optional.ofNullable(System.getenv("HURRICANE_PASS"));
-
-    if (!psqlHost.isPresent() || !psqlDBName.isPresent() || !psqlUser.isPresent() || !psqlPass.isPresent()) {
-      logger.info("You need to set the following environment variables to run this program:");
-      logger.info("HURRICANE_HOST : hostname of a postgresql server");
-      logger.info("HURRICANE_DB : database name to use");
-      logger.info("HURRICANE_USER : database user with appropriate privileges");
-      logger.info("HURRICANE_PASS : password for user");
-      System.exit(1);
-    }
-
-    try (PostgresClient cli = new PostgresClient(psqlHost.get(), psqlDBName.get(), psqlUser.get(), psqlPass.get().getBytes())) {
-      new SuperCommunication(cli.getSingleDocument()).writeToFile(args[0], true);
-    } catch (SQLException | ConcreteException e) {
-      logger.error("Caught SQL/ConcreteException.", e);
-    }
   }
 }

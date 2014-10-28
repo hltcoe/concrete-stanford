@@ -20,7 +20,10 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import concrete.server.LoggedUncaughtExceptionHandler;
 import concrete.server.RedisLoader;
+import concrete.server.sql.GigawordCreds;
 import concrete.server.sql.PostgresClient;
+import concrete.server.sql.SQLCreds;
+import concrete.server.sql.UnsetEnvironmentVariableException;
 import concrete.tools.AnnotationException;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe;
@@ -57,15 +60,18 @@ public class PostgresEnabledQSubbableStanfordConverter {
     StopWatch sw = new StopWatch();
     sw.start();
 
-    String host = System.getenv("GIGAWORD_HOST");
-    String dbName = System.getenv("GIGAWORD_DB");
-    String user = System.getenv("GIGAWORD_USER");
-    byte[] pass = System.getenv("GIGAWORD_PASS").getBytes();
-
+    SQLCreds creds = null;
+    try {
+      creds = new GigawordCreds();
+    } catch (UnsetEnvironmentVariableException e2) {
+      logger.error("Credentials were not set.", e2);
+      System.exit(1);
+    }
+    
     int backoffCounter = 1;
 
     try (Jedis jedis = jp.getResource(); 
-        PostgresClient pc = new PostgresClient(host, dbName, user, pass)) {
+        PostgresClient pc = new PostgresClient(creds)) {
       StopWatch pgsq = new StopWatch();
       pgsq.start();
       // IF null, stop - nothing left.

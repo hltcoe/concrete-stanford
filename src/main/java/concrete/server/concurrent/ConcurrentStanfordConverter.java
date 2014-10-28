@@ -32,7 +32,10 @@ import org.slf4j.LoggerFactory;
 
 import proxy.interfaces.ProxyCommunication;
 import concrete.server.LoggedUncaughtExceptionHandler;
+import concrete.server.sql.GigawordCreds;
 import concrete.server.sql.PostgresClient;
+import concrete.server.sql.SQLCreds;
+import concrete.server.sql.UnsetEnvironmentVariableException;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe;
 import edu.jhu.hlt.gigaword.ClojureIngester;
@@ -100,21 +103,15 @@ public class ConcurrentStanfordConverter implements AutoCloseable {
       System.exit(1);
     }
 
-    Optional<String> psqlHost = Optional.ofNullable(System.getenv("HURRICANE_HOST"));
-    Optional<String> psqlDBName = Optional.ofNullable(System.getenv("HURRICANE_DB"));
-    Optional<String> psqlUser = Optional.ofNullable(System.getenv("HURRICANE_USER"));
-    Optional<String> psqlPass = Optional.ofNullable(System.getenv("HURRICANE_PASS"));
-
-    if (!psqlHost.isPresent() || !psqlDBName.isPresent() || !psqlUser.isPresent() || !psqlPass.isPresent()) {
-      logger.info("You need to set the following environment variables to run this program:");
-      logger.info("HURRICANE_HOST : hostname of a postgresql server");
-      logger.info("HURRICANE_DB : database name to use");
-      logger.info("HURRICANE_USER : database user with appropriate privileges");
-      logger.info("HURRICANE_PASS : password for user");
+    SQLCreds creds = null;
+    try {
+      creds = new GigawordCreds();
+    } catch (UnsetEnvironmentVariableException e2) {
+      logger.error("Credentials were not set.", e2);
       System.exit(1);
     }
 
-    try (PostgresClient pgc = new PostgresClient(psqlHost.get(), psqlDBName.get(), psqlUser.get(), psqlPass.get().getBytes());) {
+    try (PostgresClient pgc = new PostgresClient(creds);) {
       logger.info("Successfully connected to database. Getting previously ingested IDs.");
       Set<String> idSet = pgc.getIngestedDocIds();
       logger.info("Got previously ingested IDs. There are {} previously ingested documents.", idSet.size());
