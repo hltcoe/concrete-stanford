@@ -113,12 +113,18 @@ public class PostgresClient implements AutoCloseable {
     sb.append ("SELECT bytez FROM annotated WHERE ID in (?");
     Iterator<String> stringIter = ids.iterator();
     stringIter.next(); // "omit" first.
-    while (stringIter.hasNext())
+    while (stringIter.hasNext()) {
+      stringIter.next();
       sb.append(", ?");
+    }
+    
     sb.append(")");
     
     List<Communication> toRet = new ArrayList<Communication>(ids.size() + 1);
     try (PreparedStatement ps = this.conn.prepareStatement(sb.toString())) {
+      for (int i = 1; i < ids.size() + 1; i++)
+        ps.setString(i, ids.get(i - 1));
+      
       ResultSet rs = ps.executeQuery();
       while (rs.next()) 
         toRet.add(this.cs.fromBytes(rs.getBytes("bytez")));
