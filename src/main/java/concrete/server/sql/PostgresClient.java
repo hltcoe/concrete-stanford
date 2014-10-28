@@ -10,9 +10,9 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -108,27 +108,22 @@ public class PostgresClient implements AutoCloseable {
   public List<Communication> batchSelect(List<String> ids) throws SQLException, ConcreteException {
     if (ids.size() == 0)
       return new ArrayList<Communication>();
-
-    StringBuilder sb = new StringBuilder();
-    sb.append ("SELECT bytez FROM annotated WHERE documents_id in (?");
-    Iterator<String> stringIter = ids.iterator();
-    stringIter.next(); // "omit" first.
-    while (stringIter.hasNext()) {
-      stringIter.next();
-      sb.append(", ?");
-    }
-
-    sb.append(")");
-    // logger.info("PS: {}", sb.toString());
-
-    List<Communication> toRet = new ArrayList<Communication>(ids.size() + 1);
-    try (PreparedStatement ps = this.conn.prepareStatement(sb.toString())) {
-      for (int i = 1; i < ids.size() + 1; i++) {
-        String id = ids.get(i - 1);
-        // logger.info("ID: {}", id);
-        ps.setString(i, id);
+    
+    Statement st = this.conn.createStatement();
+    st.execute("CREATE TEMPORARY TABLE doc_ids_tmp (id text not null primary key unique)");
+    st.close();
+    
+    try (PreparedStatement ps = this.conn.prepareStatement("INSERT INTO doc_ids_tmp VALUES (?)")) {
+      for (String i : ids) {
+        ps.setString(1, i);
+        ps.addBatch();
       }
-
+      
+      ps.executeBatch();
+    }
+    
+    List<Communication> toRet = new ArrayList<Communication>(ids.size() + 1);
+    try (PreparedStatement ps = this.conn.prepareStatement("SELECT bytez FROM annotated WHERE documents_id IN doc_ids_tmp.id")) {
       ResultSet rs = ps.executeQuery();
       while (rs.next())
         toRet.add(this.cs.fromBytes(rs.getBytes("bytez")));
