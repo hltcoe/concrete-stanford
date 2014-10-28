@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.nio.file.Path;
 
 import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
@@ -37,6 +38,7 @@ import edu.jhu.hlt.concrete.TokenList;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.util.CommunicationSerialization;
 import edu.jhu.hlt.concrete.util.ConcreteException;
+import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.gigaword.ClojureIngester;
 
 /**
@@ -105,31 +107,38 @@ public class PostgresClient implements AutoCloseable {
         + " (documents_id, count, token_count) VALUES (?, ?, ?)");
   }
 
-  public List<Communication> batchSelect(List<String> ids) throws SQLException, ConcreteException {
+  public void batchSelect(List<String> ids, Path outPath) throws SQLException, ConcreteException {
     if (ids.size() == 0)
-      return new ArrayList<Communication>();
-    
+      return;
+
     Statement st = this.conn.createStatement();
+    logger.info("Creating temp table.");
     st.execute("CREATE TEMPORARY TABLE doc_ids_tmp (id text not null primary key unique)");
-    st.close();
-    
-    try (PreparedStatement ps = this.conn.prepareStatement("INSERT INTO doc_ids_tmp VALUES (?)")) {
+
+    logger.info("Inserting data.");
+    try (PreparedStatement ps = this.conn.prepareStatement("INSERT INTO doc_ids_tmp (id) VALUES (?)")) {
       for (String i : ids) {
         ps.setString(1, i);
         ps.addBatch();
       }
-      
+
       ps.executeBatch();
     }
-    
-    List<Communication> toRet = new ArrayList<Communication>(ids.size() + 1);
-    try (PreparedStatement ps = this.conn.prepareStatement("SELECT bytez FROM annotated WHERE documents_id IN doc_ids_tmp.id")) {
+
+    this.setAutoCommit(false);
+    logger.info("Retrieving comms.");
+
+    try (PreparedStatement ps = this.conn.prepareStatement("SELECT bytez FROM annotated WHERE documents_id IN (SELECT id FROM doc_ids_tmp)")) {
+      ps.setFetchSize(1000);
       ResultSet rs = ps.executeQuery();
-      while (rs.next())
-        toRet.add(this.cs.fromBytes(rs.getBytes("bytez")));
+      while (rs.next()) {
+        Communication c = this.cs.fromBytes(rs.getBytes("bytez"));
+        new SuperCommunication(c).writeToFile(outPath.resolve(c.getId()), true);
+      }
     }
 
-    return toRet;
+    st.close();
+    this.setAutoCommit(true);
   }
 
   public boolean isDocumentAnnotated(String id) throws SQLException {

@@ -68,9 +68,7 @@ public class BatchSelect {
       }
 
       try (PostgresClient cli = new PostgresClient(creds)) {
-        List<Communication> commList = cli.batchSelect(idList);
-        for (Communication c : commList)
-          new SuperCommunication(c).writeToFile(outPath.resolve(c.getId()), true);
+        cli.batchSelect(idList, outPath);
       } catch (SQLException e) {
         logger.error("Caught a SQLException.", e);
       } catch (ConcreteException e) {
