@@ -2,7 +2,6 @@
  * Copyright 2012-2014 Johns Hopkins University HLTCOE. All rights reserved.
  * See LICENSE in the project root directory.
  */
-
 package concrete.server.sql;
 
 import java.io.IOException;
@@ -27,11 +26,11 @@ import edu.jhu.hlt.concrete.util.ConcreteException;
  *
  */
 public class BatchSelect {
-  
+
   private static final Logger logger = LoggerFactory.getLogger(BatchSelect.class);
-  
+
   /**
-   * 
+   *
    */
   public BatchSelect() {
     // TODO Auto-generated constructor stub
@@ -45,7 +44,7 @@ public class BatchSelect {
       logger.info("Usage: {} {}", "/path/to/csv/file/with/ids/in/col/1", "/path/to/out/folder");
       System.exit(1);
     }
-    
+
     String pathStr = args[0];
     try {
       SQLCreds creds = new GigawordCreds();
@@ -55,10 +54,10 @@ public class BatchSelect {
         logger.error("No file at: {}; exiting.", args[0]);
         System.exit(1);
       }
-      
+
       if (!Files.exists(outPath))
         Files.createDirectory(outPath);
-        
+
       List<String> idList = new ArrayList<>();
       try (Scanner sc = new Scanner(path, StandardCharsets.UTF_8.toString())) {
         while (sc.hasNextLine())
@@ -67,11 +66,11 @@ public class BatchSelect {
         logger.error("Caught an IOException trying to read in the CSV.", e1);
         System.exit(1);
       }
-      
+
       try (PostgresClient cli = new PostgresClient(creds)) {
         List<Communication> commList = cli.batchSelect(idList);
         for (Communication c : commList)
-          new SuperCommunication(c).writeToFile(outPath, true);
+          new SuperCommunication(c).writeToFile(outPath.resolve(c.getId()), true);
       } catch (SQLException e) {
         logger.error("Caught a SQLException.", e);
       } catch (ConcreteException e) {

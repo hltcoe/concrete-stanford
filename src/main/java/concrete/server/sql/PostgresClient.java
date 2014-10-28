@@ -67,30 +67,30 @@ public class PostgresClient implements AutoCloseable {
   private final PreparedStatement insertCountPS;
 
   private final ClojureIngester ci = new ClojureIngester();
-  
+
   private boolean isAutoCommitEnabled = false;
 
   public void setAutoCommit(boolean ac) throws SQLException {
     this.conn.setAutoCommit(ac);
     this.isAutoCommitEnabled = ac;
   }
-  
+
   public boolean getAutoCommitStatus() {
     return this.isAutoCommitEnabled;
   }
-  
+
   public void commit() throws SQLException {
     logger.info("Committing.");
     this.conn.commit();
   }
-  
+
   /**
    * @throws SQLException
    *
    */
   public PostgresClient(SQLCreds creds) throws SQLException {
     this.creds = creds;
-    
+
     IFn req = Clojure.var("clojure.core", "require");
     // req.invoke(Clojure.read("gigaword-ingester.giga"));
     req.invoke(Clojure.read("gigaword-ingester.giga"));
@@ -108,31 +108,35 @@ public class PostgresClient implements AutoCloseable {
   public List<Communication> batchSelect(List<String> ids) throws SQLException, ConcreteException {
     if (ids.size() == 0)
       return new ArrayList<Communication>();
-    
+
     StringBuilder sb = new StringBuilder();
-    sb.append ("SELECT bytez FROM annotated WHERE ID in (?");
+    sb.append ("SELECT bytez FROM annotated WHERE documents_id in (?");
     Iterator<String> stringIter = ids.iterator();
     stringIter.next(); // "omit" first.
     while (stringIter.hasNext()) {
       stringIter.next();
       sb.append(", ?");
     }
-    
+
     sb.append(")");
-    
+    // logger.info("PS: {}", sb.toString());
+
     List<Communication> toRet = new ArrayList<Communication>(ids.size() + 1);
     try (PreparedStatement ps = this.conn.prepareStatement(sb.toString())) {
-      for (int i = 1; i < ids.size() + 1; i++)
-        ps.setString(i, ids.get(i - 1));
-      
+      for (int i = 1; i < ids.size() + 1; i++) {
+        String id = ids.get(i - 1);
+        // logger.info("ID: {}", id);
+        ps.setString(i, id);
+      }
+
       ResultSet rs = ps.executeQuery();
-      while (rs.next()) 
+      while (rs.next())
         toRet.add(this.cs.fromBytes(rs.getBytes("bytez")));
     }
-    
+
     return toRet;
   }
-  
+
   public boolean isDocumentAnnotated(String id) throws SQLException {
     this.isAnnotatedPS.setString(1, id);
     try (ResultSet rs = this.isAnnotatedPS.executeQuery();) {
@@ -184,7 +188,7 @@ public class PostgresClient implements AutoCloseable {
 
     props.setProperty("user", creds.getUserName());
     props.setProperty("password", new String(creds.getPass()));
-    
+
     return DriverManager.getConnection("jdbc:postgresql://" + creds.getHost() + "/" + creds.getDbName(), props);
   }
 
@@ -209,7 +213,7 @@ public class PostgresClient implements AutoCloseable {
       logger.error("Problematic document ID: {}", docId);
     }
   }
-  
+
   public Set<String> getAnnotatedDocIds() throws SQLException {
     Set<String> idSet = new HashSet<String>(12000000);
 
@@ -243,7 +247,7 @@ public class PostgresClient implements AutoCloseable {
 
     return idSet;
   }
-  
+
   public Set<String> getCountedDocIds() throws SQLException {
     Set<String> idSet = new HashSet<String>(12000000);
 
@@ -282,7 +286,7 @@ public class PostgresClient implements AutoCloseable {
 
     int nSentences = 0;
     int nTokens = 0;
-      
+
     Communication c = this.get(id);
     if (c.isSetSectionList())
       for (Section s : c.getSectionList())
@@ -305,11 +309,11 @@ public class PostgresClient implements AutoCloseable {
 
     logger.info("Document {} sentence count: {}", id, nSentences);
     logger.info("Document {} token count: {}", id, nTokens);
-    
+
     this.insertCountPS.setString(1, id);
     this.insertCountPS.setInt(2, nSentences);
     this.insertCountPS.setInt(3, nTokens);
-    
+
     this.insertCountPS.executeUpdate();
   }
 
