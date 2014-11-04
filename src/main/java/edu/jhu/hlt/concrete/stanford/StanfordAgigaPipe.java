@@ -20,7 +20,6 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import concrete.server.concurrent.SystemErrDisabler;
 import concrete.tools.AnnotationException;
 import edu.jhu.agiga.AgigaDocument;
 import edu.jhu.hlt.concrete.AnnotationMetadata;

@@ -63,45 +63,24 @@
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>gigaword-json-ingest</artifactId>
       <version>3.7.3</version>
+      <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>concrete-sql</artifactId>
-      <version>3.7.0-SNAPSHOT</version>
-    </dependency>
-    <!-- <dependency> -->
-    <!--   <groupId>edu.jhu.hlt</groupId> -->
-    <!--   <artifactId>concrete-core</artifactId> -->
-    <!--   <version>${concrete.version}</version> -->
-    <!-- </dependency> -->
-    <!-- <dependency> -->
-    <!--   <groupId>edu.jhu.hlt</groupId> -->
-    <!--   <artifactId>concrete-util</artifactId> -->
-    <!--   <version>${concrete.version}</version> -->
-    <!-- </dependency> -->
 
     <dependency>
       <groupId>edu.stanford.nlp</groupId>
       <artifactId>stanford-corenlp</artifactId>
       <version>3.4</version>
     </dependency>
-
     <dependency>
       <groupId>edu.stanford.nlp</groupId>
       <artifactId>stanford-corenlp</artifactId>
       <version>3.4</version>
       <classifier>models</classifier>
     </dependency>
-
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-agiga</artifactId>
       <version>3.7.2</version>
-    </dependency>
-    <dependency>
-      <groupId>redis.clients</groupId>
-      <artifactId>jedis</artifactId>
-      <version>2.6.0</version>
     </dependency>
   </dependencies>
 

@@ -3,7 +3,7 @@
  * See LICENSE in the project root directory.
  */
 
-package concrete.server.concurrent;
+package edu.jhu.hlt.concrete.stanford;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
