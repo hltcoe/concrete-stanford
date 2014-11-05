@@ -61,8 +61,8 @@
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
-      <artifactId>gigaword-json-ingest</artifactId>
-      <version>3.7.3</version>
+      <artifactId>concrete-gigaword</artifactId>
+      <version>3.7.6-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
 
@@ -80,7 +80,7 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-agiga</artifactId>
-      <version>3.7.2</version>
+      <version>3.7.3</version>
     </dependency>
   </dependencies>
 

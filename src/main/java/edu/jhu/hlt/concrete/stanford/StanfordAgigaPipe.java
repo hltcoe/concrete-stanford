@@ -32,9 +32,9 @@ import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.communications.PerspectiveCommunication;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
-import edu.jhu.hlt.concrete.util.CommunicationSerialization;
+import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
+import edu.jhu.hlt.concrete.serialization.ThreadSafeCompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.util.ConcreteException;
-import edu.jhu.hlt.concrete.util.Serialization;
 import edu.jhu.hlt.concrete.util.ThriftIO;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
@@ -61,7 +61,7 @@ public class StanfordAgigaPipe {
       + "       --debug\n\t\tto print debugging messages (default: false)\n";
 
   private static final String[] defaultKindsToProcess = new String[] { "Passage", "Other" };
-  private static final String[] defaultKindsToOnlyTokenize = new String[] { "Title" };
+  private static final String[] defaultKindsToOnlyTokenize = new String[] { "Title", "Dateline" };
 
   private int sentenceCount = 1; // for flat files, no document structure
 
@@ -74,6 +74,8 @@ public class StanfordAgigaPipe {
   private final Set<String> kindsToTokenizeOnly;
 
   private final ConcreteStanfordProperties concStanProps;
+  
+  private final CommunicationSerializer cs = new ThreadSafeCompactCommunicationSerializer();
 
   /**
    * The global character offset. The exact meaning is determined by {@code usingOriginalCharOffsets()}. When true, this counter is with respect to the
@@ -117,6 +119,7 @@ public class StanfordAgigaPipe {
     SystemErrDisabler disabler = new SystemErrDisabler();
     disabler.disable();
     StanfordAgigaPipe sap = new StanfordAgigaPipe();
+    final CommunicationSerializer cs = new ThreadSafeCompactCommunicationSerializer();
 
     final String inputPath = args[0];
     final String outputPath = args[1];
@@ -129,7 +132,7 @@ public class StanfordAgigaPipe {
 
       ThriftIO.writeFile(outputPath, processedComms);
     } else {
-      final Communication communication = new CommunicationSerialization().fromPathString(inputPath);
+      final Communication communication = cs.fromPathString(inputPath);
       logger.info("Beginning annotation.");
       Communication annotated = sap.process(communication);
       logger.info("Finished.");
@@ -159,10 +162,11 @@ public class StanfordAgigaPipe {
   public List<Communication> process(ZipFile zf) throws TException, IOException, ConcreteException, AnnotationException {
     Enumeration<? extends ZipEntry> e = zf.entries();
     List<Communication> outList = new LinkedList<Communication>();
-    Serialization ser = new Serialization();
+    final CommunicationSerializer ser = new ThreadSafeCompactCommunicationSerializer();
+
     while (e.hasMoreElements()) {
       ZipEntry ze = e.nextElement();
-      final Communication communication = ser.fromInputStream(new Communication(), zf.getInputStream(ze));
+      final Communication communication = ser.fromInputStream(zf.getInputStream(ze));
       final Communication nComm = process(communication);
       outList.add(nComm);
     }

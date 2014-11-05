@@ -28,7 +28,8 @@ import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.agiga.AgigaAnnotationAdder;
-import edu.jhu.hlt.concrete.util.CommunicationSerialization;
+import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
+import edu.jhu.hlt.concrete.serialization.ThreadSafeCompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.ThriftIO;
 import edu.stanford.nlp.ling.CoreAnnotations;
@@ -244,7 +245,7 @@ public class AnnotateTokenizedConcrete {
     Path inFile = Paths.get(args[0]);
     Path outFile = Paths.get(args[1]);
 
-    CommunicationSerialization ser = new CommunicationSerialization();
+    CommunicationSerializer cs = new ThreadSafeCompactCommunicationSerializer();
     AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete();
     try (FileSystem zipfs = getNewZipFileSystem(outFile)) {
       try (ZipFile zf = new ZipFile(inFile.toFile())) {
@@ -252,7 +253,7 @@ public class AnnotateTokenizedConcrete {
         while (e.hasMoreElements()) {
           ZipEntry ze = e.nextElement();
           log.info("Annotating communication: " + ze.getName());
-          final Communication comm = ser.fromInputStream(zf.getInputStream(ze));
+          final Communication comm = cs.fromInputStream(zf.getInputStream(ze));
           annotator.annotateWithStanfordNlp(comm);
           ThriftIO.writeFile(zipfs.getPath(ze.getName()), comm);
         }
