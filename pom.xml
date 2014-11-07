@@ -80,7 +80,7 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-agiga</artifactId>
-      <version>3.7.3</version>
+      <version>3.7.4</version>
     </dependency>
   </dependencies>
 
