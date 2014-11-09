@@ -394,14 +394,14 @@ public class StanfordAgigaPipe {
         if (isFirst) {
           isFirst = false;
         }
-        // if there are > 1 sentence, then we need to account for any space in between the Concrete sentences
-        if(concreteSentencesSet) {
-          if(sentenceIdx + 1 < numConcreteSentences) {
-            Sentence concreteSentence = concreteSentences.get(sentenceIdx++);
-            Sentence nextConcreteSentence = concreteSentences.get(sentenceIdx);
-            int interSentenceWhitespaceDifference = nextConcreteSentence.getRawTextSpan().getStart() - concreteSentence.getRawTextSpan().getEnding();
-            charOffset += interSentenceWhitespaceDifference;
-          }
+      }
+      // if there are > 1 sentence, then we need to account for any space in between the Concrete sentences
+      if(concreteSentencesSet) {
+        if(sentenceIdx + 1 < numConcreteSentences) {
+          Sentence concreteSentence = concreteSentences.get(sentenceIdx++);
+          Sentence nextConcreteSentence = concreteSentences.get(sentenceIdx);
+          int interSentenceWhitespaceDifference = nextConcreteSentence.getRawTextSpan().getStart() - concreteSentence.getRawTextSpan().getEnding();
+          charOffset += interSentenceWhitespaceDifference;
         }
       }
       sentAnno.set(TokensAnnotation.class, sentTokens);
@@ -477,14 +477,14 @@ public class StanfordAgigaPipe {
         if (isFirst) {
           isFirst = false;
         }
-        // if there are > 1 sentence, then we need to account for any space in between the Concrete sentences
-        if(concreteSentencesSet) {
-          if(sentenceIdx + 1 < numConcreteSentences) {
-            Sentence concreteSentence = concreteSentences.get(sentenceIdx++);
-            Sentence nextConcreteSentence = concreteSentences.get(sentenceIdx);
-            int interSentenceWhitespaceDifference = nextConcreteSentence.getRawTextSpan().getStart() - concreteSentence.getRawTextSpan().getEnding();
-            charOffset += interSentenceWhitespaceDifference;
-          }
+      }
+      // if there are > 1 sentence, then we need to account for any space in between the Concrete sentences
+      if(concreteSentencesSet) {
+        if(sentenceIdx + 1 < numConcreteSentences) {
+          Sentence concreteSentence = concreteSentences.get(sentenceIdx++);
+          Sentence nextConcreteSentence = concreteSentences.get(sentenceIdx);
+          int interSentenceWhitespaceDifference = nextConcreteSentence.getRawTextSpan().getStart() - concreteSentence.getRawTextSpan().getEnding();
+          charOffset += interSentenceWhitespaceDifference;
         }
       }
       sentAnno.set(TokensAnnotation.class, sentTokens);
@@ -507,7 +507,7 @@ public class StanfordAgigaPipe {
       }
       logger.debug("[" + token.before() + ", " + token.before().length() + "] " + "[" + token.originalText() + "]" + " [" + token.after() + ", "
                    + token.after().length() + "] :: " + charOffset + " --> " + 
-                   (charOffset + token.after().length()));
+                   (charOffset + token.originalText().length()));
       token.set(CharacterOffsetBeginAnnotation.class, charOffset);
       charOffset += token.originalText().length();
       token.set(CharacterOffsetEndAnnotation.class, charOffset);

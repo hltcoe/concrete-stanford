@@ -162,11 +162,11 @@ public class InMemoryAnnoPipeline {
     // each Stanford sentence is a list of CoreLabels
     List<CoreLabel> sentTokens = stanfordSentence.get(CoreAnnotations.TokensAnnotation.class);
     for(CoreLabel token : sentTokens) {
-        logger.debug("" + token.get(CharacterOffsetBeginAnnotation.class) + " ===> " + (token.get(CharacterOffsetBeginAnnotation.class) + numSentence));
+        logger.debug("" + token.get(CharacterOffsetBeginAnnotation.class) + " ===> " + (token.get(CharacterOffsetBeginAnnotation.class)));
         token.set(CharacterOffsetBeginAnnotation.class,
-                  token.get(CharacterOffsetBeginAnnotation.class) + numSentence);
+                  token.get(CharacterOffsetBeginAnnotation.class));
         token.set(CharacterOffsetEndAnnotation.class,
-                  token.get(CharacterOffsetEndAnnotation.class) + numSentence);
+                  token.get(CharacterOffsetEndAnnotation.class));
     }
     stanfordSentence.set(CoreAnnotations.TokensAnnotation.class, sentTokens);
     // List<CoreLabel> sectionTokens = stanfordSection.get(CoreAnnotations.TokensAnnotation.class);
