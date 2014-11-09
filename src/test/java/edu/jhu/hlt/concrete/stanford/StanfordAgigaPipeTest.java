@@ -629,6 +629,7 @@ public class StanfordAgigaPipeTest {
     assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
     assertTrue("Error in serializing processed communication",
         cs.toBytes(nytProcessedComm) != null);
+    new SuperCommunication(nytProcessedComm).writeToFile("src/test/resources/post-stanford.NYT_ENG_19991220.0301.concrete", true);
   }
 
   /**
@@ -925,6 +926,7 @@ public class StanfordAgigaPipeTest {
 
     // Verify metadata toolnames
     // this.verifyToolNames(processedShakeHandComm);
+    new SuperCommunication(processedShakeHandComm).writeToFile("src/test/resources/post-stanford.handshake_multiple_sections.concrete", true);
   }
 
   /**
