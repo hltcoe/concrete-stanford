@@ -3,6 +3,7 @@ package edu.jhu.hlt.concrete.stanford;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -18,9 +19,15 @@ import org.slf4j.LoggerFactory;
 import edu.jhu.agiga.AgigaDocument;
 import edu.jhu.agiga.AgigaPrefs;
 import edu.jhu.agiga.BytesAgigaDocumentReader;
+import edu.jhu.hlt.concrete.Section;
+import edu.jhu.hlt.concrete.Sentence;
+import edu.jhu.hlt.concrete.TextSpan;
 import edu.stanford.nlp.ling.CoreAnnotations;
+import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.IndexAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
+import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.Annotator;
 import edu.stanford.nlp.pipeline.PTBTokenizerAnnotator;
@@ -103,6 +110,82 @@ public class InMemoryAnnoPipeline {
 
   public void prepForNext() {
       docCounter = 0;
+  }
+
+  /**
+   * This only performs tokenization and sentence-splitting on a block of text. 
+   * Part-of-speech tagging is handled elsewhere.
+   * 
+   * @param text
+   *          A block of text; perhaps multiple sentences.
+   * @return An annotation object containing the tokenized and sentence-split text.
+   */
+  public Annotation handleSection(Section concSection, String text) {
+    Annotation stanfordSection = new Annotation(text);;
+    if(! concSection.isSetSentenceList() ) {
+      ptbTokenizer.annotate(stanfordSection);
+      words2SentencesAnnotator.annotate(stanfordSection);
+    } else {
+      int sectionOffset = concSection.getRawTextSpan().getStart();
+      logger.debug("Text is :: [" + text + "]");
+      stanfordSection.set(CharacterOffsetEndAnnotation.class, sectionOffset);
+      stanfordSection.set(CoreAnnotations.TokensAnnotation.class, new ArrayList<CoreLabel>());
+      stanfordSection.set(SentencesAnnotation.class, new ArrayList<CoreMap>());
+      int numSentences = 0;
+      for(Sentence concSentence : concSection.getSentenceList()) {
+        TextSpan sts = concSentence.getRawTextSpan();
+        int start = sts.getStart() - sectionOffset;
+        int end = sts.getEnding() - sectionOffset;
+        //issue: next.start != current.end + 1
+        String sentenceText = text.substring(start, end);
+        Annotation sentenceAnnotation = new Annotation(sentenceText);
+        ptbTokenizer.annotate(sentenceAnnotation);
+        this.mimicWordsToSentsAnnotator(stanfordSection, sentenceAnnotation, numSentences);
+        ++numSentences;
+      }
+    }
+    return stanfordSection;
+  }
+
+  /**
+   * This method transfers the Token {@link CoreLabel} annotations
+   * for {@link stanfordSentence} to the section annotation,
+   * {@link stanfordSection}.
+   */
+  private void mimicWordsToSentsAnnotator(Annotation stanfordSection,
+                                          Annotation stanfordSentence,
+                                          int numSentence) {
+    // add a new sentence corresponding to stanfordSentence
+    List<CoreMap> sectionSents = stanfordSection.get(SentencesAnnotation.class);
+    sectionSents.add(stanfordSentence);
+    stanfordSection.set(SentencesAnnotation.class, sectionSents);
+    // each Stanford sentence is a list of CoreLabels
+    List<CoreLabel> sentTokens = stanfordSentence.get(CoreAnnotations.TokensAnnotation.class);
+    for(CoreLabel token : sentTokens) {
+        logger.debug("" + token.get(CharacterOffsetBeginAnnotation.class) + " ===> " + (token.get(CharacterOffsetBeginAnnotation.class) + numSentence));
+        token.set(CharacterOffsetBeginAnnotation.class,
+                  token.get(CharacterOffsetBeginAnnotation.class) + numSentence);
+        token.set(CharacterOffsetEndAnnotation.class,
+                  token.get(CharacterOffsetEndAnnotation.class) + numSentence);
+    }
+    stanfordSentence.set(CoreAnnotations.TokensAnnotation.class, sentTokens);
+    // List<CoreLabel> sectionTokens = stanfordSection.get(CoreAnnotations.TokensAnnotation.class);
+    // sectionTokens.addAll(sentTokens);
+    // stanfordSection.set(CoreAnnotations.TokensAnnotation.class, sectionTokens);
+    CoreLabel lastToken = sentTokens.get(sentTokens.size() - 1);
+    //reset the stanfordSection endpoint
+    stanfordSection.set(CharacterOffsetEndAnnotation.class,
+                        lastToken.get(CharacterOffsetEndAnnotation.class));
+    logger.debug("Setting section end = " + lastToken.get(CharacterOffsetEndAnnotation.class));
+    //reset the stanfordSection token endpoints
+    if(stanfordSection.get(CoreAnnotations.TokenEndAnnotation.class) == null) {
+        stanfordSection.set(CoreAnnotations.TokenEndAnnotation.class, 0);
+    }
+    if(stanfordSection.get(CoreAnnotations.TokenBeginAnnotation.class) == null) {
+        stanfordSection.set(CoreAnnotations.TokenBeginAnnotation.class, 0);
+    }
+    stanfordSection.set(CoreAnnotations.TokenEndAnnotation.class,
+                        stanfordSection.get(CoreAnnotations.TokenEndAnnotation.class) + sentTokens.size());
   }
 
   /**

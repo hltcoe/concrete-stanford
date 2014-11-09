@@ -13,6 +13,7 @@ import concrete.tools.AnnotationException;
 import edu.jhu.agiga.AgigaCoref;
 import edu.jhu.agiga.AgigaDocument;
 import edu.jhu.agiga.AgigaSentence;
+import edu.jhu.agiga.AgigaToken;
 import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.Entity;
@@ -22,9 +23,11 @@ import edu.jhu.hlt.concrete.EntitySet;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TheoryDependencies;
+import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.agiga.AgigaConverter;
 import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
+import edu.jhu.hlt.concrete.validation.ValidatableTextSpan;
 
 /**
  * given a Communication (with Sections and Sentences added) and Stanford's annotations via an AgigaDocument, add these annotations and return a new
@@ -87,27 +90,27 @@ public class AgigaConcreteAnnotator {
   }
 
   public void convertSection(Section section, AgigaDocument agigaDoc, int charOffset,
-
                              StringBuilder sb, boolean preserveTokenTaggings) throws AnnotationException {
-    this.addSentences(section, agigaDoc, charOffset, sb, preserveTokenTaggings);
+    if(section.isSetSentenceList()) {
+      this.convertSentences(section, agigaDoc, charOffset, sb, preserveTokenTaggings);
+    } else {
+      this.addSentences(section, agigaDoc, charOffset, sb, preserveTokenTaggings);
+    }
     sb.append("\n\n");
   }
 
   // add all Sentences
-
   private void addSentences(Section in, AgigaDocument ad, int charOffset,
                             StringBuilder sb, boolean preserveTokenTaggings)
     throws AnnotationException {
-    logger.debug("f4");
     final int n = ad.getSents().size();
+    logger.debug("Adding " + n + " sentences to section " + in.getUuid());
     int sentPtr = 0;
     int currOffset = charOffset;
     assert n > 0 : "n=" + n;
     for (int i = 0; i < n; i++) {
       AgigaSentence asent = ad.getSents().get(sentPtr++);
       // the second argument is the estimated character provenance offset.
-      // We're not filling the optional textSpan fields, so the exact parameter
-      // value doesn't matter.
       Sentence st = this.ag.convertSentence(asent, currOffset, preserveTokenTaggings);
       String sentText = this.ag.flattenText(asent);
       sb.append(sentText);
@@ -118,6 +121,65 @@ public class AgigaConcreteAnnotator {
       }
       logger.debug(sentText);
       in.addToSentenceList(st);
+    }
+  }
+
+  // add all Sentences
+  private void convertSentences(Section in, AgigaDocument ad, int currOffset,
+                                StringBuilder sb, boolean preserveTokenTaggings)
+    throws AnnotationException {
+    logger.debug("Section has : " + in.getSentenceList().size() + " sentences");
+    // for(AgigaSentence as : ad.getSents()) {
+    //   logger.debug("new AgigaSentence");
+    //   for(AgigaToken at : as.getTokens()) {
+    //     logger.debug("AgigaToken: " + at.getWord() + ": " + at.getCharOffBegin() + " -> " + at.getCharOffEnd());
+    //   }
+    // }
+    logger.debug("convertSentences for " + in.getUuid() );
+    final int n = ad.getSents().size();
+    List<Sentence> concreteSentences = in.getSentenceList();
+    assert n > 0 : "n=" + n;
+    for (int i = 0; i < n; i++) {
+      Sentence concSent = concreteSentences.get(i);
+      AgigaSentence asent = ad.getSents().get(i);
+
+      Tokenization tokenization = this.ag.convertTokenization(asent, currOffset, preserveTokenTaggings);
+      concSent.setTokenization(tokenization);
+
+      if (currOffset < 0)
+        throw new AnnotationException("bad character offset of " + currOffset
+                                      + " for converting sent " + asent);
+
+      String sentText = this.ag.flattenText(asent);
+
+      // NOTE: as a work-around for previous design limitations, we store the
+      // **original** offsets in the AgigaToken char begin/end values.
+      // This means that we need to compute the actual offsets on-the-fly.
+      TextSpan sentTS = new TextSpan(currOffset, currOffset + sentText.length());
+      boolean isValidSentTS = new ValidatableTextSpan(sentTS).isValid();
+      if (!isValidSentTS)
+        throw new AnnotationException("TextSpan was not valid: " + sentTS.toString());
+      concSent.setTextSpan(sentTS);
+
+      // NOTE: as a work-around for previous design limitations, we store the
+      // **original** offsets in the AgigaToken char begin/end values.
+      AgigaToken firstToken = asent.getTokens().get(0);
+      AgigaToken lastToken = asent.getTokens().get(asent.getTokens().size() - 1);
+      TextSpan compTS = new TextSpan(firstToken.getCharOffBegin(), lastToken.getCharOffEnd());
+      boolean isValidCompTS = new ValidatableTextSpan(compTS).isValid();
+      if (!isValidCompTS)
+        throw new AnnotationException("Computed TextSpan was not valid: " + compTS.toString());
+      concSent.setRawTextSpan(compTS);
+      logger.debug("Setting section raw text span to : " + compTS);
+      // and finally, add the sentence text to the string builder
+      sb.append(sentText);
+      currOffset += sentText.length();
+      if ((i + 1) < n) {
+        sb.append("\n");
+        currOffset++;
+      }
+      logger.debug(sentText);
+
     }
   }
 }
