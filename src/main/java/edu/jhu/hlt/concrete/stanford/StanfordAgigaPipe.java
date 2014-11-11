@@ -233,14 +233,19 @@ public class StanfordAgigaPipe {
     Annotation documentAnnotation = getSeededDocumentAnnotation();
     logger.debug("documentAnnotation = " + documentAnnotation);
 
+    int previousSectionEnding = 0;
     for (Section section : sections) {
+      if(section.isSetSentenceList() && section.isSetRawTextSpan()) {
+        int interSectionWhitespaceDifference = section.getRawTextSpan().getStart() - previousSectionEnding;
+        charOffset += interSectionWhitespaceDifference;      
+      }
       int sectionStartCharOffset = processedCharOffset;
       logger.debug("new section, processed offset = " + sectionStartCharOffset);
       TextSpan sts = section.getRawTextSpan();
       // 1) First *perform* the tokenization & sentence splits
       // Note we do this first, even before checking the content-type
       String sectionText = commText.substring(sts.getStart(), sts.getEnding());
-      Annotation sectionAnnotation = pipeline.splitAndTokenizeText(sectionText);
+      Annotation sectionAnnotation = pipeline.handleSection(section, sectionText);
       logger.debug("Annotating Section: {}", section.getUuid());
       logger.debug("\ttext = " + sectionText);
       logger.debug("\tkind = " + section.getKind() + " in annotateNames: " + this.kindsToProcessSet);
@@ -279,6 +284,9 @@ public class StanfordAgigaPipe {
       // between sections are two line feeds
       // one is counted for in the sentTokens loop above
       processedCharOffset++;
+      if(section.isSetRawTextSpan()) {
+        previousSectionEnding = section.getRawTextSpan().getEnding();
+      }
     }
 
     comm.setText(sb.toString());
@@ -340,7 +348,7 @@ public class StanfordAgigaPipe {
    * The global indexers {@code charOffset} and {@code globalTokenOffset} are updated here.
    *
    */
-  public void sentencesToSection(CoreMap sectAnno, Annotation document) throws AnnotationException {
+  public void sentencesToSection(Section concreteSection, CoreMap sectAnno, Annotation document) throws AnnotationException {
     if (sectAnno == null) {
       logger.warn("Encountered null annotated section. Skipping.");
       return;
@@ -353,6 +361,20 @@ public class StanfordAgigaPipe {
     List<CoreMap> sentAnnos = sectAnno.get(SentencesAnnotation.class);
     int maxCharEnding = -1;
     boolean isFirst = true;
+    int sentenceIdx = 0;
+    List<Sentence> concreteSentences = null;
+    int numConcreteSentences = 0;
+    boolean concreteSentencesSet = false;
+    if(concreteSection.isSetSentenceList()) {
+      concreteSentencesSet = true;
+      concreteSentences = concreteSection.getSentenceList();
+      numConcreteSentences = concreteSentences.size();
+      if(concreteSection.getSentenceList().size() != sentAnnos.size()) {
+        throw new AnnotationException("Section " + concreteSection.getUuid() + " has " +
+                                      concreteSection.getSentenceList().size() + " sentences already created," +
+                                      " but CoreNLP only found " + sentAnnos.size());
+      }
+    }
     for (CoreMap sentAnno : sentAnnos) {
       List<CoreLabel> sentTokens = sentAnno.get(TokensAnnotation.class);
       int tokenEnd = globalTokenOffset + sentTokens.size();
@@ -364,7 +386,6 @@ public class StanfordAgigaPipe {
 
       for (CoreLabel token : sentTokens) {
         // note that character offsets are global
-        // String tokenText = token.get(TextAnnotation.class);
         updateCharOffsetSetToken(token, isFirst, true);
         logger.debug("this token goes from " + token.get(CharacterOffsetBeginAnnotation.class) + " to " + token.get(CharacterOffsetEndAnnotation.class));
         logger.debug("\toriginal:[[" + token.originalText() + "]]");
@@ -372,6 +393,15 @@ public class StanfordAgigaPipe {
         logger.debug("\tafter:<<" + token.after() + ">>");
         if (isFirst) {
           isFirst = false;
+        }
+      }
+      // if there are > 1 sentence, then we need to account for any space in between the Concrete sentences
+      if(concreteSentencesSet) {
+        if(sentenceIdx + 1 < numConcreteSentences) {
+          Sentence concreteSentence = concreteSentences.get(sentenceIdx++);
+          Sentence nextConcreteSentence = concreteSentences.get(sentenceIdx);
+          int interSentenceWhitespaceDifference = nextConcreteSentence.getRawTextSpan().getStart() - concreteSentence.getRawTextSpan().getEnding();
+          charOffset += interSentenceWhitespaceDifference;
         }
       }
       sentAnno.set(TokensAnnotation.class, sentTokens);
@@ -402,7 +432,7 @@ public class StanfordAgigaPipe {
    * The global indexers {@code charOffset} and {@code globalTokenOffset} are updated here.
    *
    */
-  public void sentencesToSection(CoreMap sectAnno) throws AnnotationException {
+  public void sentencesToSection(Section concreteSection, CoreMap sectAnno) throws AnnotationException {
     if (sectAnno == null) {
       logger.warn("Encountered null annotated section. Skipping.");
       return;
@@ -413,6 +443,20 @@ public class StanfordAgigaPipe {
     List<CoreMap> sentAnnos = sectAnno.get(SentencesAnnotation.class);
     int maxCharEnding = -1;
     boolean isFirst = true;
+    int sentenceIdx = 0;
+    List<Sentence> concreteSentences = null;
+    int numConcreteSentences = 0;
+    boolean concreteSentencesSet = false;
+    if(concreteSection.isSetSentenceList()) {
+      concreteSentencesSet = true;
+      concreteSentences = concreteSection.getSentenceList();
+      numConcreteSentences = concreteSentences.size();
+      if(concreteSection.getSentenceList().size() != sentAnnos.size()) {
+        throw new AnnotationException("Section " + concreteSection.getUuid() + " has " +
+                                      concreteSection.getSentenceList().size() + " sentences already created," +
+                                      " but CoreNLP only found " + sentAnnos.size());
+      }
+    }
     for (CoreMap sentAnno : sentAnnos) {
       List<CoreLabel> sentTokens = sentAnno.get(TokensAnnotation.class);
       int tokenEnd = globalTokenOffset + sentTokens.size();
@@ -434,6 +478,15 @@ public class StanfordAgigaPipe {
           isFirst = false;
         }
       }
+      // if there are > 1 sentence, then we need to account for any space in between the Concrete sentences
+      if(concreteSentencesSet) {
+        if(sentenceIdx + 1 < numConcreteSentences) {
+          Sentence concreteSentence = concreteSentences.get(sentenceIdx++);
+          Sentence nextConcreteSentence = concreteSentences.get(sentenceIdx);
+          int interSentenceWhitespaceDifference = nextConcreteSentence.getRawTextSpan().getStart() - concreteSentence.getRawTextSpan().getEnding();
+          charOffset += interSentenceWhitespaceDifference;
+        }
+      }
       sentAnno.set(TokensAnnotation.class, sentTokens);
       sentAnno.set(CharacterOffsetBeginAnnotation.class, sentTokens.get(0).get(CharacterOffsetBeginAnnotation.class));
       int endingSentCOff = sentTokens.get(sentTokens.size() - 1).get(CharacterOffsetEndAnnotation.class);
@@ -450,16 +503,14 @@ public class StanfordAgigaPipe {
       if (isFirst) {
         // this is because when we have text like "foo bar", foo.after == " " AND bar.before == " "
         int beforeLength = token.before().length();
-        // if(beforeLength > 0) {
         charOffset += beforeLength;
-        // }
       }
       logger.debug("[" + token.before() + ", " + token.before().length() + "] " + "[" + token.originalText() + "]" + " [" + token.after() + ", "
-          + token.after().length() + "] :: " + charOffset + " --> ");
+                   + token.after().length() + "] :: " + charOffset + " --> " + 
+                   (charOffset + token.originalText().length()));
       token.set(CharacterOffsetBeginAnnotation.class, charOffset);
       charOffset += token.originalText().length();
       token.set(CharacterOffsetEndAnnotation.class, charOffset);
-      logger.debug(("" + charOffset));
       charOffset += token.after().length();
     } else {
       token.set(CharacterOffsetBeginAnnotation.class, charOffset);
@@ -505,14 +556,14 @@ public class StanfordAgigaPipe {
 
   public void processSectionTokenize(Section section, Annotation sentenceSplitText, int sectionOffset, StringBuilder sb) throws AnnotationException,
       IOException {
-    sentencesToSection(sentenceSplitText);
-    for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class))
-      logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
+    sentencesToSection(section, sentenceSplitText);
+    // for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class))
+    //   logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
 
     AgigaDocument agigaDoc = getAgigaDoc(sentenceSplitText, true);
     logger.debug("after annotating");
-    for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class))
-      logger.debug("sentence index: " + cm.get(SentenceIndexAnnotation.class).toString());
+    // for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class))
+    //   logger.debug("sentence index: " + cm.get(SentenceIndexAnnotation.class).toString());
 
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
     agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb, false);
@@ -528,7 +579,7 @@ public class StanfordAgigaPipe {
    */
   public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, int sectionOffset, StringBuilder sb)
       throws AnnotationException, IOException {
-    sentencesToSection(sentenceSplitText, docAnnotation);
+    sentencesToSection(section, sentenceSplitText, docAnnotation);
     logger.debug("after sentencesToSection, before annotating");
     for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class))
       logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
