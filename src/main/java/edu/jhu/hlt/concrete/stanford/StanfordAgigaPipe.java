@@ -60,7 +60,7 @@ public class StanfordAgigaPipe {
       + "       --annotate-sections <comma-separated-list of type names> (default: PASSAGE)\n"
       + "       --debug\n\t\tto print debugging messages (default: false)\n";
 
-  private static final String[] defaultKindsToFullyProcess = new String[] { "Passage", "Other" };
+  private static final String[] defaultKindsToFullyProcess = new String[] { "Passage" };
   private static final String[] defaultKindsNoCoref = new String[] { "Title", "Dateline" };
 
   private int sentenceCount = 1; // for flat files, no document structure
