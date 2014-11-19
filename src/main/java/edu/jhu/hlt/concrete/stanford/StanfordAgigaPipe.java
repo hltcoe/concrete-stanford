@@ -275,7 +275,7 @@ public class StanfordAgigaPipe {
         // Only tokenize & sentence split
         logger.error("Special handling for section type {} section: {}", section.getKind(), section.getUuid());
         logger.debug(">> SectionText=[" + sectionText + "]");
-        processSectionTokenize(section, sectionAnnotation, sectionStartCharOffset, sb);
+        processSectionForNoCoref(section, sectionAnnotation, sectionStartCharOffset, sb);
       } else {
         // 2) Second, perform the other localized processing
         logger.debug("Additional processing on section: {}", section.getUuid());
@@ -324,6 +324,14 @@ public class StanfordAgigaPipe {
   public AgigaDocument annotate(Annotation annotation) throws AnnotationException {
     try {
       return pipeline.annotate(annotation);
+    } catch (IOException e) {
+      throw new AnnotationException(e);
+    }
+  }
+
+  public AgigaDocument getAgigaDocAllButCoref(Annotation annotation) throws AnnotationException {
+    try {
+      return pipeline.getAgigaDocAllButCoref(annotation);
     } catch (IOException e) {
       throw new AnnotationException(e);
     }
@@ -556,19 +564,16 @@ public class StanfordAgigaPipe {
    * @throws IOException
    */
 
-  public void processSectionTokenize(Section section, Annotation sentenceSplitText, int sectionOffset, StringBuilder sb) throws AnnotationException,
+  public void processSectionForNoCoref(Section section, Annotation sentenceSplitText, int sectionOffset, StringBuilder sb) throws AnnotationException,
       IOException {
     sentencesToSection(section, sentenceSplitText);
-    // for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class))
-    //   logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
 
-    AgigaDocument agigaDoc = getAgigaDoc(sentenceSplitText, true);
+    //AgigaDocument agigaDoc = getAgigaDoc(sentenceSplitText, true);
+    AgigaDocument agigaDoc = getAgigaDocAllButCoref(sentenceSplitText);
     logger.debug("after annotating");
-    // for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class))
-    //   logger.debug("sentence index: " + cm.get(SentenceIndexAnnotation.class).toString());
 
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
-    agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb, false);
+    agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb, true);
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
   }
 

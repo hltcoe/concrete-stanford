@@ -286,6 +286,32 @@ public class InMemoryAnnoPipeline {
     return agigaDoc;
   }
 
+  public AgigaDocument getAgigaDocAllButCoref(Annotation annotation) throws IOException {
+    logger.debug("Local processing annotation keys :: {}", annotation.keySet().toString());
+    for (String stage : documentLevelStages) {
+      logger.debug("Annotation stage: {}", stage);
+      try {
+        (StanfordCoreNLP.getExistingAnnotator(stage)).annotate(annotation);
+        if (stage.equals("parse")) {
+          fixNullDependencyGraphs(annotation);
+        }
+      } catch (Exception e) {
+        logger.warn("Error annotating stage: {}" + stage);
+      }
+    }
+    // Convert to an XML document.
+    Document xmlDoc = this.stanfordToXML(pipeline, annotation);
+    AgigaPrefs prefs = new AgigaPrefs();
+    prefs.setAll(true);
+    AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc, prefs);
+
+    logger.debug("agigaDoc has " + agigaDoc.getSents().size() + " sentences");
+    logger.debug("annotation has " + annotation.get(SentencesAnnotation.class).size());
+    logger.debug("annotation has " + annotation.get(SentencesAnnotation.class));
+
+    return agigaDoc;
+  }
+
   public AgigaDocument annotateCoref(StanfordCoreNLP pipeline, Annotation annotation) throws IOException {
     String stage = "dcoref";
     logger.debug("DEBUG: annotation stage = " + stage);
