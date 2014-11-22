@@ -28,10 +28,10 @@ import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.agiga.AgigaAnnotationAdder;
+import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.ThreadSafeCompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.util.ConcreteException;
-import edu.jhu.hlt.concrete.util.ThriftIO;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
@@ -255,7 +255,7 @@ public class AnnotateTokenizedConcrete {
           log.info("Annotating communication: " + ze.getName());
           final Communication comm = cs.fromInputStream(zf.getInputStream(ze));
           annotator.annotateWithStanfordNlp(comm);
-          ThriftIO.writeFile(zipfs.getPath(ze.getName()), comm);
+          new SuperCommunication(comm).writeToFile(zipfs.getPath(ze.getName()), true);
         }
       }
     }

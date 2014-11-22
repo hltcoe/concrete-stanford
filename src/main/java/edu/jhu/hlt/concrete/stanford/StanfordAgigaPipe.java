@@ -33,9 +33,10 @@ import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.communications.PerspectiveCommunication;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
+import edu.jhu.hlt.concrete.serialization.CommunicationTarGzSerializer;
 import edu.jhu.hlt.concrete.serialization.ThreadSafeCompactCommunicationSerializer;
+import edu.jhu.hlt.concrete.serialization.ThreadSafeTarGzCompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.util.ConcreteException;
-import edu.jhu.hlt.concrete.util.ThriftIO;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentenceIndexAnnotation;
@@ -74,8 +75,6 @@ public class StanfordAgigaPipe {
   private final Set<String> kindsForNoCoref;
 
   private final ConcreteStanfordProperties concStanProps;
-  
-  private final CommunicationSerializer cs = new ThreadSafeCompactCommunicationSerializer();
 
   /**
    * The global character offset. The exact meaning is determined by {@code usingOriginalCharOffsets()}. When true, this counter is with respect to the
@@ -130,7 +129,9 @@ public class StanfordAgigaPipe {
       List<Communication> processedComms = sap.process(zf);
       logger.info("Finished.");
 
-      ThriftIO.writeFile(outputPath, processedComms);
+      // ThriftIO.writeFile(outputPath, processedComms);
+      CommunicationTarGzSerializer tgz = new ThreadSafeTarGzCompactCommunicationSerializer();
+      tgz.toTarGz(processedComms, outputPath);
     } else {
       final Communication communication = cs.fromPathString(inputPath);
       logger.info("Beginning annotation.");
@@ -264,7 +265,7 @@ public class StanfordAgigaPipe {
 
         // Note that we need to update the global character offset...
         List<CoreLabel> sentTokens = sectionAnnotation.get(TokensAnnotation.class);
-        int tokCount = 0;
+        // int tokCount = 0;
         for (CoreLabel badToken : sentTokens) {
           updateCharOffsetSetToken(badToken, false, false);
         }
@@ -295,7 +296,6 @@ public class StanfordAgigaPipe {
 
     // 3) Third, do coref; cross-reference against sectionUUIDs
     logger.debug("Running coref.");
-    SuperCommunication sc = new SuperCommunication(comm);
     processCoref(comm, documentAnnotation, tokenizations);
   }
 
