@@ -42,6 +42,7 @@ import edu.jhu.hlt.concrete.serialization.ThreadSafeCompactCommunicationSerializ
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
 import edu.jhu.hlt.concrete.util.SuperTextSpan;
+import edu.jhu.hlt.concrete.util.ThriftIO;
 import edu.jhu.hlt.gigaword.ConcreteGigawordDocumentFactory;
 import gigaword.api.GigawordDocumentConverter;
 import gigaword.interfaces.GigawordDocument;
@@ -559,6 +560,8 @@ public class StanfordAgigaPipeTest {
 
     assertTrue("Error in serializing processed communication",
         cs.toBytes(afpProcessedComm) != null);
+    ThriftIO.writeFile("src/test/resources/AFP_ENG_20100318.0623_processed.compact.concrete",
+                       afpProcessedComm);
   }
 
   private void testNDependencyParses(int expected, Communication target) {

@@ -9,6 +9,7 @@ src/test/resources/post-stanford.concrete
 src/test/resources/sample_para_processed.concrete
 src/test/resources/post-stanford.NYT_ENG_19991220.0301.concrete
 src/test/resources/post-stanford.handshake_multiple_sections.concrete
+src/test/resources/AFP_ENG_20100318.0623_processed.compact.concrete
 *_processed.concrete
 *_processed.zip
 

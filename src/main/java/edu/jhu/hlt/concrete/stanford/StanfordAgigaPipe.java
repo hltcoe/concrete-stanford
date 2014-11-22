@@ -53,15 +53,15 @@ import edu.stanford.nlp.util.CoreMap;
 public class StanfordAgigaPipe {
 
   private static final Logger logger = LoggerFactory.getLogger(StanfordAgigaPipe.class);
-  private static final String[] DEFAULT_KINDS_TO_ANNOTATE = new String[] { "Passage", "Other" };
+  // private static final String[] DEFAULT_KINDS_TO_ANNOTATE = new String[] { "Passage", "Other" };
 
   static final String usage = "You must specify an input path: java edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe --input path/to/input/file --output path/to/output/file\n"
       + "  Optional arguments: \n"
       + "       --annotate-sections <comma-separated-list of type names> (default: PASSAGE)\n"
       + "       --debug\n\t\tto print debugging messages (default: false)\n";
 
-  private static final String[] defaultKindsToProcess = new String[] { "Passage", "Other" };
-  private static final String[] defaultKindsToOnlyTokenize = new String[] { "Title", "Dateline" };
+  private static final String[] defaultKindsToFullyProcess = new String[] { "Passage" };
+  private static final String[] defaultKindsNoCoref = new String[] { "Title", "Dateline" };
 
   private int sentenceCount = 1; // for flat files, no document structure
 
@@ -71,7 +71,7 @@ public class StanfordAgigaPipe {
 
   private final InMemoryAnnoPipeline pipeline;
   private final Set<String> kindsToProcessSet;
-  private final Set<String> kindsToTokenizeOnly;
+  private final Set<String> kindsForNoCoref;
 
   private final ConcreteStanfordProperties concStanProps;
   
@@ -144,15 +144,15 @@ public class StanfordAgigaPipe {
   }
 
   public StanfordAgigaPipe() throws IOException {
-    this(Arrays.asList(defaultKindsToProcess), Arrays.asList(defaultKindsToOnlyTokenize), true);
+    this(Arrays.asList(defaultKindsToFullyProcess), Arrays.asList(defaultKindsNoCoref), true);
   }
 
   public StanfordAgigaPipe(Collection<String> typesToAnnotate, Collection<String> typesToTokenizeOnly, boolean allowEmptyMentions) throws IOException {
     this.kindsToProcessSet = new HashSet<>();
     this.kindsToProcessSet.addAll(typesToAnnotate);
 
-    this.kindsToTokenizeOnly = new HashSet<>();
-    this.kindsToTokenizeOnly.addAll(typesToTokenizeOnly);
+    this.kindsForNoCoref = new HashSet<>();
+    this.kindsForNoCoref.addAll(typesToTokenizeOnly);
 
     this.concStanProps = new ConcreteStanfordProperties();
     this.pipeline = new InMemoryAnnoPipeline();
@@ -249,7 +249,9 @@ public class StanfordAgigaPipe {
       logger.debug("Annotating Section: {}", section.getUuid());
       logger.debug("\ttext = " + sectionText);
       logger.debug("\tkind = " + section.getKind() + " in annotateNames: " + this.kindsToProcessSet);
-      if (!kindsToProcessSet.contains(section.getKind()) && !kindsToTokenizeOnly.contains(section.getKind())) {
+      boolean allButCoref = kindsForNoCoref.contains(section.getKind());
+      boolean allWithCoref = kindsToProcessSet.contains(section.getKind());
+      if (!allWithCoref && !allButCoref) {
         // We MUST update the character offset
         logger.debug("no good section: from " + charOffset + " to ");
         // NOTE: It's possible we want to account for sentences in non-contentful sections
@@ -269,11 +271,11 @@ public class StanfordAgigaPipe {
 
         logger.debug("" + charOffset);
         logger.debug("\t" + sectionText);
-      } else if (kindsToTokenizeOnly.contains(section.getKind())) {
+      } else if (allButCoref) {
         // Only tokenize & sentence split
-        logger.debug("Special handling for section type {} section: {}", section.getKind(), section.getUuid());
+        logger.error("Special handling for section type {} section: {}", section.getKind(), section.getUuid());
         logger.debug(">> SectionText=[" + sectionText + "]");
-        processSectionTokenize(section, sectionAnnotation, sectionStartCharOffset, sb);
+        processSectionForNoCoref(section, sectionAnnotation, sectionStartCharOffset, sb);
       } else {
         // 2) Second, perform the other localized processing
         logger.debug("Additional processing on section: {}", section.getUuid());
@@ -322,6 +324,14 @@ public class StanfordAgigaPipe {
   public AgigaDocument annotate(Annotation annotation) throws AnnotationException {
     try {
       return pipeline.annotate(annotation);
+    } catch (IOException e) {
+      throw new AnnotationException(e);
+    }
+  }
+
+  public AgigaDocument getAgigaDocAllButCoref(Annotation annotation) throws AnnotationException {
+    try {
+      return pipeline.getAgigaDocAllButCoref(annotation);
     } catch (IOException e) {
       throw new AnnotationException(e);
     }
@@ -554,19 +564,16 @@ public class StanfordAgigaPipe {
    * @throws IOException
    */
 
-  public void processSectionTokenize(Section section, Annotation sentenceSplitText, int sectionOffset, StringBuilder sb) throws AnnotationException,
+  public void processSectionForNoCoref(Section section, Annotation sentenceSplitText, int sectionOffset, StringBuilder sb) throws AnnotationException,
       IOException {
     sentencesToSection(section, sentenceSplitText);
-    // for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class))
-    //   logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
 
-    AgigaDocument agigaDoc = getAgigaDoc(sentenceSplitText, true);
+    //AgigaDocument agigaDoc = getAgigaDoc(sentenceSplitText, true);
+    AgigaDocument agigaDoc = getAgigaDocAllButCoref(sentenceSplitText);
     logger.debug("after annotating");
-    // for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class))
-    //   logger.debug("sentence index: " + cm.get(SentenceIndexAnnotation.class).toString());
 
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
-    agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb, false);
+    agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb, true);
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
   }
 

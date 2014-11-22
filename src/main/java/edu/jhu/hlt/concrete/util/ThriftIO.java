@@ -13,7 +13,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
-import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TCompactProtocol;
 
 import edu.jhu.hlt.concrete.Communication;
 
@@ -25,7 +25,7 @@ public class ThriftIO {
   }
 
   public static void writeFile(Path path, Communication communication) throws TException, IOException {
-    byte[] bytez = new TSerializer(new TBinaryProtocol.Factory()).serialize(communication);
+    byte[] bytez = new TSerializer(new TCompactProtocol.Factory()).serialize(communication);
     Files.write(path, bytez, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
   }
 
@@ -36,7 +36,7 @@ public class ThriftIO {
     for (Communication communication : communications) {
       ZipEntry ze = new ZipEntry(communication.getId());
       zout.putNextEntry(ze);
-      byte[] bytez = new TSerializer(new TBinaryProtocol.Factory()).serialize(communication);
+      byte[] bytez = new TSerializer(new TCompactProtocol.Factory()).serialize(communication);
       zout.write(bytez);
       zout.closeEntry();
     }
