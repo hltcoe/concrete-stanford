@@ -374,8 +374,6 @@ public class InMemoryAnnoPipeline {
     ser.write(xmlDoc);
     ser.flush();
 
-    logger.debug(baos.toString("UTF-8"));
-
     BytesAgigaDocumentReader adr = new BytesAgigaDocumentReader(baos.toByteArray(), agigaPrefs);
     if (!adr.hasNext()) {
       throw new IllegalStateException("No documents found.");
