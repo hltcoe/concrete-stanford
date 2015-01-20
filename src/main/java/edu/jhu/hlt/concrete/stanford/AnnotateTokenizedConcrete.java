@@ -30,7 +30,7 @@ import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.agiga.AgigaAnnotationAdder;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
-import edu.jhu.hlt.concrete.serialization.ThreadSafeCompactCommunicationSerializer;
+import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
@@ -245,7 +245,7 @@ public class AnnotateTokenizedConcrete {
     Path inFile = Paths.get(args[0]);
     Path outFile = Paths.get(args[1]);
 
-    CommunicationSerializer cs = new ThreadSafeCompactCommunicationSerializer();
+    CommunicationSerializer cs = new CompactCommunicationSerializer();
     AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete();
     try (FileSystem zipfs = getNewZipFileSystem(outFile)) {
       try (ZipFile zf = new ZipFile(inFile.toFile())) {

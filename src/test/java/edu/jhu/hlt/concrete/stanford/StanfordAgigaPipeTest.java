@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import concrete.agiga.util.ConcreteAgigaProperties;
 import concrete.tools.AnnotationException;
-import concrete.util.data.ConcreteFactory;
 import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.DependencyParse;
@@ -37,12 +36,13 @@ import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.TokenTagging;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
+import edu.jhu.hlt.concrete.gigaword.ConcreteGigawordDocumentFactory;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
-import edu.jhu.hlt.concrete.serialization.ThreadSafeCompactCommunicationSerializer;
+import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.util.ConcreteException;
+import edu.jhu.hlt.concrete.util.ConcreteFactory;
 import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
 import edu.jhu.hlt.concrete.util.SuperTextSpan;
-import edu.jhu.hlt.gigaword.ConcreteGigawordDocumentFactory;
 import gigaword.api.GigawordDocumentConverter;
 import gigaword.interfaces.GigawordDocument;
 
@@ -81,7 +81,7 @@ public class StanfordAgigaPipeTest {
 
   ConcreteUUIDFactory cuf = new ConcreteUUIDFactory();
   ConcreteFactory cf = new ConcreteFactory();
-  CommunicationSerializer cs = new ThreadSafeCompactCommunicationSerializer();
+  CommunicationSerializer cs = new CompactCommunicationSerializer();
 
   Communication randomTestComm;
   Communication mapped;

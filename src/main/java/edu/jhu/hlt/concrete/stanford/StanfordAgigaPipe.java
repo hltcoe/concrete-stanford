@@ -34,8 +34,8 @@ import edu.jhu.hlt.concrete.communications.PerspectiveCommunication;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.CommunicationTarGzSerializer;
-import edu.jhu.hlt.concrete.serialization.ThreadSafeCompactCommunicationSerializer;
-import edu.jhu.hlt.concrete.serialization.ThreadSafeTarGzCompactCommunicationSerializer;
+import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
+import edu.jhu.hlt.concrete.serialization.TarGzCompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
@@ -118,7 +118,7 @@ public class StanfordAgigaPipe {
     SystemErrDisabler disabler = new SystemErrDisabler();
     disabler.disable();
     StanfordAgigaPipe sap = new StanfordAgigaPipe();
-    final CommunicationSerializer cs = new ThreadSafeCompactCommunicationSerializer();
+    final CommunicationSerializer cs = new CompactCommunicationSerializer();
 
     final String inputPath = args[0];
     final String outputPath = args[1];
@@ -130,7 +130,7 @@ public class StanfordAgigaPipe {
       logger.info("Finished.");
 
       // ThriftIO.writeFile(outputPath, processedComms);
-      CommunicationTarGzSerializer tgz = new ThreadSafeTarGzCompactCommunicationSerializer();
+      CommunicationTarGzSerializer tgz = new TarGzCompactCommunicationSerializer();
       tgz.toTarGz(processedComms, outputPath);
     } else {
       final Communication communication = cs.fromPathString(inputPath);
@@ -163,7 +163,7 @@ public class StanfordAgigaPipe {
   public List<Communication> process(ZipFile zf) throws TException, IOException, ConcreteException, AnnotationException {
     Enumeration<? extends ZipEntry> e = zf.entries();
     List<Communication> outList = new LinkedList<Communication>();
-    final CommunicationSerializer ser = new ThreadSafeCompactCommunicationSerializer();
+    final CommunicationSerializer ser = new CompactCommunicationSerializer();
 
     while (e.hasMoreElements()) {
       ZipEntry ze = e.nextElement();
