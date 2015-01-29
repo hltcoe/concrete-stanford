@@ -57,6 +57,7 @@ import edu.stanford.nlp.util.CoreMap;
 public class InMemoryAnnoPipeline {
 
   private static final Logger logger = LoggerFactory.getLogger(InMemoryAnnoPipeline.class);
+  private static final String basedir = System.getProperty("InMemoryAnnoPipeline", "data");
 
   private static final boolean do_deps = true;
   // Document counter.
@@ -107,6 +108,53 @@ public class InMemoryAnnoPipeline {
     pipeline = new StanfordCoreNLP(props);
     logger.debug("Done.");
   }
+
+  public InMemoryAnnoPipeline(String lang) {
+    docCounter = 0;
+    ptbTokenizer = new PTBTokenizerAnnotator();
+    ptbTokenizerUnofficial = new PTBTokenizerAnnotator(true, firstPassTokArgs);
+    words2SentencesAnnotator = new WordsToSentencesAnnotator();
+    if (lang.equals("en")) {
+	    Properties props = new Properties();
+	    String annotatorList = "tokenize, ssplit, pos, lemma, parse, ner";
+	    logger.debug("Using annotators: {}", annotatorList);
+
+	    props.put("annotators", annotatorList);
+	    props.setProperty("output.printSingletonEntities", "true");
+	    logger.debug("Loading models and resources.");
+	    pipeline = new StanfordCoreNLP(props);
+    }
+    else if (lang.equals("cn")) 
+	    pipeline = makeChinesePipeline();
+    else {
+    	System.err.println("Do not support language: " + lang);
+	System.exit(0);
+    }
+    logger.debug("Done.");
+  }
+
+  
+  public static StanfordCoreNLP makeChinesePipeline() {
+	Properties props = new Properties();
+      	String annotatorList = "segment, ssplit, pos, parse";
+	logger.debug("Using annotators: {}", annotatorList);
+
+	props.put("annotators", annotatorList);
+	props.setProperty("segment.model", basedir+"/ctb.gz");
+	props.setProperty("segment.sighanCorporaDict", basedir);
+	props.setProperty("segment.serDictionary", basedir+"/dict-chris6.ser.gz");
+	props.setProperty("segment.sighanPostProcessing", "true");
+
+	props.setProperty("ssplit.boundaryTokenRegex", "[.]|[!?]+|[。]|[！？]+");
+        props.setProperty("output.printSingletonEntities", "true");
+	props.setProperty("pos.model", basedir+"/chinese-distsim.tagger");
+	logger.debug("Loading pos models and resources."); 
+	props.setProperty("parse.model", basedir+"/chineseFactored.ser.gz");
+	logger.debug("Loading parser models and resources."); 
+	StanfordCoreNLP cpipeline = new StanfordCoreNLP(props);
+	return cpipeline;	
+  }
+
 
   public void prepForNext() {
       docCounter = 0;

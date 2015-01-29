@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+//import java.util.Properties;
 
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -39,6 +40,7 @@ import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.process.CoreLabelTokenFactory;
 import edu.stanford.nlp.util.CoreMap;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 
 /**
  * Given tokenized Concrete as input, this class will annotate sentences with the Stanford NLP tools and add the annotations back in their Concrete
@@ -56,9 +58,9 @@ public class AnnotateTokenizedConcrete {
 
   private InMemoryAnnoPipeline pipeline;
 
-  public AnnotateTokenizedConcrete() {
+  public AnnotateTokenizedConcrete(String lang) {
     log.info("Loading models for Stanford tools");
-    pipeline = new InMemoryAnnoPipeline();
+    pipeline = new InMemoryAnnoPipeline(lang);
   }
 
   /**
@@ -85,6 +87,30 @@ public class AnnotateTokenizedConcrete {
     }
   }
 
+
+  /**
+   * Annotates a Concrete {@link Communication} with the Stanford NLP tools.<br>
+   * Pipeline specifiction enabled.<br>
+   * NOTE: Currently, this only supports per-sentence annotation. Coreference resolution is not performed.
+   * 
+   * @param comm
+   *          The concrete communication.
+   */
+  public void annotateWithStanfordNlp(Communication comm, StanfordCoreNLP cpipeline) {
+    for (Section cSection : comm.getSectionList()) {
+      Annotation sSectionAnno = getSectionAsAnnotation(cSection, comm);
+      try {
+        // Run the in-memory anno pipeline to (1) create Stanford objects,
+        // (2) convert them to XML, and (3) read that XML into AGiga API objects.
+        AgigaDocument aDoc = pipeline.annotate(cpipeline, sSectionAnno);
+        // Convert the AgigaDocument with annotations for this section
+        // to annotations on this section.
+        AgigaAnnotationAdder.addAgigaAnnosToSection(aDoc, cSection);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
   /**
    * Annotates a Concrete {@link Sentence} with the Stanford NLP tools.
    * 
@@ -231,6 +257,7 @@ public class AnnotateTokenizedConcrete {
     return sentences;
   }
 
+  
   public static FileSystem getNewZipFileSystem(Path zipFile) throws IOException {
     if (Files.exists(zipFile)) {
       Files.delete(zipFile);
@@ -241,12 +268,15 @@ public class AnnotateTokenizedConcrete {
     return FileSystems.newFileSystem(uri, env);
   }
 
+  
   public static void main(String[] args) throws IOException, TException, ConcreteException {
     Path inFile = Paths.get(args[0]);
     Path outFile = Paths.get(args[1]);
 
     CommunicationSerializer cs = new CompactCommunicationSerializer();
-    AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete();
+    AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete("cn");
+    
+    //StanfordCoreNLP cpipeline = annotator.makeChinesePipeline();
     try (FileSystem zipfs = getNewZipFileSystem(outFile)) {
       try (ZipFile zf = new ZipFile(inFile.toFile())) {
         Enumeration<? extends ZipEntry> e = zf.entries();
