@@ -290,7 +290,7 @@ public class StanfordAgigaPipe {
         logger.debug("\t" + sectionText);
       } else if (allButCoref) {
         // Only tokenize & sentence split
-        logger.error("Special handling for section type {} section: {}", section.getKind(), section.getUuid());
+        logger.debug("Special handling for section type {} section: {}", section.getKind(), section.getUuid());
         logger.debug(">> SectionText=[" + sectionText + "]");
         processSectionForNoCoref(section, sectionAnnotation, sectionStartCharOffset, sb);
       } else {
