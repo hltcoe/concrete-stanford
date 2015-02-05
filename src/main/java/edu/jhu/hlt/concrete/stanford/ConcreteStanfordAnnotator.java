@@ -78,11 +78,11 @@ public class ConcreteStanfordAnnotator {
     String lowerOutPathStr = outPathStr.toLowerCase();
     try {
 
-      // Outcomes:
+      // Outcomes of outPathStr ending:
+      // No valid ending (program exit)
       // Ends with .concrete (first if)
       // Ends with .tar (else, first if)
       // Ends with .tar.gz (else, second if)
-      // No valid ending (program exit)
       boolean isTarExt = lowerOutPathStr.endsWith(".tar");
       boolean isTarGzExt = lowerOutPathStr.endsWith(".tar.gz");
       boolean isConcreteExt = lowerOutPathStr.endsWith(".concrete");
