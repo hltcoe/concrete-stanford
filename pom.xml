@@ -62,7 +62,7 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-gigaword</artifactId>
-      <version>4.2.0</version>
+      <version>4.2.1</version>
       <scope>test</scope>
     </dependency>
 
@@ -80,7 +80,7 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-agiga</artifactId>
-      <version>4.2.0</version>
+      <version>4.2.1</version>
     </dependency>
   </dependencies>
 
