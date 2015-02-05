@@ -51,7 +51,7 @@ import edu.stanford.nlp.util.CoreMap;
  * This class assumes that the input has been tokenized using a PTB-like tokenization. There is a known bug in the Stanford library which will throw an
  * exception when trying to perform semantic head finding on after parsing the sentence "( CROSSTALK )". The error will not occur given the input
  * "-LRB- CROSSTALK -RRB-".
- * 
+ *
  * @author mgormley
  */
 public class AnnotateTokenizedConcrete {
@@ -69,7 +69,7 @@ public class AnnotateTokenizedConcrete {
    * Annotates a Concrete {@link Communication} with the Stanford NLP tools.<br>
    * <br>
    * NOTE: Currently, this only supports per-sentence annotation. Coreference resolution is not performed.
-   * 
+   *
    * @param comm
    *          The concrete communication.
    */
@@ -91,7 +91,7 @@ public class AnnotateTokenizedConcrete {
 
   /**
    * Annotates a Concrete {@link Sentence} with the Stanford NLP tools.
-   * 
+   *
    * @param cSent
    *          The concrete sentence.
    * @param comm
@@ -117,7 +117,7 @@ public class AnnotateTokenizedConcrete {
 
   /**
    * Converts a Concrete {@link Section} to a Stanford {@link Annotation}.
-   * 
+   *
    * @param cSection
    *          The concrete section.
    * @param comm
@@ -131,7 +131,7 @@ public class AnnotateTokenizedConcrete {
 
   /**
    * Converts a Concrete {@link Sentence} to a Stanford {@link Annotation}.
-   * 
+   *
    * @param cSection
    *          The concrete sentence.
    * @param comm
@@ -146,7 +146,7 @@ public class AnnotateTokenizedConcrete {
 
   /**
    * Converts a {@link List} of Concrete {@link Sentence} to a Stanford {@link Annotation}.
-   * 
+   *
    * @param cSents
    *          The list of concrete sentences.
    * @param comm
@@ -174,7 +174,7 @@ public class AnnotateTokenizedConcrete {
 
   /**
    * Converts a Concrete {@link Sentence} to a {@link List} of {@Link CoreLabel}s representing each token.
-   * 
+   *
    * @param cSent
    *          The concrete sentence.
    * @param comm
@@ -264,5 +264,4 @@ public class AnnotateTokenizedConcrete {
       }
     }
   }
-
 }

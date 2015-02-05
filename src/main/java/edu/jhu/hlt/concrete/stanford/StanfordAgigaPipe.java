@@ -121,6 +121,7 @@ public class StanfordAgigaPipe {
     // this is silly, but needed for stanford logging disable.
     SystemErrDisabler disabler = new SystemErrDisabler();
     disabler.disable();
+
     StanfordAgigaPipe sap = new StanfordAgigaPipe();
     final CommunicationSerializer cs = new CompactCommunicationSerializer();
 
@@ -164,6 +165,17 @@ public class StanfordAgigaPipe {
     this.allowEmptyEntitiesAndEntityMentions = allowEmptyMentions;
   }
 
+  /**
+   * NOTE: This method will be removed in a future release.
+   *
+   * @param zf
+   * @return
+   * @throws TException
+   * @throws IOException
+   * @throws ConcreteException
+   * @throws AnnotationException
+   */
+  @Deprecated
   public List<Communication> process(ZipFile zf) throws TException, IOException, ConcreteException, AnnotationException {
     Enumeration<? extends ZipEntry> e = zf.entries();
     List<Communication> outList = new LinkedList<Communication>();
@@ -178,7 +190,7 @@ public class StanfordAgigaPipe {
     return outList;
   }
 
-  public Communication process(Communication c) throws TException, IOException, ConcreteException, AnnotationException {
+  public Communication process(Communication c) throws IOException, ConcreteException, AnnotationException {
     if (!c.isSetText())
       throw new ConcreteException("Expecting Communication Text, but was empty or none.");
 
@@ -242,7 +254,7 @@ public class StanfordAgigaPipe {
     for (Section section : sections) {
       if(section.isSetSentenceList() && section.isSetRawTextSpan()) {
         int interSectionWhitespaceDifference = section.getRawTextSpan().getStart() - previousSectionEnding;
-        charOffset += interSectionWhitespaceDifference;      
+        charOffset += interSectionWhitespaceDifference;
       }
       int sectionStartCharOffset = processedCharOffset;
       logger.debug("new section, processed offset = " + sectionStartCharOffset);
@@ -520,7 +532,7 @@ public class StanfordAgigaPipe {
         charOffset += beforeLength;
       }
       logger.debug("[" + token.before() + ", " + token.before().length() + "] " + "[" + token.originalText() + "]" + " [" + token.after() + ", "
-                   + token.after().length() + "] :: " + charOffset + " --> " + 
+                   + token.after().length() + "] :: " + charOffset + " --> " +
                    (charOffset + token.originalText().length()));
       token.set(CharacterOffsetBeginAnnotation.class, charOffset);
       charOffset += token.originalText().length();
