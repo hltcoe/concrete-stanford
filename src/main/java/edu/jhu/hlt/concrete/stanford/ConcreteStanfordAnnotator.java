@@ -69,6 +69,8 @@ public class ConcreteStanfordAnnotator {
     CommunicationTarGzSerializer ser = new TarGzCompactCommunicationSerializer();
     String lowerOutPathStr = initPathStr.toLowerCase();
     try {
+      SystemErrDisabler sed = new SystemErrDisabler();
+      sed.disable();
 
       // Outcomes of outPathStr ending:
       // No valid ending (program exit)
