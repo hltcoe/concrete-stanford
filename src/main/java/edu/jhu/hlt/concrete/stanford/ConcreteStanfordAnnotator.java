@@ -66,16 +66,8 @@ public class ConcreteStanfordAnnotator {
       }
     }
 
-    StanfordAgigaPipe pipe = null;
-    try {
-      pipe = new StanfordAgigaPipe();
-    } catch (IOException e1) {
-      LOGGER.error("Caught IOException while initializing StanfordAgigaPipe.", e1);
-      System.exit(1);
-    }
-
     CommunicationTarGzSerializer ser = new TarGzCompactCommunicationSerializer();
-    String lowerOutPathStr = outPathStr.toLowerCase();
+    String lowerOutPathStr = initPathStr.toLowerCase();
     try {
 
       // Outcomes of outPathStr ending:
@@ -92,6 +84,7 @@ public class ConcreteStanfordAnnotator {
         LOGGER.error("Input file extension was not '.concrete', '.tar', or '.tar.gz'; exiting.");
         System.exit(1);
       } else if (isConcreteExt) {
+        StanfordAgigaPipe pipe = new StanfordAgigaPipe();
         // IF .concrete, run single communication.
         LOGGER.info("Annotating single .concrete file.");
         byte[] inputBytes = Files.readAllBytes(initPath);
@@ -101,9 +94,11 @@ public class ConcreteStanfordAnnotator {
         Path concreteOutPath = outPath.resolve(fileName);
         new SuperCommunication(annotated).writeToFile(concreteOutPath, true);
       } else {
+        StanfordAgigaPipe pipe = new StanfordAgigaPipe();
         int nElementsInitPath = initPath.getNameCount();
         Path inputFileName = initPath.getName(nElementsInitPath - 1);
-        String noExtStr = inputFileName.toString().split(".")[0];
+        // LOGGER.info("Input FN: {}", inputFileName.toString());
+        String noExtStr = inputFileName.toString().split("\\.")[0];
         String fileName = noExtStr + ".tar";
         Path localOutPath = outPath.resolve(fileName);
         // Iterate over the archive.
@@ -116,8 +111,9 @@ public class ConcreteStanfordAnnotator {
           else
             iter = ser.fromTarGz(is);
 
+          LOGGER.info("Created iterator.");
           Set<Communication> commSet = new HashSet<Communication>();
-          while (iter.hasNext()); {
+          while (iter.hasNext()) {
             Communication n = iter.next();
             LOGGER.info("Annotating communication: {}", n.getId());
             Communication a = pipe.process(n);
