@@ -1,3 +1,7 @@
+/*
+ * Copyright 2012-2015 Johns Hopkins University HLTCOE. All rights reserved.
+ * See LICENSE in the project root directory.
+ */
 package edu.jhu.hlt.concrete.stanford;
 
 import java.io.ByteArrayOutputStream;
@@ -108,7 +112,7 @@ public class InMemoryAnnoPipeline {
     logger.debug("Done.");
   }
 
-  public void prepForNext() {
+  void prepForNext() {
       docCounter = 0;
   }
 
@@ -596,11 +600,11 @@ public class InMemoryAnnoPipeline {
   }
 
   // return various annotators from the CoreNLP tools
-  public Annotator nerAnnotator() {
+  public Annotator getNERAnnotator() {
     return StanfordCoreNLP.getExistingAnnotator("ner");
   }
 
-  public Annotator dcorefAnnotator() {
+  public Annotator getDCorefAnnotator() {
     return StanfordCoreNLP.getExistingAnnotator("dcoref");
   }
 

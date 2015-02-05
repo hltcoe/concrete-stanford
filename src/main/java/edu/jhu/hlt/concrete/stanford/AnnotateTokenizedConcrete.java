@@ -1,3 +1,7 @@
+/*
+ * Copyright 2012-2015 Johns Hopkins University HLTCOE. All rights reserved.
+ * See LICENSE in the project root directory.
+ */
 package edu.jhu.hlt.concrete.stanford;
 
 import java.io.IOException;
@@ -15,10 +19,10 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.tools.AnnotationException;
 import edu.jhu.agiga.AgigaDocument;
 import edu.jhu.agiga.AgigaSentence;
 import edu.jhu.hlt.concrete.Communication;
@@ -69,7 +73,7 @@ public class AnnotateTokenizedConcrete {
    * @param comm
    *          The concrete communication.
    */
-  public void annotateWithStanfordNlp(Communication comm) {
+  public void annotateWithStanfordNlp(Communication comm) throws AnnotationException {
     for (Section cSection : comm.getSectionList()) {
       Annotation sSectionAnno = getSectionAsAnnotation(cSection, comm);
       try {
@@ -93,21 +97,21 @@ public class AnnotateTokenizedConcrete {
    * @param comm
    *          The communication from which to extract the source text.
    */
-  public void annotateWithStanfordNlp(Sentence cSent, Communication comm) {
+  public void annotateWithStanfordNlp(Sentence cSent, Communication comm) throws AnnotationException {
     Annotation sSentAnno = getSentenceAsAnnotation(cSent, comm);
     try {
       // Run the in-memory anno pipeline to (1) create Stanford objects,
       // (2) convert them to XML, and (3) read that XML into AGiga API objects.
       AgigaDocument aDoc = pipeline.annotate(sSentAnno);
       if (aDoc.getSents().size() != 1) {
-        throw new IllegalStateException("Multiple sentences in AgigaDoc which should contain only 1.");
+        throw new AnnotationException("Multiple sentences in AgigaDoc which should contain only 1.");
       }
       AgigaSentence aSent = aDoc.getSents().get(0);
       // Convert the AgigaSentence with annotations for this sentence
       // to annotations on this sentence.
       AgigaAnnotationAdder.addAgigaAnnosToConcreteSent(aSent, cSent);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new AnnotationException(e);
     }
   }
 
@@ -120,7 +124,7 @@ public class AnnotateTokenizedConcrete {
    *          The communication from which to extract the source text.
    * @return The annotation representing the section.
    */
-  private Annotation getSectionAsAnnotation(Section cSection, Communication comm) {
+  private Annotation getSectionAsAnnotation(Section cSection, Communication comm) throws AnnotationException{
     List<Sentence> cSents = cSection.getSentenceList();
     return concreteSentListToAnnotation(cSents, comm);
   }
@@ -134,7 +138,7 @@ public class AnnotateTokenizedConcrete {
    *          The communication from which to extract the source text.
    * @return The annotation representing the section.
    */
-  private Annotation getSentenceAsAnnotation(Sentence cSent, Communication comm) {
+  private Annotation getSentenceAsAnnotation(Sentence cSent, Communication comm) throws AnnotationException {
     List<Sentence> cSents = new ArrayList<>();
     cSents.add(cSent);
     return concreteSentListToAnnotation(cSents, comm);
@@ -149,7 +153,7 @@ public class AnnotateTokenizedConcrete {
    *          The communication from which to extract the source text.
    * @return The annotation representing the list of sentences.
    */
-  private Annotation concreteSentListToAnnotation(List<Sentence> cSents, Communication comm) {
+  private Annotation concreteSentListToAnnotation(List<Sentence> cSents, Communication comm) throws AnnotationException{
     Annotation sSectionAnno = new Annotation(comm.getText());
     // Done by constructor: sectionAnno.set(CoreAnnotations.TextAnnotation, null);
 
@@ -202,12 +206,12 @@ public class AnnotateTokenizedConcrete {
   /**
    * This method mimics the behavior of Stanford's WordsToSentencesAnnotator to create a List<CoreMap>s from a List<List<CoreLabel>>.
    */
-  private List<CoreMap> mimicWordsToSentsAnnotator(List<List<CoreLabel>> sSents, String text) {
+  private List<CoreMap> mimicWordsToSentsAnnotator(List<List<CoreLabel>> sSents, String text) throws AnnotationException {
     int tokenOffset = 0;
     List<CoreMap> sentences = new ArrayList<CoreMap>();
     for (List<CoreLabel> sentenceTokens : sSents) {
       if (sentenceTokens.isEmpty()) {
-        throw new RuntimeException("unexpected empty sentence: " + sentenceTokens);
+        throw new AnnotationException("unexpected empty sentence: " + sentenceTokens);
       }
 
       // get the sentence text from the first and last character offsets
@@ -241,7 +245,7 @@ public class AnnotateTokenizedConcrete {
     return FileSystems.newFileSystem(uri, env);
   }
 
-  public static void main(String[] args) throws IOException, TException, ConcreteException {
+  public static void main(String[] args) throws IOException, ConcreteException, AnnotationException {
     Path inFile = Paths.get(args[0]);
     Path outFile = Paths.get(args[1]);
 

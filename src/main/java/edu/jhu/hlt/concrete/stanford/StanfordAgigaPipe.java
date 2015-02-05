@@ -1,3 +1,7 @@
+/*
+ * Copyright 2012-2015 Johns Hopkins University HLTCOE. All rights reserved.
+ * See LICENSE in the project root directory.
+ */
 package edu.jhu.hlt.concrete.stanford;
 
 import java.io.IOException;
@@ -100,7 +104,7 @@ public class StanfordAgigaPipe {
 
   private int globalTokenOffset = 0;
 
-  public void resetGlobals() {
+  private void resetGlobals() {
     globalTokenOffset = 0;
     sentenceCount = 1;
     charOffset = 0;
@@ -217,7 +221,7 @@ public class StanfordAgigaPipe {
    * @throws AnnotationException
    * @throws IOException
    */
-  public void runPipelineOnCommunicationSectionsAndSentences(Communication comm) throws AnnotationException, IOException {
+  private void runPipelineOnCommunicationSectionsAndSentences(Communication comm) throws AnnotationException, IOException {
     // if called multiple times, reset the sentence count
     sentenceCount = 1;
     String commText = comm.isSetText() ? comm.getText() : comm.getOriginalText();
@@ -321,7 +325,7 @@ public class StanfordAgigaPipe {
    * @throws AnnotationException
    *
    */
-  public AgigaDocument annotate(Annotation annotation) throws AnnotationException {
+  private AgigaDocument annotate(Annotation annotation) throws AnnotationException {
     try {
       return pipeline.annotate(annotation);
     } catch (IOException e) {
@@ -329,7 +333,7 @@ public class StanfordAgigaPipe {
     }
   }
 
-  public AgigaDocument getAgigaDocAllButCoref(Annotation annotation) throws AnnotationException {
+  private AgigaDocument getAgigaDocAllButCoref(Annotation annotation) throws AnnotationException {
     try {
       return pipeline.getAgigaDocAllButCoref(annotation);
     } catch (IOException e) {
@@ -337,7 +341,7 @@ public class StanfordAgigaPipe {
     }
   }
 
-  public AgigaDocument getAgigaDoc(Annotation annotation, boolean tokensOnly) throws AnnotationException {
+  private AgigaDocument getAgigaDoc(Annotation annotation, boolean tokensOnly) throws AnnotationException {
     try {
       return pipeline.getAgigaDoc(annotation, tokensOnly);
     } catch (IOException e) {
@@ -345,7 +349,7 @@ public class StanfordAgigaPipe {
     }
   }
 
-  public AgigaDocument annotateCoref(Annotation annotation) throws AnnotationException {
+  private AgigaDocument annotateCoref(Annotation annotation) throws AnnotationException {
     try {
       return pipeline.annotateCoref(annotation);
     } catch (IOException e) {
@@ -358,7 +362,7 @@ public class StanfordAgigaPipe {
    * The global indexers {@code charOffset} and {@code globalTokenOffset} are updated here.
    *
    */
-  public void sentencesToSection(Section concreteSection, CoreMap sectAnno, Annotation document) throws AnnotationException {
+  private void sentencesToSection(Section concreteSection, CoreMap sectAnno, Annotation document) throws AnnotationException {
     if (sectAnno == null) {
       logger.warn("Encountered null annotated section. Skipping.");
       return;
@@ -442,7 +446,7 @@ public class StanfordAgigaPipe {
    * The global indexers {@code charOffset} and {@code globalTokenOffset} are updated here.
    *
    */
-  public void sentencesToSection(Section concreteSection, CoreMap sectAnno) throws AnnotationException {
+  private void sentencesToSection(Section concreteSection, CoreMap sectAnno) throws AnnotationException {
     if (sectAnno == null) {
       logger.warn("Encountered null annotated section. Skipping.");
       return;
@@ -508,7 +512,7 @@ public class StanfordAgigaPipe {
     }
   }
 
-  public void updateCharOffsetSetToken(CoreLabel token, boolean isFirst, boolean updateProcessedOff) {
+  private void updateCharOffsetSetToken(CoreLabel token, boolean isFirst, boolean updateProcessedOff) {
     if (usingOriginalCharOffsets()) {
       if (isFirst) {
         // this is because when we have text like "foo bar", foo.after == " " AND bar.before == " "
@@ -537,7 +541,7 @@ public class StanfordAgigaPipe {
    * Transfer an individual section's annotations to the global accumulating document. This allows global annotators (coref) to use local information, such as
    * parses.
    */
-  public void transferAnnotations(Annotation section, Annotation document) {
+  private void transferAnnotations(Annotation section, Annotation document) {
     List<CoreMap> sectionSents = section.get(SentencesAnnotation.class);
     ArrayList<CoreMap> documentSents = (ArrayList<CoreMap>) document.get(SentencesAnnotation.class);
     logger.debug("\t******Document sents*********");
@@ -564,7 +568,7 @@ public class StanfordAgigaPipe {
    * @throws IOException
    */
 
-  public void processSectionForNoCoref(Section section, Annotation sentenceSplitText, int sectionOffset, StringBuilder sb) throws AnnotationException,
+  private void processSectionForNoCoref(Section section, Annotation sentenceSplitText, int sectionOffset, StringBuilder sb) throws AnnotationException,
       IOException {
     sentencesToSection(section, sentenceSplitText);
 
@@ -584,7 +588,7 @@ public class StanfordAgigaPipe {
    * @throws AnnotationException
    * @throws IOException
    */
-  public void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, int sectionOffset, StringBuilder sb)
+  private void processSection(Section section, Annotation sentenceSplitText, Annotation docAnnotation, int sectionOffset, StringBuilder sb)
       throws AnnotationException, IOException {
     sentencesToSection(section, sentenceSplitText, docAnnotation);
     logger.debug("after sentencesToSection, before annotating");
@@ -602,7 +606,7 @@ public class StanfordAgigaPipe {
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
   }
 
-  public void setSectionTextSpan(Section section, int start, int end, boolean compensate) throws AnnotationException {
+  private static void setSectionTextSpan(Section section, int start, int end, boolean compensate) throws AnnotationException {
     if (!section.isSetTextSpan()) {
       int compE = compensate ? (end - 1) : end;
       if (compE <= start)
@@ -614,7 +618,7 @@ public class StanfordAgigaPipe {
     }
   }
 
-  public void processCoref(Communication comm, Annotation docAnnotation, List<Tokenization> tokenizations) throws AnnotationException, IOException {
+  private void processCoref(Communication comm, Annotation docAnnotation, List<Tokenization> tokenizations) throws AnnotationException, IOException {
     AgigaDocument agigaDoc = annotateCoref(docAnnotation);
     AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
     SimpleEntry<EntityMentionSet, EntitySet> tuple = agigaToConcrete.convertCoref(comm, agigaDoc, tokenizations);
@@ -653,7 +657,7 @@ public class StanfordAgigaPipe {
     if (t == null)
       return null;
 
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
 
     for (Tree tt : t.getLeaves()) {
       sb.append(tt.value());
