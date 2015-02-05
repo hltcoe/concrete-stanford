@@ -34,8 +34,8 @@ Communication withSections = ...
 Communication annotatedWithStanford = pipe.process(withSections);
 ```
 
-`annotatedWithStanford` is a `Communication` with the output of the system
-- sentences, tokenizations, entity mentions, and entities.
+`annotatedWithStanford` is a `Communication` with the output of the system, including
+sentences, tokenizations, entity mentions, and entities.
 
 Running as a command-line program
 ---

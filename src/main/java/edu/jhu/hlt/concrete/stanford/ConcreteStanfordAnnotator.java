@@ -97,8 +97,15 @@ public class ConcreteStanfordAnnotator {
         byte[] inputBytes = Files.readAllBytes(initPath);
         Communication c = ser.fromBytes(inputBytes);
         Communication annotated = pipe.process(c);
-        new SuperCommunication(annotated).writeToFile(outPath, true);
+        String fileName = annotated.getId() + ".concrete";
+        Path concreteOutPath = outPath.resolve(fileName);
+        new SuperCommunication(annotated).writeToFile(concreteOutPath, true);
       } else {
+        int nElementsInitPath = initPath.getNameCount();
+        Path inputFileName = initPath.getName(nElementsInitPath - 1);
+        String noExtStr = inputFileName.toString().split(".")[0];
+        String fileName = noExtStr + ".tar";
+        Path localOutPath = outPath.resolve(fileName);
         // Iterate over the archive.
         Iterator<Communication> iter;
         try (InputStream is = Files.newInputStream(initPath);) {
@@ -116,7 +123,7 @@ public class ConcreteStanfordAnnotator {
             Communication a = pipe.process(n);
             commSet.add(a);
           }
-          ser.toTar(commSet, outPath);
+          ser.toTar(commSet, localOutPath);
         }
       }
     } catch (IOException | ConcreteException | AnnotationException e) {
