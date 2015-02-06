@@ -48,11 +48,11 @@ public class AgigaConcreteAnnotator {
   //   ag.setToolName(csProps.getToolName());
   // }
 
-  public AgigaConcreteAnnotator(boolean setSpans) throws IOException {
+  public AgigaConcreteAnnotator(boolean setSpans, String language) throws IOException {
     this.agigaProps = new ConcreteAgigaProperties();
     this.csProps = new ConcreteStanfordProperties();
     
-    ag = new AgigaConverter(setSpans, this.csProps.getAllowEmptyMentions());
+    ag = new AgigaConverter(setSpans, this.csProps.getAllowEmptyMentions(), language);
   }
 
   public AnnotationMetadata metadata(String name) {

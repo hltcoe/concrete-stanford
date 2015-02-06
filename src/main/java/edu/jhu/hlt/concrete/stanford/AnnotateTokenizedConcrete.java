@@ -12,6 +12,9 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 //import java.util.Properties;
@@ -57,9 +60,14 @@ public class AnnotateTokenizedConcrete {
   private static final Logger log = LoggerFactory.getLogger(AnnotateTokenizedConcrete.class);
 
   private InMemoryAnnoPipeline pipeline;
+  private String language;
+
+  private final static String[] ChineseSectionName = new String[] {"</TURN>", "</HEADLINE>", "</TEXT>", "</POST>"};
+  private static Set<String> ChineseSectionNameSet = new HashSet<String>(Arrays.asList(ChineseSectionName));
 
   public AnnotateTokenizedConcrete(String lang) {
     log.info("Loading models for Stanford tools");
+    language = lang;
     pipeline = new InMemoryAnnoPipeline(lang);
   }
 
@@ -73,6 +81,8 @@ public class AnnotateTokenizedConcrete {
    */
   public void annotateWithStanfordNlp(Communication comm) {
     for (Section cSection : comm.getSectionList()) {
+      if (cSection.isSetLabel() && !ChineseSectionNameSet.contains(cSection.getLabel()) ) 
+	      continue;
       Annotation sSectionAnno = getSectionAsAnnotation(cSection, comm);
       try {
         // Run the in-memory anno pipeline to (1) create Stanford objects,
@@ -80,7 +90,9 @@ public class AnnotateTokenizedConcrete {
         AgigaDocument aDoc = pipeline.annotate(sSectionAnno);
         // Convert the AgigaDocument with annotations for this section
         // to annotations on this section.
-        AgigaAnnotationAdder.addAgigaAnnosToSection(aDoc, cSection);
+	String[] annotationList = {"pos", "cparse", "dparse"};
+        AgigaAnnotationAdder aaa = new AgigaAnnotationAdder(language);
+	aaa.addAgigaAnnosToSection(aDoc, cSection, annotationList);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -88,29 +100,6 @@ public class AnnotateTokenizedConcrete {
   }
 
 
-  /**
-   * Annotates a Concrete {@link Communication} with the Stanford NLP tools.<br>
-   * Pipeline specifiction enabled.<br>
-   * NOTE: Currently, this only supports per-sentence annotation. Coreference resolution is not performed.
-   * 
-   * @param comm
-   *          The concrete communication.
-   */
-  public void annotateWithStanfordNlp(Communication comm, StanfordCoreNLP cpipeline) {
-    for (Section cSection : comm.getSectionList()) {
-      Annotation sSectionAnno = getSectionAsAnnotation(cSection, comm);
-      try {
-        // Run the in-memory anno pipeline to (1) create Stanford objects,
-        // (2) convert them to XML, and (3) read that XML into AGiga API objects.
-        AgigaDocument aDoc = pipeline.annotate(cpipeline, sSectionAnno);
-        // Convert the AgigaDocument with annotations for this section
-        // to annotations on this section.
-        AgigaAnnotationAdder.addAgigaAnnosToSection(aDoc, cSection);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
-  }
   /**
    * Annotates a Concrete {@link Sentence} with the Stanford NLP tools.
    * 
@@ -131,7 +120,9 @@ public class AnnotateTokenizedConcrete {
       AgigaSentence aSent = aDoc.getSents().get(0);
       // Convert the AgigaSentence with annotations for this sentence
       // to annotations on this sentence.
-      AgigaAnnotationAdder.addAgigaAnnosToConcreteSent(aSent, cSent);
+      String[] annotationList = {"pos", "cparse", "dparse"};
+      AgigaAnnotationAdder aaa = new AgigaAnnotationAdder(language);
+      aaa.addAgigaAnnosToConcreteSent(aSent, cSent, annotationList);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -147,6 +138,7 @@ public class AnnotateTokenizedConcrete {
    * @return The annotation representing the section.
    */
   private Annotation getSectionAsAnnotation(Section cSection, Communication comm) {
+    //System.out.println("In getSectionAsAnnotation function!!!!!");
     List<Sentence> cSents = cSection.getSentenceList();
     return concreteSentListToAnnotation(cSents, comm);
   }
@@ -161,6 +153,7 @@ public class AnnotateTokenizedConcrete {
    * @return The annotation representing the section.
    */
   private Annotation getSentenceAsAnnotation(Sentence cSent, Communication comm) {
+    //System.out.println("In getSentenceAsAnnotation function!!!!!");
     List<Sentence> cSents = new ArrayList<>();
     cSents.add(cSent);
     return concreteSentListToAnnotation(cSents, comm);
@@ -176,6 +169,7 @@ public class AnnotateTokenizedConcrete {
    * @return The annotation representing the list of sentences.
    */
   private Annotation concreteSentListToAnnotation(List<Sentence> cSents, Communication comm) {
+    //System.out.println("In concreteSentListToAnnotation function!!!!!");
     Annotation sSectionAnno = new Annotation(comm.getText());
     // Done by constructor: sectionAnno.set(CoreAnnotations.TextAnnotation, null);
 
@@ -189,6 +183,8 @@ public class AnnotateTokenizedConcrete {
 
     List<CoreMap> sentences = mimicWordsToSentsAnnotator(sSents, comm.getText());
 
+    //log.info("The tokenlist = "+ sToks);
+    //log.info("The sentencelist = " + sentences);
     sSectionAnno.set(CoreAnnotations.TokensAnnotation.class, sToks);
     sSectionAnno.set(CoreAnnotations.SentencesAnnotation.class, sentences);
     return sSectionAnno;
@@ -240,8 +236,25 @@ public class AnnotateTokenizedConcrete {
       int begin = sentenceTokens.get(0).get(CharacterOffsetBeginAnnotation.class);
       int last = sentenceTokens.size() - 1;
       int end = sentenceTokens.get(last).get(CharacterOffsetEndAnnotation.class);
-      String sentenceText = text.substring(begin, end);
-
+      String sentenceText = "";
+      if (language.equals("en")) {
+	     sentenceText  = text.substring(begin, end);
+      }
+      else if (language.equals("cn")) { 
+	     StringBuilder sb = new StringBuilder();
+	     int cnt = 0;
+	     for (CoreLabel token: sentenceTokens) {
+		if (cnt != 0)
+			sb.append(" ");
+	     	sb.append(token.word());
+		cnt ++ ;
+	     }
+	     sentenceText = sb.toString();
+      }
+      else {
+	System.err.println("Do not support language "+language);
+      	System.exit(1);
+      }
       // create a sentence annotation with text and token offsets
       Annotation sentence = new Annotation(sentenceText);
       sentence.set(CharacterOffsetBeginAnnotation.class, begin);

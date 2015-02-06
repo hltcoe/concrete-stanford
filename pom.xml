@@ -4,7 +4,7 @@
 
   <groupId>edu.jhu.hlt.concrete</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.2.1</version>
+  <version>4.2.0</version>
   <packaging>jar</packaging>
 
   <name>Concrete Stanford</name>
@@ -70,6 +70,12 @@
       <groupId>edu.stanford.nlp</groupId>
       <artifactId>stanford-corenlp</artifactId>
       <version>3.4</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.stanford.nlp</groupId>
+      <artifactId>stanford-chinese-corenlp</artifactId>
+      <version>3.4</version>
+      <classifier>models</classifier>
     </dependency>
     <dependency>
       <groupId>edu.stanford.nlp</groupId>

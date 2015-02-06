@@ -75,6 +75,7 @@ public class StanfordAgigaPipe {
   private final Set<String> kindsForNoCoref;
 
   private final ConcreteStanfordProperties concStanProps;
+  private String language;
 
   /**
    * The global character offset. The exact meaning is determined by {@code usingOriginalCharOffsets()}. When true, this counter is with respect to the
@@ -148,6 +149,11 @@ public class StanfordAgigaPipe {
     this(Arrays.asList(defaultKindsToFullyProcess), Arrays.asList(defaultKindsNoCoref), true);
   }
 
+  public StanfordAgigaPipe(String lang) throws IOException {
+    this();
+    this.language = lang;
+  }
+
   public StanfordAgigaPipe(Collection<String> typesToAnnotate, Collection<String> typesToTokenizeOnly, boolean allowEmptyMentions) throws IOException {
     this.kindsToProcessSet = new HashSet<>();
     this.kindsToProcessSet.addAll(typesToAnnotate);
@@ -158,6 +164,7 @@ public class StanfordAgigaPipe {
     this.concStanProps = new ConcreteStanfordProperties();
     this.pipeline = new InMemoryAnnoPipeline();
     this.allowEmptyEntitiesAndEntityMentions = allowEmptyMentions;
+    this.language = "en";
   }
 
   public List<Communication> process(ZipFile zf) throws TException, IOException, ConcreteException, AnnotationException {
@@ -572,7 +579,7 @@ public class StanfordAgigaPipe {
     AgigaDocument agigaDoc = getAgigaDocAllButCoref(sentenceSplitText);
     logger.debug("after annotating");
 
-    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
+    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets(), this.language);
     agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb, true);
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
   }
@@ -597,7 +604,7 @@ public class StanfordAgigaPipe {
       logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
 
     transferAnnotations(sentenceSplitText, docAnnotation);
-    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
+    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets(), this.language);
     agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb, true);
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
   }
@@ -616,7 +623,7 @@ public class StanfordAgigaPipe {
 
   public void processCoref(Communication comm, Annotation docAnnotation, List<Tokenization> tokenizations) throws AnnotationException, IOException {
     AgigaDocument agigaDoc = annotateCoref(docAnnotation);
-    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets());
+    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(usingOriginalCharOffsets(), this.language);
     SimpleEntry<EntityMentionSet, EntitySet> tuple = agigaToConcrete.convertCoref(comm, agigaDoc, tokenizations);
     EntityMentionSet ems = tuple.getKey();
     EntitySet es = tuple.getValue();
