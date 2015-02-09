@@ -51,8 +51,8 @@ public class NonPTBTextTest {
   ConcreteFactory cf = new ConcreteFactory();
   ConcreteUUIDFactory cuf = new ConcreteUUIDFactory();
 
-  public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 Hanfeng 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 ChinaHuanengGroup 和 中信 CITIC .";
-  //public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 ( Hanfeng ) 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 ( ChinaHuanengGroup ) 和 中信 ( CITIC ) .";
+  //public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 Hanfeng 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 ChinaHuanengGroup 和 中信 CITIC .";
+  public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 ( Hanfeng ) 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 ( ChinaHuanengGroup ) 和 中信 ( CITIC ) .";
 
   @Test
   public void testChinese1() throws Exception {
@@ -71,7 +71,7 @@ public class NonPTBTextTest {
     TokenList tokenList = new TokenList();
     int tokId = 0;
     int tokenStart = 0, tokenEnd = 0;
-    for(String tokenStr : chineseText1.split(" ")) {
+    for(String tokenStr : chineseText1.split(" +")) {
       tokenEnd += tokenStr.length();
       Token token = new Token().setTokenIndex(tokId++)
         .setText(tokenStr)
