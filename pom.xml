@@ -75,7 +75,7 @@
       <groupId>edu.stanford.nlp</groupId>
       <artifactId>stanford-chinese-corenlp</artifactId>
       <version>3.4</version>
-      <classifier>models</classifier>
+      <!-- <classifier>models</classifier>-->
     </dependency>
     <dependency>
       <groupId>edu.stanford.nlp</groupId>

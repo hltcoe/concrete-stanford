@@ -79,7 +79,7 @@ public class AnnotateTokenizedConcrete {
    * @param comm
    *          The concrete communication.
    */
-  public void annotateWithStanfordNlp(Communication comm) {
+  public void annotateWithStanfordNlp(Communication comm) throws Exception{
     for (Section cSection : comm.getSectionList()) {
       if (cSection.isSetLabel() && !ChineseSectionNameSet.contains(cSection.getLabel()) ) 
 	      continue;
@@ -108,7 +108,7 @@ public class AnnotateTokenizedConcrete {
    * @param comm
    *          The communication from which to extract the source text.
    */
-  public void annotateWithStanfordNlp(Sentence cSent, Communication comm) {
+  public void annotateWithStanfordNlp(Sentence cSent, Communication comm) throws Exception{
     Annotation sSentAnno = getSentenceAsAnnotation(cSent, comm);
     try {
       // Run the in-memory anno pipeline to (1) create Stanford objects,
@@ -282,7 +282,7 @@ public class AnnotateTokenizedConcrete {
   }
 
   
-  public static void main(String[] args) throws IOException, TException, ConcreteException {
+  public static void main(String[] args) throws IOException, TException, ConcreteException, Exception {
     Path inFile = Paths.get(args[0]);
     Path outFile = Paths.get(args[1]);
 
