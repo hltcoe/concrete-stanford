@@ -23,6 +23,7 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import concrete.tools.AnnotationException;
 import edu.jhu.agiga.AgigaDocument;
 import edu.jhu.agiga.AgigaSentence;
 import edu.jhu.hlt.concrete.Communication;
@@ -90,10 +91,16 @@ public class AnnotateTokenizedConcrete {
         AgigaDocument aDoc = pipeline.annotate(sSectionAnno);
         // Convert the AgigaDocument with annotations for this section
         // to annotations on this section.
-	String[] annotationList = {"pos", "cparse", "dparse"};
+        String[] annotationList = {"pos", "cparse", "dparse"};
         AgigaAnnotationAdder aaa = new AgigaAnnotationAdder(language);
-	aaa.addAgigaAnnosToSection(aDoc, cSection, annotationList);
+        aaa.addAgigaAnnosToSection(aDoc, cSection, annotationList);
       } catch (IOException e) {
+        throw new RuntimeException(e);
+      } catch (AnnotationException e) {
+        throw new RuntimeException(e);
+      } catch(Exception e) {
+        log.error(e.toString());
+        e.printStackTrace();
         throw new RuntimeException(e);
       }
     }
@@ -124,6 +131,8 @@ public class AnnotateTokenizedConcrete {
       AgigaAnnotationAdder aaa = new AgigaAnnotationAdder(language);
       aaa.addAgigaAnnosToConcreteSent(aSent, cSent, annotationList);
     } catch (IOException e) {
+      throw new RuntimeException(e);
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
@@ -183,7 +192,7 @@ public class AnnotateTokenizedConcrete {
 
     List<CoreMap> sentences = mimicWordsToSentsAnnotator(sSents, comm.getText());
 
-    //log.info("The tokenlist = "+ sToks);
+    log.info("The tokenlist = "+ sToks);
     //log.info("The sentencelist = " + sentences);
     sSectionAnno.set(CoreAnnotations.TokensAnnotation.class, sToks);
     sSectionAnno.set(CoreAnnotations.SentencesAnnotation.class, sentences);

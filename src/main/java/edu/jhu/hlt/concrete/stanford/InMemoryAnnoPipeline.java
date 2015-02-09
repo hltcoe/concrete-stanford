@@ -313,7 +313,7 @@ public class InMemoryAnnoPipeline {
         logger.warn("Error annotating stage: {}" + stage);
       }
     }
-    
+
     logger.debug("Local processing annotation keys :: {}", annotation.keySet().toString());
     // Convert to an XML document.
     Document xmlDoc = this.stanfordToXML(pipeline, annotation);
