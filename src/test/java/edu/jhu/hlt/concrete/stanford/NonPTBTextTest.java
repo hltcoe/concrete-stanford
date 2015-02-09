@@ -52,7 +52,10 @@ public class NonPTBTextTest {
   ConcreteUUIDFactory cuf = new ConcreteUUIDFactory();
 
   //public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 Hanfeng 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 ChinaHuanengGroup 和 中信 CITIC .";
-  public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 ( Hanfeng ) 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 ( ChinaHuanengGroup ) 和 中信 ( CITIC ) .";
+  //public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 ( Hanfeng ) 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 ( ChinaHuanengGroup ) 和 中信 ( CITIC ) .";
+  public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 -LRB- Hanfeng -RRB- 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 -LRB- ChinaHuanengGroup -RRB- 和 中信 -LRB- CITIC -RRB- .";
+  //public static final String englishText1 = "John ( a boy ) ran fast .";
+  public static final String englishText1 = "John -LRB- a boy -RRB- ran fast [ to the park ] { on Friday } .";
 
   @Test
   public void testChinese1() throws Exception {
@@ -85,5 +88,38 @@ public class NonPTBTextTest {
     assertTrue(new CommunicationValidator(chineseComm).validate());
     AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete("cn");
     atc.annotateWithStanfordNlp(chineseComm);
+  }
+
+  @Test
+  public void testEnglish1() throws Exception {
+    Communication englishComm = this.cf.randomCommunication().setText(englishText1); 
+    AnnotationMetadata md = new AnnotationMetadata().
+      setTool("concrete-stanford:test").setTimestamp(System.currentTimeMillis() / 1000);
+    englishComm.setMetadata(md);
+    Section section = new Section().setUuid(cuf.getConcreteUUID())
+      .setTextSpan(new TextSpan().setStart(0).setEnding(englishText1.length())).setKind("Passage");
+    englishComm.addToSectionList(section);
+    Sentence sentence = new Sentence().setUuid(cuf.getConcreteUUID())
+      .setTextSpan(new TextSpan().setStart(0).setEnding(englishText1.length()));
+    section.addToSentenceList(sentence);
+    Tokenization tokenization = new Tokenization().setUuid(cuf.getConcreteUUID())
+      .setMetadata(md).setKind(TokenizationKind.TOKEN_LIST);
+    TokenList tokenList = new TokenList();
+    int tokId = 0;
+    int tokenStart = 0, tokenEnd = 0;
+    for(String tokenStr : englishText1.split(" +")) {
+      tokenEnd += tokenStr.length();
+      Token token = new Token().setTokenIndex(tokId++)
+        .setText(tokenStr)
+        .setTextSpan(new TextSpan().setStart(tokenStart).setEnding(tokenEnd));
+      tokenStart = tokenEnd + 1;
+      tokenEnd = tokenStart;
+      tokenList.addToTokenList(token);
+    }
+    tokenization.setTokenList(tokenList);
+    sentence.setTokenization(tokenization);
+    assertTrue(new CommunicationValidator(englishComm).validate());
+    AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete("en");
+    atc.annotateWithStanfordNlp(englishComm);
   }
 }

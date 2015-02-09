@@ -313,11 +313,12 @@ public class InMemoryAnnoPipeline {
         logger.warn("Error annotating stage: {}" + stage);
       }
     }
-
     logger.debug("Local processing annotation keys :: {}", annotation.keySet().toString());
     // Convert to an XML document.
     Document xmlDoc = this.stanfordToXML(pipeline, annotation);
     AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc);
+    logger.info("Parse text == " +  agigaDoc.getSents().get(0).getParseText());
+    logger.info("Now number of leaves == " +  agigaDoc.getSents().get(0).getStanfordContituencyTree().getLeaves().size());
 
     logger.debug("agigaDoc has " + agigaDoc.getSents().size() + " sentences");
     logger.debug("annotation has " + annotation.get(SentencesAnnotation.class).size());
