@@ -242,12 +242,12 @@ public class AnnotateTokenizedConcrete {
       }
       else if (language.equals("cn")) { 
 	     StringBuilder sb = new StringBuilder();
-	     int cnt = 0;
+	     //int cnt = 0;
 	     for (CoreLabel token: sentenceTokens) {
-		if (cnt != 0)
-			sb.append(" ");
+		//if (cnt != 0)
+		//	sb.append(" ");
 	     	sb.append(token.word());
-		cnt ++ ;
+		//cnt ++ ;
 	     }
 	     sentenceText = sb.toString();
       }
