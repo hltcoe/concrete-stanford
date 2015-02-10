@@ -13,6 +13,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.apache.commons.lang3.time.StopWatch;
+import org.joda.time.Duration;
+import org.joda.time.Minutes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,7 +96,7 @@ public class ConcreteStanfordAnnotator {
       } else if (isConcreteExt) {
         StanfordAgigaPipe pipe = new StanfordAgigaPipe();
         // IF .concrete, run single communication.
-        LOGGER.info("Annotating single .concrete file.");
+        LOGGER.info("Annotating single .concrete file at: {}", initPath.toString());
         byte[] inputBytes = Files.readAllBytes(initPath);
 
         Communication c = ser.fromBytes(inputBytes);
@@ -123,12 +126,16 @@ public class ConcreteStanfordAnnotator {
           else
             iter = new TarGzArchiveEntryByteIterator(bis);
 
-          LOGGER.info("Created iterator.");
+          LOGGER.info("Iterating over archive: {}", initPath.toString());
+          StopWatch sw = new StopWatch();
+          sw.start();
+          int docCtr = 0;
           while (iter.hasNext()) {
             Communication n = ser.fromBytes(iter.next());
             LOGGER.info("Annotating communication: {}", n.getId());
             Communication a = pipe.process(n);
             archiver.addEntry(new ArchivableCommunication(a));
+            docCtr++;
           }
 
           try {
@@ -136,6 +143,18 @@ public class ConcreteStanfordAnnotator {
           } catch (Exception e) {
             // unlikely.
             LOGGER.error("Caught exception closing iterator.", e);
+          }
+
+          sw.stop();
+          Minutes m = new Duration(sw.getTime()).toStandardMinutes();
+          int minutesInt = m.getMinutes();
+
+          LOGGER.info("Complete.");
+          LOGGER.info("Runtime: approximately {} minutes.", minutesInt);
+          LOGGER.info("Processed {} documents.", docCtr);
+          if (docCtr > 0 && minutesInt > 0) {
+            float perMin = (float)docCtr / (float)minutesInt;
+            LOGGER.info("Processed approximately {} documents/minute.", perMin);
           }
         }
       }
