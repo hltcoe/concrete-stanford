@@ -53,7 +53,7 @@ public class NonPTBTextTest {
 
   //public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 Hanfeng 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 ChinaHuanengGroup 和 中信 CITIC .";
   //public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 ( Hanfeng ) 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 ( ChinaHuanengGroup ) 和 中信 ( CITIC ) .";
-  public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 -LRB- Hanfeng -RRB- 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 -LRB- ChinaHuanengGroup -RRB- 和 中信 -LRB- CITIC -RRB- .";
+  public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 （ Hanfeng ） 火力 发电厂 40% 的 股份 转让 给 中国 华 能 集团 （ ChinaHuanengGroup ） 和 中信 （ CITIC ） 。";
   //public static final String englishText1 = "John ( a boy ) ran fast .";
   public static final String englishText1 = "John -LRB- a boy -RRB- ran fast [ to the park ] { on Friday } .";
 

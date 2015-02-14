@@ -186,6 +186,12 @@ public class AnnotateTokenizedConcrete {
     List<List<CoreLabel>> sSents = new ArrayList<>();
     for (Sentence cSent : cSents) {
       List<CoreLabel> sSent = concreteSentToCoreLabels(cSent, comm);
+      /*for (CoreLabel tok : sSent) {
+      	if (tok.word().equals("("))
+		tok.setWord("（");
+	else if (tok.word().equals(")"))
+		tok.setWord("）");
+      }*/
       sToks.addAll(sSent);
       sSents.add(sSent);
     }
@@ -215,6 +221,14 @@ public class AnnotateTokenizedConcrete {
     for (Token cTok : cToks.getTokenList().getTokenList()) {
       TextSpan cSpan = cTok.getTextSpan();
       String text = cTok.getText();
+      if (text.equals("(")) {
+      	cTok.setText("（");
+	text = "（";
+      }
+      else if (text.equals(")")) {
+      	cTok.setText("）");
+	text = "）";
+      }
       int length = cSpan.getEnding() - cSpan.getStart();
       CoreLabel sTok = coreLabelTokenFactory.makeToken(text, comm.getText(), cSpan.getStart(), length);
       sSent.add(sTok);
@@ -251,12 +265,20 @@ public class AnnotateTokenizedConcrete {
       }
       else if (language.equals("cn")) { 
 	     StringBuilder sb = new StringBuilder();
-	     //int cnt = 0;
+	     int cnt = 0;
 	     for (CoreLabel token: sentenceTokens) {
-		//if (cnt != 0)
-		//	sb.append(" ");
-	     	sb.append(token.word());
-		//cnt ++ ;
+		if (cnt != 0)
+			sb.append(" ");
+	     	/*if (token.word().equals("(")) {
+			System.out.println("replacing!!!!!!(");
+			sb.append("（");
+		}
+		else if (token.word().equals(")")) {
+			System.out.println("replacing!!!!!!)");
+			sb.append("）");
+		}*/
+		sb.append(token.word());
+		cnt ++ ;
 	     }
 	     sentenceText = sb.toString();
       }

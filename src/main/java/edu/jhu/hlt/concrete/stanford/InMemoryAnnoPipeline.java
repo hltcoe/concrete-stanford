@@ -133,7 +133,7 @@ public class InMemoryAnnoPipeline {
     else if (lang.equals("cn")) {
     	    gsf = new ChineseGrammaticalStructureFactory();
 	    pipeline = makeChinesePipeline();
-	    documentLevelStages = new String[] { "segment", "pos", "lemma", "parse" };
+	    documentLevelStages = new String[] {"pos", "lemma", "parse" };
     }
     else {
     	System.err.println("Do not support language: " + lang);
