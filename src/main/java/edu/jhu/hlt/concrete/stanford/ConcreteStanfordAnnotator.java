@@ -4,23 +4,31 @@
  */
 package edu.jhu.hlt.concrete.stanford;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
 
+import org.apache.commons.lang3.time.StopWatch;
+import org.joda.time.Duration;
+import org.joda.time.Minutes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import concrete.tools.AnnotationException;
+import edu.jhu.hlt.acute.AutoCloseableIterator;
+import edu.jhu.hlt.acute.archivers.tar.TarArchiver;
+import edu.jhu.hlt.acute.iterators.tar.TarArchiveEntryByteIterator;
+import edu.jhu.hlt.acute.iterators.tar.TarGzArchiveEntryByteIterator;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
-import edu.jhu.hlt.concrete.serialization.CommunicationTarGzSerializer;
-import edu.jhu.hlt.concrete.serialization.TarGzCompactCommunicationSerializer;
+import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
+import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
+import edu.jhu.hlt.concrete.serialization.archiver.ArchivableCommunication;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 
 /**
@@ -66,8 +74,8 @@ public class ConcreteStanfordAnnotator {
       }
     }
 
-    CommunicationTarGzSerializer ser = new TarGzCompactCommunicationSerializer();
     String lowerOutPathStr = initPathStr.toLowerCase();
+    CommunicationSerializer ser = new CompactCommunicationSerializer();
     try {
       SystemErrDisabler sed = new SystemErrDisabler();
       sed.disable();
@@ -88,8 +96,9 @@ public class ConcreteStanfordAnnotator {
       } else if (isConcreteExt) {
         StanfordAgigaPipe pipe = new StanfordAgigaPipe();
         // IF .concrete, run single communication.
-        LOGGER.info("Annotating single .concrete file.");
+        LOGGER.info("Annotating single .concrete file at: {}", initPath.toString());
         byte[] inputBytes = Files.readAllBytes(initPath);
+
         Communication c = ser.fromBytes(inputBytes);
         Communication annotated = pipe.process(c);
         String fileName = annotated.getId() + ".concrete";
@@ -104,24 +113,49 @@ public class ConcreteStanfordAnnotator {
         String fileName = noExtStr + ".tar";
         Path localOutPath = outPath.resolve(fileName);
         // Iterate over the archive.
-        Iterator<Communication> iter;
-        try (InputStream is = Files.newInputStream(initPath);) {
+        AutoCloseableIterator<byte[]> iter;
+        try (InputStream is = Files.newInputStream(initPath);
+            BufferedInputStream bis = new BufferedInputStream(is);
+            OutputStream os = Files.newOutputStream(localOutPath);
+            BufferedOutputStream bos = new BufferedOutputStream(os);
+            TarArchiver archiver = new TarArchiver(bos);) {
           // If .tar - read from .tar.
           if (isTarExt)
-            iter = ser.fromTar(is);
+            iter = new TarArchiveEntryByteIterator(bis);
           // If .tar.gz - read from .tar.gz.
           else
-            iter = ser.fromTarGz(is);
+            iter = new TarGzArchiveEntryByteIterator(bis);
 
-          LOGGER.info("Created iterator.");
-          Set<Communication> commSet = new HashSet<Communication>();
+          LOGGER.info("Iterating over archive: {}", initPath.toString());
+          StopWatch sw = new StopWatch();
+          sw.start();
+          int docCtr = 0;
           while (iter.hasNext()) {
-            Communication n = iter.next();
+            Communication n = ser.fromBytes(iter.next());
             LOGGER.info("Annotating communication: {}", n.getId());
             Communication a = pipe.process(n);
-            commSet.add(a);
+            archiver.addEntry(new ArchivableCommunication(a));
+            docCtr++;
           }
-          ser.toTar(commSet, localOutPath);
+
+          try {
+            iter.close();
+          } catch (Exception e) {
+            // unlikely.
+            LOGGER.error("Caught exception closing iterator.", e);
+          }
+
+          sw.stop();
+          Minutes m = new Duration(sw.getTime()).toStandardMinutes();
+          int minutesInt = m.getMinutes();
+
+          LOGGER.info("Complete.");
+          LOGGER.info("Runtime: approximately {} minutes.", minutesInt);
+          LOGGER.info("Processed {} documents.", docCtr);
+          if (docCtr > 0 && minutesInt > 0) {
+            float perMin = (float)docCtr / (float)minutesInt;
+            LOGGER.info("Processed approximately {} documents/minute.", perMin);
+          }
         }
       }
     } catch (IOException | ConcreteException | AnnotationException e) {

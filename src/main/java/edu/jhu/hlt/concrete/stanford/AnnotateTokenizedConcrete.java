@@ -6,6 +6,7 @@ package edu.jhu.hlt.concrete.stanford;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -246,22 +247,52 @@ public class AnnotateTokenizedConcrete {
   }
 
   public static void main(String[] args) throws IOException, ConcreteException, AnnotationException {
-    Path inFile = Paths.get(args[0]);
-    Path outFile = Paths.get(args[1]);
-
-    CommunicationSerializer cs = new CompactCommunicationSerializer();
-    AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete();
-    try (FileSystem zipfs = getNewZipFileSystem(outFile)) {
-      try (ZipFile zf = new ZipFile(inFile.toFile())) {
-        Enumeration<? extends ZipEntry> e = zf.entries();
-        while (e.hasMoreElements()) {
-          ZipEntry ze = e.nextElement();
-          log.info("Annotating communication: " + ze.getName());
-          final Communication comm = cs.fromInputStream(zf.getInputStream(ze));
-          annotator.annotateWithStanfordNlp(comm);
-          new SuperCommunication(comm).writeToFile(zipfs.getPath(ze.getName()), true);
+    if (args[0].endsWith(".zip") && args[1].endsWith(".zip") ) {
+        // Write out to a zip file.
+        Path inFile = Paths.get(args[0]);        
+        Path outFile = Paths.get(args[1]);
+        CommunicationSerializer cs = new CompactCommunicationSerializer();
+        AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete();
+        try (FileSystem zipfs = getNewZipFileSystem(outFile)) {
+          try (ZipFile zf = new ZipFile(inFile.toFile())) {
+            Enumeration<? extends ZipEntry> e = zf.entries();
+            while (e.hasMoreElements()) {
+              ZipEntry ze = e.nextElement();
+              log.info("Annotating communication: " + ze.getName());
+              final Communication comm = cs.fromInputStream(zf.getInputStream(ze));
+              annotator.annotateWithStanfordNlp(comm);
+              new SuperCommunication(comm).writeToFile(zipfs.getPath(ze.getName()), true);
+            }
+          }
         }
-      }
+    } else if (args[0].endsWith(".comm") && args[1].endsWith(".comm") ) {
+        // Write out to a file.
+        Path inFile = Paths.get(args[0]);
+        Path outFile = Paths.get(args[1]);
+        CommunicationSerializer cs = new CompactCommunicationSerializer();
+        AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete();
+        log.info("Annotating communication: " + inFile.getFileName());
+        final Communication comm = cs.fromPath(inFile);
+        annotator.annotateWithStanfordNlp(comm);
+        new SuperCommunication(comm).writeToFile(outFile, true);
+    } else {
+        // Write out to a directory.
+        Path inDir = Paths.get(args[0]);
+        Path outDir = Paths.get(args[1]);
+        if (!Files.exists(outDir)) {
+            Files.createDirectory(outDir);
+        }
+        CommunicationSerializer cs = new CompactCommunicationSerializer();
+        AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete();
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(inDir)) {
+            for (Path inFile : stream) {
+                log.info("Annotating communication: " + inFile.getFileName());
+                final Communication comm = cs.fromPath(inFile);
+                annotator.annotateWithStanfordNlp(comm);
+                new SuperCommunication(comm).writeToFile(outDir.resolve(inFile.getFileName()), true);
+            }
+        }
     }
   }
 }

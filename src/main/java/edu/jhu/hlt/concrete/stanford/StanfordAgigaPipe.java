@@ -112,6 +112,18 @@ public class StanfordAgigaPipe {
     pipeline.prepForNext();
   }
 
+  /**
+   * Deprecated. This method will be removed in a future release.
+   *
+   * Use {@link ConcreteStanfordAnnotator#main(String[])} instead.
+   *
+   * @param args
+   * @throws TException
+   * @throws IOException
+   * @throws ConcreteException
+   * @throws AnnotationException
+   */
+  @Deprecated
   public static void main(String[] args) throws TException, IOException, ConcreteException, AnnotationException {
     if (args.length != 2) {
       System.out.println("Usage: " + StanfordAgigaPipe.class.getSimpleName() + " <input-concrete-file-with-section-segmentations> <output-file-name>");
