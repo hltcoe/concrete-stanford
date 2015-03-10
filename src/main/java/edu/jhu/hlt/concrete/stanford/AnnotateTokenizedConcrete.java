@@ -63,7 +63,7 @@ public class AnnotateTokenizedConcrete {
   private InMemoryAnnoPipeline pipeline;
   private String language;
 
-  private final static String[] ChineseSectionName = new String[] {"</TURN>", "</HEADLINE>", "</TEXT>", "</POST>"};
+  private final static String[] ChineseSectionName = new String[] {"</TURN>", "</HEADLINE>", "</TEXT>", "</POST>", "</post>", "</quote>"};
   private static Set<String> ChineseSectionNameSet = new HashSet<String>(Arrays.asList(ChineseSectionName));
 
   public AnnotateTokenizedConcrete(String lang) {
