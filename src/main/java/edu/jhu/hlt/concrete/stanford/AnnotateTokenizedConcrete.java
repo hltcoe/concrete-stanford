@@ -303,7 +303,19 @@ public class AnnotateTokenizedConcrete {
     return FileSystems.newFileSystem(uri, env);
   }
 
-  
+
+  /**
+   * Usage is: inputPath outputPath [language]
+   * Currently, three modes between inputPath and outputPath are supported:
+   * <ul>
+   * <li> zip file to zip file </li>
+   * <li> single comm to single comm </li>
+   * <li> directory of comms to directory of comms </li>
+   * </ul>
+   * <br/>
+   * The optional third argument language defaults to en (English). 
+   * Currently, the only other supported option is cn (Chinese).
+   */
   public static void main(String[] args) throws IOException, ConcreteException, AnnotationException {
     Path inPath = Paths.get(args[0]);        
     Path outPath = Paths.get(args[1]);
