@@ -141,8 +141,8 @@ public class InMemoryAnnoPipeline {
 	    documentLevelStages = new String[] {"pos", "lemma", "parse" };
     }
     else {
-    	System.err.println("Do not support language: " + lang);
-	System.exit(0);
+	    logger.error("Do not support language: " + lang);
+    	    throw new IllegalArgumentException("Do not support language: " + lang);
     }
     logger.debug("Done.");
   }

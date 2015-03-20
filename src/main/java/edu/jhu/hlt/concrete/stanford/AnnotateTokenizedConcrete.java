@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-//import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +57,7 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
  * "-LRB- CROSSTALK -RRB-".
  *
  * @author mgormley
+ * @author npeng
  */
 public class AnnotateTokenizedConcrete {
 
@@ -134,13 +134,7 @@ public class AnnotateTokenizedConcrete {
       AgigaAnnotationAdder aaa = new AgigaAnnotationAdder(language);
       aaa.addAgigaAnnosToConcreteSent(aSent, cSent, annotationList);
     } catch (IOException e) {
-/*<<<<<<< HEAD
-      throw new RuntimeException(e);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-=======*/
       throw new AnnotationException(e);
-//>>>>>>> dev
     }
   }
 
@@ -273,22 +267,14 @@ public class AnnotateTokenizedConcrete {
 	     for (CoreLabel token: sentenceTokens) {
 		if (cnt != 0)
 			sb.append(" ");
-	     	/*if (token.word().equals("(")) {
-			System.out.println("replacing!!!!!!(");
-			sb.append("（");
-		}
-		else if (token.word().equals(")")) {
-			System.out.println("replacing!!!!!!)");
-			sb.append("）");
-		}*/
 		sb.append(token.word());
 		cnt ++ ;
 	     }
 	     sentenceText = sb.toString();
       }
       else {
-	System.err.println("Do not support language "+language);
-      	System.exit(1);
+	      log.error("Do not support language "+language);
+	      throw new IllegalArgumentException("Do not support language "+language);	
       }
       // create a sentence annotation with text and token offsets
       Annotation sentence = new Annotation(sentenceText);
