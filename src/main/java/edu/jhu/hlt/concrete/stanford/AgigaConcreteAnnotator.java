@@ -1,3 +1,7 @@
+/*
+ * Copyright 2012-2015 Johns Hopkins University HLTCOE. All rights reserved.
+ * See LICENSE in the project root directory.
+ */
 package edu.jhu.hlt.concrete.stanford;
 
 import java.io.IOException;
@@ -33,7 +37,7 @@ import edu.jhu.hlt.concrete.validation.ValidatableTextSpan;
  * given a Communication (with Sections and Sentences added) and Stanford's annotations via an AgigaDocument, add these annotations and return a new
  * Communication
  */
-public class AgigaConcreteAnnotator {
+class AgigaConcreteAnnotator {
 
   private static final Logger logger = LoggerFactory.getLogger(AgigaConcreteAnnotator.class);
   
@@ -55,17 +59,17 @@ public class AgigaConcreteAnnotator {
     ag = new AgigaConverter(setSpans, this.csProps.getAllowEmptyMentions(), language);
   }
 
-  public AnnotationMetadata metadata(String name) {
+  AnnotationMetadata getMetadata(String name) {
     return new AnnotationMetadata().setTool(name).setTimestamp(System.currentTimeMillis() / 1000);
   }
 
-  public SimpleEntry<EntityMentionSet, EntitySet> convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations)
+  SimpleEntry<EntityMentionSet, EntitySet> convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations)
     throws AnnotationException {
     EntityMentionSet ems = new EntityMentionSet().setUuid(this.idFactory.getConcreteUUID());
     TheoryDependencies td = new TheoryDependencies();
     for (Tokenization t : tokenizations)
       td.addToTokenizationTheoryList(t.getUuid());
-    AnnotationMetadata md = this.metadata(this.agigaProps.getCorefToolName()).setDependencies(td);
+    AnnotationMetadata md = this.getMetadata(this.agigaProps.getCorefToolName()).setDependencies(td);
     ems.setMetadata(md);
 
     List<Entity> elist = new ArrayList<Entity>();
@@ -89,7 +93,7 @@ public class AgigaConcreteAnnotator {
     return new SimpleEntry<EntityMentionSet, EntitySet>(ems, es);
   }
 
-  public void convertSection(Section section, AgigaDocument agigaDoc, int charOffset,
+  void convertSection(Section section, AgigaDocument agigaDoc, int charOffset,
                              StringBuilder sb, boolean preserveTokenTaggings) throws AnnotationException {
     if(section.isSetSentenceList()) {
       this.convertSentences(section, agigaDoc, charOffset, sb, preserveTokenTaggings);
@@ -100,7 +104,7 @@ public class AgigaConcreteAnnotator {
   }
 
   // add all Sentences
-  private void addSentences(Section in, AgigaDocument ad, int charOffset,
+  void addSentences(Section in, AgigaDocument ad, int charOffset,
                             StringBuilder sb, boolean preserveTokenTaggings)
     throws AnnotationException {
     final int n = ad.getSents().size();

@@ -1,3 +1,7 @@
+/*
+ * Copyright 2012-2015 Johns Hopkins University HLTCOE. All rights reserved.
+ * See LICENSE in the project root directory.
+ */
 package edu.jhu.hlt.concrete.stanford;
 
 import java.io.IOException;
@@ -19,7 +23,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 //import java.util.Properties;
 
-import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +56,7 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
  * This class assumes that the input has been tokenized using a PTB-like tokenization. There is a known bug in the Stanford library which will throw an
  * exception when trying to perform semantic head finding on after parsing the sentence "( CROSSTALK )". The error will not occur given the input
  * "-LRB- CROSSTALK -RRB-".
- * 
+ *
  * @author mgormley
  */
 public class AnnotateTokenizedConcrete {
@@ -76,11 +79,11 @@ public class AnnotateTokenizedConcrete {
    * Annotates a Concrete {@link Communication} with the Stanford NLP tools.<br>
    * <br>
    * NOTE: Currently, this only supports per-sentence annotation. Coreference resolution is not performed.
-   * 
+   *
    * @param comm
    *          The concrete communication.
    */
-  public void annotateWithStanfordNlp(Communication comm) throws Exception{
+  public void annotateWithStanfordNlp(Communication comm) throws AnnotationException {
     for (Section cSection : comm.getSectionList()) {
       if (cSection.isSetLabel() && !ChineseSectionNameSet.contains(cSection.getLabel()) ) 
 	      continue;
@@ -98,31 +101,31 @@ public class AnnotateTokenizedConcrete {
         throw new RuntimeException(e);
       } catch (AnnotationException e) {
         throw new RuntimeException(e);
-      } catch(Exception e) {
+      } /*catch(Exception e) {
         log.error(e.toString());
         e.printStackTrace();
         throw new RuntimeException(e);
-      }
+      }*/
     }
   }
 
 
   /**
    * Annotates a Concrete {@link Sentence} with the Stanford NLP tools.
-   * 
+   *
    * @param cSent
    *          The concrete sentence.
    * @param comm
    *          The communication from which to extract the source text.
    */
-  public void annotateWithStanfordNlp(Sentence cSent, Communication comm) throws Exception{
+  public void annotateWithStanfordNlp(Sentence cSent, Communication comm) throws AnnotationException {
     Annotation sSentAnno = getSentenceAsAnnotation(cSent, comm);
     try {
       // Run the in-memory anno pipeline to (1) create Stanford objects,
       // (2) convert them to XML, and (3) read that XML into AGiga API objects.
       AgigaDocument aDoc = pipeline.annotate(sSentAnno);
       if (aDoc.getSents().size() != 1) {
-        throw new IllegalStateException("Multiple sentences in AgigaDoc which should contain only 1.");
+        throw new AnnotationException("Multiple sentences in AgigaDoc which should contain only 1.");
       }
       AgigaSentence aSent = aDoc.getSents().get(0);
       // Convert the AgigaSentence with annotations for this sentence
@@ -131,38 +134,40 @@ public class AnnotateTokenizedConcrete {
       AgigaAnnotationAdder aaa = new AgigaAnnotationAdder(language);
       aaa.addAgigaAnnosToConcreteSent(aSent, cSent, annotationList);
     } catch (IOException e) {
+/*<<<<<<< HEAD
       throw new RuntimeException(e);
     } catch (Exception e) {
       throw new RuntimeException(e);
+=======*/
+      throw new AnnotationException(e);
+//>>>>>>> dev
     }
   }
 
   /**
    * Converts a Concrete {@link Section} to a Stanford {@link Annotation}.
-   * 
+   *
    * @param cSection
    *          The concrete section.
    * @param comm
    *          The communication from which to extract the source text.
    * @return The annotation representing the section.
    */
-  private Annotation getSectionAsAnnotation(Section cSection, Communication comm) {
-    //System.out.println("In getSectionAsAnnotation function!!!!!");
+  private Annotation getSectionAsAnnotation(Section cSection, Communication comm) throws AnnotationException{
     List<Sentence> cSents = cSection.getSentenceList();
     return concreteSentListToAnnotation(cSents, comm);
   }
 
   /**
    * Converts a Concrete {@link Sentence} to a Stanford {@link Annotation}.
-   * 
+   *
    * @param cSection
    *          The concrete sentence.
    * @param comm
    *          The communication from which to extract the source text.
    * @return The annotation representing the section.
    */
-  private Annotation getSentenceAsAnnotation(Sentence cSent, Communication comm) {
-    //System.out.println("In getSentenceAsAnnotation function!!!!!");
+  private Annotation getSentenceAsAnnotation(Sentence cSent, Communication comm) throws AnnotationException {
     List<Sentence> cSents = new ArrayList<>();
     cSents.add(cSent);
     return concreteSentListToAnnotation(cSents, comm);
@@ -170,15 +175,14 @@ public class AnnotateTokenizedConcrete {
 
   /**
    * Converts a {@link List} of Concrete {@link Sentence} to a Stanford {@link Annotation}.
-   * 
+   *
    * @param cSents
    *          The list of concrete sentences.
    * @param comm
    *          The communication from which to extract the source text.
    * @return The annotation representing the list of sentences.
    */
-  private Annotation concreteSentListToAnnotation(List<Sentence> cSents, Communication comm) {
-    //System.out.println("In concreteSentListToAnnotation function!!!!!");
+  private Annotation concreteSentListToAnnotation(List<Sentence> cSents, Communication comm) throws AnnotationException{
     Annotation sSectionAnno = new Annotation(comm.getText());
     // Done by constructor: sectionAnno.set(CoreAnnotations.TextAnnotation, null);
 
@@ -207,7 +211,7 @@ public class AnnotateTokenizedConcrete {
 
   /**
    * Converts a Concrete {@link Sentence} to a {@link List} of {@Link CoreLabel}s representing each token.
-   * 
+   *
    * @param cSent
    *          The concrete sentence.
    * @param comm
@@ -247,12 +251,12 @@ public class AnnotateTokenizedConcrete {
   /**
    * This method mimics the behavior of Stanford's WordsToSentencesAnnotator to create a List<CoreMap>s from a List<List<CoreLabel>>.
    */
-  private List<CoreMap> mimicWordsToSentsAnnotator(List<List<CoreLabel>> sSents, String text) {
+  private List<CoreMap> mimicWordsToSentsAnnotator(List<List<CoreLabel>> sSents, String text) throws AnnotationException {
     int tokenOffset = 0;
     List<CoreMap> sentences = new ArrayList<CoreMap>();
     for (List<CoreLabel> sentenceTokens : sSents) {
       if (sentenceTokens.isEmpty()) {
-        throw new RuntimeException("unexpected empty sentence: " + sentenceTokens);
+        throw new AnnotationException("unexpected empty sentence: " + sentenceTokens);
       }
 
       // get the sentence text from the first and last character offsets
@@ -313,7 +317,7 @@ public class AnnotateTokenizedConcrete {
   }
 
   
-  public static void main(String[] args) throws IOException, TException, ConcreteException, Exception {
+  public static void main(String[] args) throws IOException, ConcreteException, AnnotationException {
     Path inFile = Paths.get(args[0]);
     Path outFile = Paths.get(args[1]);
 
@@ -334,5 +338,4 @@ public class AnnotateTokenizedConcrete {
       }
     }
   }
-
 }
