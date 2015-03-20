@@ -54,6 +54,7 @@ import edu.stanford.nlp.util.CoreMap;
  * 
  * @author mgormley
  * @author fferraro
+ * @author npeng
  */
 public class InMemoryAnnoPipeline {
 
