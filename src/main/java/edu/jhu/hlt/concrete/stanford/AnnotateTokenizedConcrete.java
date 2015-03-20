@@ -17,6 +17,9 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -44,6 +47,7 @@ import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.process.CoreLabelTokenFactory;
 import edu.stanford.nlp.util.CoreMap;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 
 /**
  * Given tokenized Concrete as input, this class will annotate sentences with the Stanford NLP tools and add the annotations back in their Concrete
@@ -54,16 +58,22 @@ import edu.stanford.nlp.util.CoreMap;
  * "-LRB- CROSSTALK -RRB-".
  *
  * @author mgormley
+ * @author npeng
  */
 public class AnnotateTokenizedConcrete {
 
   private static final Logger log = LoggerFactory.getLogger(AnnotateTokenizedConcrete.class);
 
   private InMemoryAnnoPipeline pipeline;
+  private String language;
 
-  public AnnotateTokenizedConcrete() {
+  private final static String[] ChineseSectionName = new String[] {"</TURN>", "</HEADLINE>", "</TEXT>", "</POST>", "</post>", "</quote>"};
+  private static Set<String> ChineseSectionNameSet = new HashSet<String>(Arrays.asList(ChineseSectionName));
+
+  public AnnotateTokenizedConcrete(String lang) {
     log.info("Loading models for Stanford tools");
-    pipeline = new InMemoryAnnoPipeline();
+    language = lang;
+    pipeline = new InMemoryAnnoPipeline(lang);
   }
 
   /**
@@ -76,6 +86,8 @@ public class AnnotateTokenizedConcrete {
    */
   public void annotateWithStanfordNlp(Communication comm) throws AnnotationException {
     for (Section cSection : comm.getSectionList()) {
+      if (cSection.isSetLabel() && !ChineseSectionNameSet.contains(cSection.getLabel()) ) 
+	      continue;
       Annotation sSectionAnno = getSectionAsAnnotation(cSection, comm);
       try {
         // Run the in-memory anno pipeline to (1) create Stanford objects,
@@ -83,12 +95,21 @@ public class AnnotateTokenizedConcrete {
         AgigaDocument aDoc = pipeline.annotate(sSectionAnno);
         // Convert the AgigaDocument with annotations for this section
         // to annotations on this section.
-        AgigaAnnotationAdder.addAgigaAnnosToSection(aDoc, cSection);
+        String[] annotationList = {"pos", "cparse", "dparse"};
+        AgigaAnnotationAdder aaa = new AgigaAnnotationAdder(language);
+        aaa.addAgigaAnnosToSection(aDoc, cSection, annotationList);
       } catch (IOException e) {
         throw new RuntimeException(e);
-      }
+      } catch (AnnotationException e) {
+        throw new RuntimeException(e);
+      } /*catch(Exception e) {
+          log.error(e.toString());
+          e.printStackTrace();
+          throw new RuntimeException(e);
+          }*/
     }
   }
+
 
   /**
    * Annotates a Concrete {@link Sentence} with the Stanford NLP tools.
@@ -110,7 +131,9 @@ public class AnnotateTokenizedConcrete {
       AgigaSentence aSent = aDoc.getSents().get(0);
       // Convert the AgigaSentence with annotations for this sentence
       // to annotations on this sentence.
-      AgigaAnnotationAdder.addAgigaAnnosToConcreteSent(aSent, cSent);
+      String[] annotationList = {"pos", "cparse", "dparse"};
+      AgigaAnnotationAdder aaa = new AgigaAnnotationAdder(language);
+      aaa.addAgigaAnnosToConcreteSent(aSent, cSent, annotationList);
     } catch (IOException e) {
       throw new AnnotationException(e);
     }
@@ -162,12 +185,20 @@ public class AnnotateTokenizedConcrete {
     List<List<CoreLabel>> sSents = new ArrayList<>();
     for (Sentence cSent : cSents) {
       List<CoreLabel> sSent = concreteSentToCoreLabels(cSent, comm);
+      /*for (CoreLabel tok : sSent) {
+      	if (tok.word().equals("("))
+        tok.setWord("（");
+        else if (tok.word().equals(")"))
+        tok.setWord("）");
+        }*/
       sToks.addAll(sSent);
       sSents.add(sSent);
     }
 
     List<CoreMap> sentences = mimicWordsToSentsAnnotator(sSents, comm.getText());
 
+    log.info("The tokenlist = "+ sToks);
+    //log.info("The sentencelist = " + sentences);
     sSectionAnno.set(CoreAnnotations.TokensAnnotation.class, sToks);
     sSectionAnno.set(CoreAnnotations.SentencesAnnotation.class, sentences);
     return sSectionAnno;
@@ -189,6 +220,14 @@ public class AnnotateTokenizedConcrete {
     for (Token cTok : cToks.getTokenList().getTokenList()) {
       TextSpan cSpan = cTok.getTextSpan();
       String text = cTok.getText();
+      if (text.equals("(")) {
+      	cTok.setText("（");
+        text = "（";
+      }
+      else if (text.equals(")")) {
+      	cTok.setText("）");
+        text = "）";
+      }
       int length = cSpan.getEnding() - cSpan.getStart();
       CoreLabel sTok = coreLabelTokenFactory.makeToken(text, comm.getText(), cSpan.getStart(), length);
       sSent.add(sTok);
@@ -219,8 +258,25 @@ public class AnnotateTokenizedConcrete {
       int begin = sentenceTokens.get(0).get(CharacterOffsetBeginAnnotation.class);
       int last = sentenceTokens.size() - 1;
       int end = sentenceTokens.get(last).get(CharacterOffsetEndAnnotation.class);
-      String sentenceText = text.substring(begin, end);
-
+      String sentenceText = "";
+      if (language.equals("en")) {
+        sentenceText  = text.substring(begin, end);
+      }
+      else if (language.equals("cn")) { 
+        StringBuilder sb = new StringBuilder();
+        int cnt = 0;
+        for (CoreLabel token: sentenceTokens) {
+          if (cnt != 0)
+            sb.append(" ");
+          sb.append(token.word());
+          cnt ++ ;
+        }
+        sentenceText = sb.toString();
+      }
+      else {
+	      log.error("Do not support language "+language);
+	      throw new IllegalArgumentException("Do not support language "+language);	
+      }
       // create a sentence annotation with text and token offsets
       Annotation sentence = new Annotation(sentenceText);
       sentence.set(CharacterOffsetBeginAnnotation.class, begin);
@@ -236,6 +292,7 @@ public class AnnotateTokenizedConcrete {
     return sentences;
   }
 
+  
   public static FileSystem getNewZipFileSystem(Path zipFile) throws IOException {
     if (Files.exists(zipFile)) {
       Files.delete(zipFile);
@@ -246,52 +303,57 @@ public class AnnotateTokenizedConcrete {
     return FileSystems.newFileSystem(uri, env);
   }
 
+  
   public static void main(String[] args) throws IOException, ConcreteException, AnnotationException {
+    Path inPath = Paths.get(args[0]);        
+    Path outPath = Paths.get(args[1]);
+    String lang  = "en";
+    if(args.length >= 3) {
+      lang = args[2];
+    }
+    CommunicationSerializer cs = new CompactCommunicationSerializer();
+    AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete(lang);
+
     if (args[0].endsWith(".zip") && args[1].endsWith(".zip") ) {
-        // Write out to a zip file.
-        Path inFile = Paths.get(args[0]);        
-        Path outFile = Paths.get(args[1]);
-        CommunicationSerializer cs = new CompactCommunicationSerializer();
-        AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete();
-        try (FileSystem zipfs = getNewZipFileSystem(outFile)) {
-          try (ZipFile zf = new ZipFile(inFile.toFile())) {
-            Enumeration<? extends ZipEntry> e = zf.entries();
-            while (e.hasMoreElements()) {
-              ZipEntry ze = e.nextElement();
-              log.info("Annotating communication: " + ze.getName());
-              final Communication comm = cs.fromInputStream(zf.getInputStream(ze));
-              annotator.annotateWithStanfordNlp(comm);
-              new SuperCommunication(comm).writeToFile(zipfs.getPath(ze.getName()), true);
+      // Write out to a zip file.
+      try (FileSystem zipfs = getNewZipFileSystem(outPath)) {
+          try (ZipFile zf = new ZipFile(inPath.toFile())) {
+              Enumeration<? extends ZipEntry> e = zf.entries();
+              while (e.hasMoreElements()) {
+                ZipEntry ze = e.nextElement();
+                log.info("Annotating communication: " + ze.getName());
+                final Communication comm = cs.fromInputStream(zf.getInputStream(ze));
+                annotator.annotateWithStanfordNlp(comm);
+                new SuperCommunication(comm).writeToFile(zipfs.getPath(ze.getName()), true);
+              }
             }
-          }
         }
     } else if (args[0].endsWith(".comm") && args[1].endsWith(".comm") ) {
-        // Write out to a file.
-        Path inFile = Paths.get(args[0]);
-        Path outFile = Paths.get(args[1]);
-        CommunicationSerializer cs = new CompactCommunicationSerializer();
-        AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete();
-        log.info("Annotating communication: " + inFile.getFileName());
-        final Communication comm = cs.fromPath(inFile);
-        annotator.annotateWithStanfordNlp(comm);
-        new SuperCommunication(comm).writeToFile(outFile, true);
+      // Write out to a file.
+      log.info("Annotating communication: " + inPath.getFileName());
+      final Communication comm = cs.fromPath(inPath);
+      annotator.annotateWithStanfordNlp(comm);
+      new SuperCommunication(comm).writeToFile(outPath, true);
     } else {
-        // Write out to a directory.
-        Path inDir = Paths.get(args[0]);
-        Path outDir = Paths.get(args[1]);
-        if (!Files.exists(outDir)) {
-            Files.createDirectory(outDir);
-        }
-        CommunicationSerializer cs = new CompactCommunicationSerializer();
-        AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete();
+      // This assumes directory --> directory
+      // Write out to a directory.
+      if(!Files.exists(inPath)) {
+        throw new IOException("Input directory " + inPath + " doesn't exist.");
+      }
+      if(!Files.isDirectory(inPath)) {
+        throw new IOException("Input path " + inPath + " exists, but is not a directory.");
+      }
+      if (!Files.exists(outPath)) {
+        Files.createDirectory(outPath);
+      }
 
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(inDir)) {
-            for (Path inFile : stream) {
-                log.info("Annotating communication: " + inFile.getFileName());
-                final Communication comm = cs.fromPath(inFile);
-                annotator.annotateWithStanfordNlp(comm);
-                new SuperCommunication(comm).writeToFile(outDir.resolve(inFile.getFileName()), true);
-            }
+      try (DirectoryStream<Path> stream = Files.newDirectoryStream(inPath)) {
+          for (Path inFile : stream) {
+            log.info("Annotating communication: " + inFile.getFileName());
+            final Communication comm = cs.fromPath(inFile);
+            annotator.annotateWithStanfordNlp(comm);
+            new SuperCommunication(comm).writeToFile(outPath.resolve(inFile.getFileName()), true);
+          }
         }
     }
   }

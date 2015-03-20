@@ -44,6 +44,7 @@ import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations;
 import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation;
 import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 import edu.stanford.nlp.trees.EnglishGrammaticalStructureFactory;
+import edu.stanford.nlp.trees.international.pennchinese.ChineseGrammaticalStructureFactory;
 import edu.stanford.nlp.trees.GrammaticalStructureFactory;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
@@ -57,10 +58,12 @@ import edu.stanford.nlp.util.CoreMap;
  * 
  * @author mgormley
  * @author fferraro
+ * @author npeng
  */
 public class InMemoryAnnoPipeline {
 
   private static final Logger logger = LoggerFactory.getLogger(InMemoryAnnoPipeline.class);
+  //private static final String basedir = System.getProperty("InMemoryAnnoPipeline", "data");
 
   private static final boolean do_deps = true;
   // Document counter.
@@ -71,8 +74,9 @@ public class InMemoryAnnoPipeline {
   private WordsToSentencesAnnotator words2SentencesAnnotator;
   // NOTE: we're only using this for its annotationToDoc method
   private StanfordCoreNLP pipeline;
-  private static GrammaticalStructureFactory gsf = new EnglishGrammaticalStructureFactory();
-  private static String[] documentLevelStages = { "pos", "lemma", "parse", "ner" };
+  private static GrammaticalStructureFactory gsf;
+  //private static String[] documentLevelStages = { "pos", "lemma", "parse", "ner" };
+  private String[] documentLevelStages;
 
   private static String firstPassTokArgs = "" + 
       "invertible=true," + //default
@@ -97,9 +101,11 @@ public class InMemoryAnnoPipeline {
       "strictTreebank3=false"; //default
 
   public InMemoryAnnoPipeline() {
+    documentLevelStages = new String[] { "pos", "lemma", "parse", "ner" };
     docCounter = 0;
     ptbTokenizer = new PTBTokenizerAnnotator();
     ptbTokenizerUnofficial = new PTBTokenizerAnnotator(true, firstPassTokArgs);
+    gsf = new EnglishGrammaticalStructureFactory();
     words2SentencesAnnotator = new WordsToSentencesAnnotator();
     Properties props = new Properties();
     String annotatorList = "tokenize, ssplit, pos, lemma, parse, ner";
@@ -111,6 +117,62 @@ public class InMemoryAnnoPipeline {
     pipeline = new StanfordCoreNLP(props);
     logger.debug("Done.");
   }
+
+  public InMemoryAnnoPipeline(String lang) {
+    docCounter = 0;
+    ptbTokenizer = new PTBTokenizerAnnotator();
+    ptbTokenizerUnofficial = new PTBTokenizerAnnotator(true, firstPassTokArgs);
+    words2SentencesAnnotator = new WordsToSentencesAnnotator();
+    if (lang.equals("en")) {
+	    documentLevelStages = new String[] { "pos", "lemma", "parse", "ner" };
+    	    gsf = new EnglishGrammaticalStructureFactory();
+	    Properties props = new Properties();
+	    String annotatorList = "tokenize, ssplit, pos, lemma, parse, ner";
+	    logger.debug("Using annotators: {}", annotatorList);
+
+	    props.put("annotators", annotatorList);
+	    props.setProperty("output.printSingletonEntities", "true");
+	    logger.debug("Loading models and resources.");
+	    pipeline = new StanfordCoreNLP(props);
+    }
+    else if (lang.equals("cn")) {
+    	    gsf = new ChineseGrammaticalStructureFactory();
+	    pipeline = makeChinesePipeline();
+	    documentLevelStages = new String[] {"pos", "lemma", "parse" };
+    }
+    else {
+	    logger.error("Do not support language: " + lang);
+    	    throw new IllegalArgumentException("Do not support language: " + lang);
+    }
+    logger.debug("Done.");
+  }
+
+  
+  public static StanfordCoreNLP makeChinesePipeline() {
+	Properties props = new Properties();
+      	String annotatorList = "segment, ssplit, pos, parse";
+	logger.debug("Using annotators: {}", annotatorList);
+
+	props.setProperty("customAnnotatorClass.segment", "edu.stanford.nlp.pipeline.ChineseSegmenterAnnotator");
+
+	props.setProperty("segment.model", "edu/stanford/nlp/models/segmenter/chinese/ctb.gz");
+	props.setProperty("segment.sighanCorporaDict", "edu/stanford/nlp/models/segmenter/chinese");
+	props.setProperty("segment.serDictionary", "edu/stanford/nlp/models/segmenter/chinese/dict-chris6.ser.gz");
+	props.setProperty("segment.sighanPostProcessing", "true");
+
+	props.setProperty("ssplit.boundaryTokenRegex", "[.]|[!?]+|[。]|[！？]+");
+	logger.debug("Loading segmentation models and resources."); 
+
+	props.setProperty("pos.model", "edu/stanford/nlp/models/pos-tagger/chinese-distsim/chinese-distsim.tagger");
+	logger.debug("Loading pos models and resources."); 
+
+	props.setProperty("parse.model", "edu/stanford/nlp/models/lexparser/chinesePCFG.ser.gz");
+	logger.debug("Loading parser models and resources."); 
+	props.put("annotators", annotatorList);
+	StanfordCoreNLP cpipeline = new StanfordCoreNLP(props);
+	return cpipeline;	
+  }
+
 
   void prepForNext() {
       docCounter = 0;
@@ -256,11 +318,12 @@ public class InMemoryAnnoPipeline {
         logger.warn("Error annotating stage: {}" + stage);
       }
     }
-    
     logger.debug("Local processing annotation keys :: {}", annotation.keySet().toString());
     // Convert to an XML document.
     Document xmlDoc = this.stanfordToXML(pipeline, annotation);
     AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc);
+    logger.info("Parse text == " +  agigaDoc.getSents().get(0).getParseText());
+    logger.info("Now number of leaves == " +  agigaDoc.getSents().get(0).getStanfordContituencyTree().getLeaves().size());
 
     logger.debug("agigaDoc has " + agigaDoc.getSents().size() + " sentences");
     logger.debug("annotation has " + annotation.get(SentencesAnnotation.class).size());
@@ -458,7 +521,7 @@ public class InMemoryAnnoPipeline {
             fillInParseAnnotations(false, sentence, sentence.get(TreeAnnotation.class));
           }
         } catch (Exception e) {
-          logger.warn("Error filling in parse annotation for sentence " + sentence);
+          logger.warn("In stanfordToXML. Error filling in parse annotation for sentence " + sentence);
         }
 
       }
@@ -543,7 +606,7 @@ public class InMemoryAnnoPipeline {
       try {
         fillInParseAnnotations(false, sentence, sentence.get(TreeAnnotation.class));
       } catch (Exception e) {
-        logger.warn("Error filling in parse annotation for sentence " + sentence);
+        logger.warn("In corefToXML. Error filling in parse annotation for sentence " + sentence);
       }
     }
 
