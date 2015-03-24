@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import concrete.tools.AnnotationException;
-import edu.jhu.hlt.acute.AutoCloseableIterator;
 import edu.jhu.hlt.acute.archivers.tar.TarArchiver;
 import edu.jhu.hlt.acute.iterators.tar.TarArchiveEntryByteIterator;
 import edu.jhu.hlt.acute.iterators.tar.TarGzArchiveEntryByteIterator;
@@ -30,6 +29,7 @@ import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.archiver.ArchivableCommunication;
 import edu.jhu.hlt.concrete.util.ConcreteException;
+import edu.jhu.hlt.utilt.AutoCloseableIterator;
 
 /**
  *
