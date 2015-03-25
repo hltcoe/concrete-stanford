@@ -36,13 +36,13 @@ import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.TokenTagging;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
-import edu.jhu.hlt.concrete.gigaword.ConcreteGigawordDocumentFactory;
+import edu.jhu.hlt.concrete.ingesters.gigaword.CommunicationizableGigawordDocument;
+import edu.jhu.hlt.concrete.random.RandomConcreteFactory;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.util.ConcreteException;
-import edu.jhu.hlt.concrete.util.ConcreteFactory;
-import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
 import edu.jhu.hlt.concrete.util.SuperTextSpan;
+import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 import gigaword.api.GigawordDocumentConverter;
 import gigaword.interfaces.GigawordDocument;
 
@@ -79,8 +79,7 @@ public class StanfordAgigaPipeTest {
   final String pathToNYTComm = "./src/test/resources/NYT_ENG_20070319.0077.xml";
   final String pathTo1999NYTComm = "./src/test/resources/NYT_ENG_19991220.0301.xml";
 
-  ConcreteUUIDFactory cuf = new ConcreteUUIDFactory();
-  ConcreteFactory cf = new ConcreteFactory();
+  RandomConcreteFactory cf = new RandomConcreteFactory();
   CommunicationSerializer cs = new CompactCommunicationSerializer();
 
   Communication randomTestComm;
@@ -99,18 +98,17 @@ public class StanfordAgigaPipeTest {
     this.pipe = new StanfordAgigaPipe();
     this.kindsToAnnotate = this.pipe.getSectionTypesToAnnotate();
 
-    Communication c = new ConcreteFactory().randomCommunication();
+    Communication c = this.cf.communication();
     c.addToSectionList(new SuperCommunication(c).singleSection("Passage"));
 
     GigawordDocumentConverter conv = new GigawordDocumentConverter();
     GigawordDocument pdc = conv.fromPathString(this.pathToAFPComm);
-    ConcreteGigawordDocumentFactory f = new ConcreteGigawordDocumentFactory();
-    this.mapped = f.convert(pdc);
+    this.mapped = new CommunicationizableGigawordDocument(pdc).toCommunication();
     this.randomTestComm = new Communication(c);
 
-    this.wonkyNYT = f.convert(conv.fromPathString(this.pathToNYTComm));
+    this.wonkyNYT = new CommunicationizableGigawordDocument(conv.fromPathString(this.pathToNYTComm)).toCommunication();
 
-    this.nyt1999 = f.convert(conv.fromPathString(this.pathTo1999NYTComm));
+    this.nyt1999 = new CommunicationizableGigawordDocument(conv.fromPathString(this.pathTo1999NYTComm)).toCommunication();
   }
 
   /**
@@ -154,7 +152,7 @@ public class StanfordAgigaPipeTest {
    */
   @Test
   public void testNoMentions() throws TException, IOException, ConcreteException, AnnotationException {
-    Communication c = new ConcreteFactory().randomCommunication().setText("gobljsfoewj");
+    Communication c = this.cf.communication().setText("gobljsfoewj");
     c.addToSectionList(new SuperCommunication(c).singleSection("Passage"));
     SuperCommunication sc = new SuperCommunication(c);
     assertTrue(sc.hasSections());
@@ -177,11 +175,11 @@ public class StanfordAgigaPipeTest {
    */
   @Test
   public void processHandshakeCommunication() throws TException, IOException, ConcreteException, AnnotationException {
-    Communication shakeHandComm = this.cf.randomCommunication().setText(SHAKE_HAND_TEXT_STRING);
+    Communication shakeHandComm = this.cf.communication().setText(SHAKE_HAND_TEXT_STRING);
     AnnotationMetadata md = new AnnotationMetadata().setTool("concrete-stanford:test").setTimestamp(
         System.currentTimeMillis() / 1000);
     shakeHandComm.setMetadata(md);
-    Section section = new Section().setUuid(cuf.getConcreteUUID())
+    Section section = new Section().setUuid(UUIDFactory.newUUID())
         .setTextSpan(new TextSpan().setStart(0).setEnding(SHAKE_HAND_TEXT_STRING.length())).setKind("Passage");
     shakeHandComm.addToSectionList(section);
 
@@ -218,7 +216,7 @@ public class StanfordAgigaPipeTest {
     // Test # Tokens
     StringBuilder actualTokensSB = new StringBuilder();
     for (Token tok : firstTokenization.getTokenList().getTokenList()) {
-      actualTokensSB.append("(" + tok.text + ", " + tok.tokenIndex + ") ");
+      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex() + ") ");
     }
     assertTrue(
         "Expected tokens length = " + stokens.length + ";" + "Actual   tokens length = "
@@ -228,9 +226,9 @@ public class StanfordAgigaPipeTest {
     // Verify tokens
     int tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      assertTrue("tokIdx = " + tokIdx + "; token.tokenIndex = " + token.tokenIndex, token.tokenIndex == tokIdx);
-      assertTrue("expected = [" + stokens[tokIdx] + "]; token.text = [" + token.text + "]",
-          token.text.equals(stokens[tokIdx]));
+      assertTrue("tokIdx = " + tokIdx + "; token.getTokenIndex() = " + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
+      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = [" + token.getText() + "]",
+          token.getText().equals(stokens[tokIdx]));
       tokIdx++;
     }
 
@@ -258,9 +256,9 @@ public class StanfordAgigaPipeTest {
     tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
-      assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx],
+      assertTrue(token.getText() + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx],
           tts.getStart() == start[tokIdx]);
-      assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx],
+      assertTrue(token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx],
           tts.getEnding() == end[tokIdx]);
       tokIdx++;
     }
@@ -553,7 +551,7 @@ public class StanfordAgigaPipeTest {
     // Verify anchor tokens
     int numWithout = 0;
     for (EntityMention em : afpProcessedComm.getEntityMentionSetList().get(0).getMentionList())
-      numWithout += (em.getTokens().anchorTokenIndex >= 0 ? 0 : 1);
+      numWithout += (em.getTokens().getAnchorTokenIndex() >= 0 ? 0 : 1);
 
     assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
 
@@ -577,7 +575,7 @@ public class StanfordAgigaPipeTest {
   /**
    * This following test is useful because it uses a number of numeric fractions. The Stanford tokenizer is a bit strange with those: for a fraction of K n/m
    * (e.g., 66 6/16), it will add a non-breaking space in between K and n. Therefore, it may appear that "K n/m" is two tokens, but it really is one. This test
-   * primarily verifies that those boundaries are respected in both the Token.text and Token.textSpan fields.
+   * primarily verifies that those boundaries are respected in both the token.getText() and token.getText()Span fields.
    */
   @Test
   public void process1999NYTComm() throws Exception {
@@ -625,7 +623,7 @@ public class StanfordAgigaPipeTest {
     // Verify anchor tokens
     int numWithout = 0;
     for (EntityMention em : nytProcessedComm.getEntityMentionSetList().get(0).getMentionList())
-      numWithout += (em.getTokens().anchorTokenIndex >= 0 ? 0 : 1);
+      numWithout += (em.getTokens().getAnchorTokenIndex() >= 0 ? 0 : 1);
 
     assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
     assertTrue("Error in serializing processed communication",
@@ -645,14 +643,14 @@ public class StanfordAgigaPipeTest {
    */
   @Test
   public void processHandshakeCommunicationWithSentences() throws TException, IOException, ConcreteException, AnnotationException {
-    Communication shakeHandComm = this.cf.randomCommunication().setText(SHAKE_HAND_TEXT_STRING);
+    Communication shakeHandComm = this.cf.communication().setText(SHAKE_HAND_TEXT_STRING);
     AnnotationMetadata md = new AnnotationMetadata().setTool("concrete-stanford:test").setTimestamp(
         System.currentTimeMillis() / 1000);
     shakeHandComm.setMetadata(md);
-    Section section = new Section().setUuid(cuf.getConcreteUUID())
+    Section section = new Section().setUuid(UUIDFactory.newUUID())
         .setTextSpan(new TextSpan().setStart(0).setEnding(SHAKE_HAND_TEXT_STRING.length())).setKind("Passage");
     shakeHandComm.addToSectionList(section);
-    Sentence sentence = new Sentence().setUuid(cuf.getConcreteUUID())
+    Sentence sentence = new Sentence().setUuid(UUIDFactory.newUUID())
       .setTextSpan(new TextSpan().setStart(0).setEnding(SHAKE_HAND_TEXT_STRING.length()));
     section.addToSentenceList(sentence);
 
@@ -689,7 +687,7 @@ public class StanfordAgigaPipeTest {
     // Test # Tokens
     StringBuilder actualTokensSB = new StringBuilder();
     for (Token tok : firstTokenization.getTokenList().getTokenList()) {
-      actualTokensSB.append("(" + tok.text + ", " + tok.tokenIndex + ") ");
+      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex() + ") ");
     }
     assertTrue(
         "Expected tokens length = " + stokens.length + ";" + "Actual   tokens length = "
@@ -699,9 +697,9 @@ public class StanfordAgigaPipeTest {
     // Verify tokens
     int tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      assertTrue("tokIdx = " + tokIdx + "; token.tokenIndex = " + token.tokenIndex, token.tokenIndex == tokIdx);
-      assertTrue("expected = [" + stokens[tokIdx] + "]; token.text = [" + token.text + "]",
-          token.text.equals(stokens[tokIdx]));
+      assertTrue("tokIdx = " + tokIdx + "; token.getTokenIndex() = " + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
+      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = [" + token.getText() + "]",
+          token.getText().equals(stokens[tokIdx]));
       tokIdx++;
     }
 
@@ -729,9 +727,9 @@ public class StanfordAgigaPipeTest {
     tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
-      assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx],
+      assertTrue(token.getText() + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx],
           tts.getStart() == start[tokIdx]);
-      assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx],
+      assertTrue(token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx],
           tts.getEnding() == end[tokIdx]);
       tokIdx++;
     }
@@ -786,15 +784,15 @@ public class StanfordAgigaPipeTest {
     final int eachSentenceLength = SHAKE_HAND_TEXT_STRING.length() - 1;
     assertEquals(48, eachSentenceLength);
     final String origCommText = SHAKE_HAND_TEXT_STRING + SHAKE_HAND_TEXT_STRING_1 + SHAKE_HAND_TEXT_STRING_2;
-    Communication shakeHandComm = this.cf.randomCommunication().setText(origCommText);
+    Communication shakeHandComm = this.cf.communication().setText(origCommText);
     AnnotationMetadata md = new AnnotationMetadata().setTool("concrete-stanford:test").setTimestamp(
         System.currentTimeMillis() / 1000);
     shakeHandComm.setMetadata(md);
-    Section section1 = new Section().setUuid(cuf.getConcreteUUID())
+    Section section1 = new Section().setUuid(UUIDFactory.newUUID())
         .setTextSpan(new TextSpan().setStart(0).setEnding(2*eachSentenceLength + 1)).setKind("Passage");
-    section1.addToSentenceList(new Sentence().setUuid(cuf.getConcreteUUID())
+    section1.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
                                .setTextSpan(new TextSpan().setStart(0).setEnding(eachSentenceLength)));
-    section1.addToSentenceList(new Sentence().setUuid(cuf.getConcreteUUID())
+    section1.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
                                .setTextSpan(new TextSpan()
                                             .setStart(eachSentenceLength + 1)
                                             .setEnding(1 + 2*eachSentenceLength)));
@@ -804,9 +802,9 @@ public class StanfordAgigaPipeTest {
     assertEquals(98, section2Start);
     int section2End = 3*eachSentenceLength + 2;
     assertEquals(146, section2End);
-    Section section2 = new Section().setUuid(cuf.getConcreteUUID())
+    Section section2 = new Section().setUuid(UUIDFactory.newUUID())
       .setTextSpan(new TextSpan().setStart(section2Start).setEnding(section2End)).setKind("Passage");
-    section2.addToSentenceList(new Sentence().setUuid(cuf.getConcreteUUID())
+    section2.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
                                .setTextSpan(new TextSpan()
                                             .setStart(section2Start)
                                             .setEnding(section2End)));
@@ -850,7 +848,7 @@ public class StanfordAgigaPipeTest {
     // Test # Tokens
     StringBuilder actualTokensSB = new StringBuilder();
     for (Token tok : firstTokenization.getTokenList().getTokenList()) {
-      actualTokensSB.append("(" + tok.text + ", " + tok.tokenIndex + ") ");
+      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex() + ") ");
     }
     assertTrue(
         "Expected tokens length = " + stokens.length + ";" + "Actual   tokens length = "
@@ -860,9 +858,9 @@ public class StanfordAgigaPipeTest {
     // Verify tokens
     int tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      assertTrue("tokIdx = " + tokIdx + "; token.tokenIndex = " + token.tokenIndex, token.tokenIndex == tokIdx);
-      assertTrue("expected = [" + stokens[tokIdx] + "]; token.text = [" + token.text + "]",
-          token.text.equals(stokens[tokIdx]));
+      assertTrue("tokIdx = " + tokIdx + "; token.getTokenIndex() = " + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
+      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = [" + token.getText() + "]",
+          token.getText().equals(stokens[tokIdx]));
       tokIdx++;
     }
 
@@ -892,9 +890,9 @@ public class StanfordAgigaPipeTest {
     tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
-      assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx] + oOffset,
+      assertTrue(token.getText() + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx] + oOffset,
           tts.getStart() == start[tokIdx] + oOffset);
-      assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx] + oOffset,
+      assertTrue(token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx] + oOffset,
           tts.getEnding() == end[tokIdx] + oOffset);
       tokIdx++;
     }
@@ -947,15 +945,15 @@ public class StanfordAgigaPipeTest {
     final int eachSentenceLength = SHAKE_HAND_TEXT_STRING.length() - 1;
     assertEquals(48, eachSentenceLength);
     final String origCommText = SHAKE_HAND_TEXT_STRING + SHAKE_HAND_TEXT_STRING_1 + SHAKE_HAND_TEXT_STRING_2;
-    Communication shakeHandComm = this.cf.randomCommunication().setText(origCommText);
+    Communication shakeHandComm = this.cf.communication().setText(origCommText);
     AnnotationMetadata md = new AnnotationMetadata().setTool("concrete-stanford:test").setTimestamp(
         System.currentTimeMillis() / 1000);
     shakeHandComm.setMetadata(md);
-    Section section1 = new Section().setUuid(cuf.getConcreteUUID())
+    Section section1 = new Section().setUuid(UUIDFactory.newUUID())
         .setTextSpan(new TextSpan().setStart(0).setEnding(2*eachSentenceLength + 1)).setKind("Title");
-    section1.addToSentenceList(new Sentence().setUuid(cuf.getConcreteUUID())
+    section1.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
                                .setTextSpan(new TextSpan().setStart(0).setEnding(eachSentenceLength)));
-    section1.addToSentenceList(new Sentence().setUuid(cuf.getConcreteUUID())
+    section1.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
                                .setTextSpan(new TextSpan()
                                             .setStart(eachSentenceLength + 1)
                                             .setEnding(1 + 2*eachSentenceLength)));
@@ -965,9 +963,9 @@ public class StanfordAgigaPipeTest {
     assertEquals(98, section2Start);
     int section2End = 3*eachSentenceLength + 2;
     assertEquals(146, section2End);
-    Section section2 = new Section().setUuid(cuf.getConcreteUUID())
+    Section section2 = new Section().setUuid(UUIDFactory.newUUID())
       .setTextSpan(new TextSpan().setStart(section2Start).setEnding(section2End)).setKind("Passage");
-    section2.addToSentenceList(new Sentence().setUuid(cuf.getConcreteUUID())
+    section2.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
                                .setTextSpan(new TextSpan()
                                             .setStart(section2Start)
                                             .setEnding(section2End)));
@@ -1011,7 +1009,7 @@ public class StanfordAgigaPipeTest {
     // Test # Tokens
     StringBuilder actualTokensSB = new StringBuilder();
     for (Token tok : firstTokenization.getTokenList().getTokenList()) {
-      actualTokensSB.append("(" + tok.text + ", " + tok.tokenIndex + ") ");
+      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex() + ") ");
     }
     assertTrue(
         "Expected tokens length = " + stokens.length + ";" + "Actual   tokens length = "
@@ -1021,9 +1019,9 @@ public class StanfordAgigaPipeTest {
     // Verify tokens
     int tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      assertTrue("tokIdx = " + tokIdx + "; token.tokenIndex = " + token.tokenIndex, token.tokenIndex == tokIdx);
-      assertTrue("expected = [" + stokens[tokIdx] + "]; token.text = [" + token.text + "]",
-          token.text.equals(stokens[tokIdx]));
+      assertTrue("tokIdx = " + tokIdx + "; token.getTokenIndex() = " + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
+      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = [" + token.getText() + "]",
+          token.getText().equals(stokens[tokIdx]));
       tokIdx++;
     }
 
@@ -1053,9 +1051,9 @@ public class StanfordAgigaPipeTest {
     tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
-      assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx] + oOffset,
+      assertTrue(token.getText() + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx] + oOffset,
           tts.getStart() == start[tokIdx] + oOffset);
-      assertTrue(token.text + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx] + oOffset,
+      assertTrue(token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx] + oOffset,
           tts.getEnding() == end[tokIdx] + oOffset);
       tokIdx++;
     }
