@@ -4,7 +4,7 @@
  */
 package edu.jhu.hlt.concrete.stanford;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashSet;
 import java.util.List;
@@ -21,7 +21,7 @@ import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
-import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
+import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 
 /**
  * Using the example from the online demo at
@@ -44,8 +44,6 @@ import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
  * @author travis
  */
 public class BasicDepParseTest {
-  private static final ConcreteUUIDFactory cuf = new ConcreteUUIDFactory();
-
   public static Communication getTestCommunication() {
     return unsectionedCommunicationFromText(
         //"My dog also likes eating sausage.");
@@ -62,11 +60,11 @@ public class BasicDepParseTest {
 
     Section sect = new Section();
     sect.setKind("Passage");
-    sect.setUuid(cuf.getConcreteUUID());
+    sect.setUuid(UUIDFactory.newUUID());
     sect.setTextSpan(span);
 
     Communication c = new Communication();
-    c.setUuid(cuf.getConcreteUUID());
+    c.setUuid(UUIDFactory.newUUID());
     c.addToSectionList(sect);
     c.setText(text);
     return c;
