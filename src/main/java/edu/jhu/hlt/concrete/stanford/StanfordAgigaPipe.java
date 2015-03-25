@@ -372,14 +372,6 @@ public class StanfordAgigaPipe {
     }
   }
 
-  private AgigaDocument getAgigaDoc(Annotation annotation, boolean tokensOnly) throws AnnotationException {
-    try {
-      return pipeline.getAgigaDoc(annotation, tokensOnly);
-    } catch (IOException e) {
-      throw new AnnotationException(e);
-    }
-  }
-
   private AgigaDocument annotateCoref(Annotation annotation) throws AnnotationException {
     try {
       return pipeline.annotateCoref(annotation);

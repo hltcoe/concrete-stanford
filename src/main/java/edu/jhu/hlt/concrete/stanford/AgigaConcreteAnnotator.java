@@ -26,11 +26,11 @@ import edu.jhu.hlt.concrete.EntityMentionSet;
 import edu.jhu.hlt.concrete.EntitySet;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
-import edu.jhu.hlt.concrete.TheoryDependencies;
 import edu.jhu.hlt.concrete.TextSpan;
+import edu.jhu.hlt.concrete.TheoryDependencies;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.agiga.AgigaConverter;
-import edu.jhu.hlt.concrete.util.ConcreteUUIDFactory;
+import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 import edu.jhu.hlt.concrete.validation.ValidatableTextSpan;
 
 /**
@@ -41,7 +41,6 @@ class AgigaConcreteAnnotator {
 
   private static final Logger logger = LoggerFactory.getLogger(AgigaConcreteAnnotator.class);
   
-  private final ConcreteUUIDFactory idFactory = new ConcreteUUIDFactory();
   private final ConcreteAgigaProperties agigaProps;
   private final ConcreteStanfordProperties csProps;
   private final AgigaConverter ag;
@@ -65,7 +64,7 @@ class AgigaConcreteAnnotator {
 
   SimpleEntry<EntityMentionSet, EntitySet> convertCoref(Communication in, AgigaDocument agigaDoc, List<Tokenization> tokenizations)
     throws AnnotationException {
-    EntityMentionSet ems = new EntityMentionSet().setUuid(this.idFactory.getConcreteUUID());
+    EntityMentionSet ems = new EntityMentionSet().setUuid(UUIDFactory.newUUID());
     TheoryDependencies td = new TheoryDependencies();
     for (Tokenization t : tokenizations)
       td.addToTokenizationTheoryList(t.getUuid());
@@ -88,7 +87,7 @@ class AgigaConcreteAnnotator {
     if (!ems.isSetMentionList())
       ems.setMentionList(new ArrayList<EntityMention>());
 
-    EntitySet es = new EntitySet().setUuid(this.idFactory.getConcreteUUID()).setMetadata(md).setEntityList(elist);
+    EntitySet es = new EntitySet().setUuid(UUIDFactory.newUUID()).setMetadata(md).setEntityList(elist);
 
     return new SimpleEntry<EntityMentionSet, EntitySet>(ems, es);
   }
