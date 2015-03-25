@@ -2,6 +2,8 @@ package edu.jhu.hlt.concrete.stanford;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +22,9 @@ import edu.jhu.hlt.concrete.random.RandomConcreteFactory;
 import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 
 public class NonPTBTextTest {
+  
+  private static final Logger LOGGER = LoggerFactory.getLogger(NonPTBTextTest.class);
+  
   RandomConcreteFactory cf = new RandomConcreteFactory();
 
   //public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 Hanfeng 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 ChinaHuanengGroup 和 中信 CITIC .";
@@ -54,7 +59,9 @@ public class NonPTBTextTest {
       tokenEnd = tokenStart;
       tokenList.addToTokenList(token);
     }
+    tokenization.setTokenTaggingList(new ArrayList<>());
     tokenization.setTokenList(tokenList);
+    
     sentence.setTokenization(tokenization);
     assertTrue(new CommunicationValidator(chineseComm).validate());
     AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete("cn");
@@ -88,6 +95,7 @@ public class NonPTBTextTest {
       tokenList.addToTokenList(token);
     }
     tokenization.setTokenList(tokenList);
+    tokenization.setTokenTaggingList(new ArrayList<>());
     sentence.setTokenization(tokenization);
     assertTrue(new CommunicationValidator(englishComm).validate());
     AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete("en");

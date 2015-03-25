@@ -122,7 +122,8 @@ public class InMemoryAnnoPipeline {
   public InMemoryAnnoPipeline(String lang) {
     docCounter = 0;
     ptbTokenizer = new TokenizerAnnotator();
-    ptbTokenizerUnofficial = new TokenizerAnnotator(true, firstPassTokArgs);
+    String omg = null;
+    ptbTokenizerUnofficial = new TokenizerAnnotator(true, omg, firstPassTokArgs);
     words2SentencesAnnotator = new WordsToSentencesAnnotator();
     if (lang.equals("en")) {
 	    documentLevelStages = new String[] { "pos", "lemma", "parse", "ner" };
