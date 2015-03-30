@@ -36,6 +36,7 @@ import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.communications.PerspectiveCommunication;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
+import edu.jhu.hlt.concrete.stanford.ProjectConstants;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.CommunicationTarGzSerializer;
 import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
@@ -78,7 +79,6 @@ public class StanfordAgigaPipe {
   private final Set<String> kindsToProcessSet;
   private final Set<String> kindsForNoCoref;
 
-  private final ConcreteStanfordProperties concStanProps;
   private String language;
 
   /**
@@ -178,7 +178,6 @@ public class StanfordAgigaPipe {
     this.kindsForNoCoref = new HashSet<>();
     this.kindsForNoCoref.addAll(typesToTokenizeOnly);
 
-    this.concStanProps = new ConcreteStanfordProperties();
     this.pipeline = new InMemoryAnnoPipeline();
     this.allowEmptyEntitiesAndEntityMentions = allowEmptyMentions;
     this.language = "en";
@@ -210,7 +209,7 @@ public class StanfordAgigaPipe {
   }
 
   public Communication process(Communication c) throws IOException, ConcreteException, AnnotationException {
-    if (!c.isSetText())
+    if (!c.isSetText() || c.getText().equals(""))
       throw new ConcreteException("Expecting Communication Text, but was empty or none.");
 
     PerspectiveCommunication pc = new PerspectiveCommunication(c, "PerspectiveCreator");
@@ -218,7 +217,7 @@ public class StanfordAgigaPipe {
 
     // hopefully MD is never null
     AnnotationMetadata md = Optional.ofNullable(persp.getMetadata()).orElse(new AnnotationMetadata());
-    String csToolName = this.concStanProps.getToolName();
+    String csToolName = ProjectConstants.PROJECT_NAME + " " + ProjectConstants.VERSION;
     String newToolName = csToolName + " perspective";
 
     String mdToolName = md.isSetTool() ? md.getTool() : "";
