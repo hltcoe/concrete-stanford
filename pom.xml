@@ -4,7 +4,7 @@
 
   <groupId>edu.jhu.hlt.concrete</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.4.0</version>
+  <version>4.4.1</version>
   <packaging>jar</packaging>
 
   <name>Concrete Stanford</name>
@@ -127,7 +127,7 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-agiga</artifactId>
-      <version>4.4.1-SNAPSHOT</version>
+      <version>4.4.1</version>
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>

@@ -10,7 +10,7 @@ Maven dependency (Currently COE only)
 <dependency>
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.4.0</version>
+  <version>4.4.1</version>
 </dependency>
 ```
 
@@ -57,7 +57,7 @@ The following should be compliant in any `sh`-like shell.
 export CONC_STAN_INPUT_FILE=/path/to/.concrete/or/.tar/or/.tar.gz
 export CONC_STAN_OUTPUT_DIR=/path/to/output/dir
 mvn clean compile assembly:single
-java -cp target/concrete-stanford-4.4.0-jar-with-dependencies.jar edu.jhu.hlt.concrete.stanford.ConcreteStanfordAnnotator \
+java -cp target/concrete-stanford-4.4.1-jar-with-dependencies.jar edu.jhu.hlt.concrete.stanford.ConcreteStanfordAnnotator \
 $CONC_STAN_INPUT_FILE \
 $CONC_STAN_OUTPUT_DIR
 ```
