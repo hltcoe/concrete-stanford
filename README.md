@@ -4,13 +4,13 @@ Provides a library that can take `Communication` objects, containing `Section`s,
 annotate them using the Stanford CoreNLP framework. This produces `Communication` objects
 with `Tokenization` objects, and optionally `EntityMention` and `Entity` objects.
 
-Maven dependency
+Maven dependency (Currently COE only)
 ---
 ```xml
 <dependency>
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.2.2-SNAPSHOT</version>
+  <version>4.4.0</version>
 </dependency>
 ```
 
@@ -57,7 +57,7 @@ The following should be compliant in any `sh`-like shell.
 export CONC_STAN_INPUT_FILE=/path/to/.concrete/or/.tar/or/.tar.gz
 export CONC_STAN_OUTPUT_DIR=/path/to/output/dir
 mvn clean compile assembly:single
-java -cp target/concrete-stanford-4.2.2-SNAPSHOT-jar-with-dependencies.jar edu.jhu.hlt.concrete.stanford.ConcreteStanfordAnnotator \
+java -cp target/concrete-stanford-4.4.0-jar-with-dependencies.jar edu.jhu.hlt.concrete.stanford.ConcreteStanfordAnnotator \
 $CONC_STAN_INPUT_FILE \
 $CONC_STAN_OUTPUT_DIR
 ```
