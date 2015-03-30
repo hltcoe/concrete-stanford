@@ -5,20 +5,14 @@
 package edu.jhu.hlt.concrete.stanford;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -35,12 +29,6 @@ import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.communications.PerspectiveCommunication;
-import edu.jhu.hlt.concrete.communications.SuperCommunication;
-import edu.jhu.hlt.concrete.stanford.ProjectConstants;
-import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
-import edu.jhu.hlt.concrete.serialization.CommunicationTarGzSerializer;
-import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
-import edu.jhu.hlt.concrete.serialization.TarGzCompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
@@ -126,40 +114,7 @@ public class StanfordAgigaPipe {
    */
   @Deprecated
   public static void main(String[] args) throws TException, IOException, ConcreteException, AnnotationException {
-    if (args.length != 2) {
-      System.out.println("Usage: " + StanfordAgigaPipe.class.getSimpleName() + " <input-concrete-file-with-section-segmentations> <output-file-name>");
-      System.exit(1);
-    }
-
-    // this is silly, but needed for stanford logging disable.
-    SystemErrDisabler disabler = new SystemErrDisabler();
-    disabler.disable();
-
-    StanfordAgigaPipe sap = new StanfordAgigaPipe();
-    final CommunicationSerializer cs = new CompactCommunicationSerializer();
-
-    final String inputPath = args[0];
-    final String outputPath = args[1];
-    String inputType = Files.probeContentType(Paths.get(inputPath));
-    if (inputType.equals("application/zip")) {
-      ZipFile zf = new ZipFile(inputPath);
-      logger.info("Beginning annotation.");
-      List<Communication> processedComms = sap.process(zf);
-      logger.info("Finished.");
-
-      // ThriftIO.writeFile(outputPath, processedComms);
-      CommunicationTarGzSerializer tgz = new TarGzCompactCommunicationSerializer();
-      tgz.toTarGz(processedComms, outputPath);
-    } else {
-      final Communication communication = cs.fromPathString(inputPath);
-      logger.info("Beginning annotation.");
-      Communication annotated = sap.process(communication);
-      logger.info("Finished.");
-
-      new SuperCommunication(annotated).writeToFile(outputPath, true);
-    }
-
-    disabler.enable();
+    ConcreteStanfordAnnotator.main(args);
   }
 
   public StanfordAgigaPipe() throws IOException {
@@ -181,31 +136,6 @@ public class StanfordAgigaPipe {
     this.pipeline = new InMemoryAnnoPipeline();
     this.allowEmptyEntitiesAndEntityMentions = allowEmptyMentions;
     this.language = "en";
-  }
-
-  /**
-   * NOTE: This method will be removed in a future release.
-   *
-   * @param zf
-   * @return
-   * @throws TException
-   * @throws IOException
-   * @throws ConcreteException
-   * @throws AnnotationException
-   */
-  @Deprecated
-  public List<Communication> process(ZipFile zf) throws TException, IOException, ConcreteException, AnnotationException {
-    Enumeration<? extends ZipEntry> e = zf.entries();
-    List<Communication> outList = new LinkedList<Communication>();
-    final CommunicationSerializer ser = new CompactCommunicationSerializer();
-
-    while (e.hasMoreElements()) {
-      ZipEntry ze = e.nextElement();
-      final Communication communication = ser.fromInputStream(zf.getInputStream(ze));
-      final Communication nComm = process(communication);
-      outList.add(nComm);
-    }
-    return outList;
   }
 
   public Communication process(Communication c) throws IOException, ConcreteException, AnnotationException {
