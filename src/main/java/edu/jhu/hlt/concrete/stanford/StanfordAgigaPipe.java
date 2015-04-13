@@ -99,6 +99,8 @@ public class StanfordAgigaPipe {
 
   private int globalTokenOffset = 0;
 
+  private Annotation documentAnnotation;
+
   private void resetGlobals() {
     globalTokenOffset = 0;
     sentenceCount = 1;
@@ -183,7 +185,7 @@ public class StanfordAgigaPipe {
     md.setTool(newToolName);
     persp.setMetadata(md);
     resetGlobals();
-    this.runPipelineOnCommunicationSectionsAndSentences(persp);
+    this.annotateSects(persp);
     return persp;
   }
 
@@ -200,36 +202,41 @@ public class StanfordAgigaPipe {
   }
 
   /**
-   * This steps through the given communication. For each section segmentation,
-   * it will go through each of the sections, first doing what localized
-   * processing it can (i.e., all but coref resolution), and then doing the
-   * global processing (coref).
+   * This steps through the given communication. Each section is first locally
+   * processed (i.e., all but coref resolution). Once all sections have been
+   * locally processed, global processing is done on the entire communication
+   * (i.e., coref).
+   * 
+   * It assumes that {@code comm} both passes
+   * PrereqValidator.verifyCommunication and has been constructed via a new
+   * perspective. In particular, rawTextSpans must be set.
    *
    * @throws AnnotationException
    * @throws IOException
    */
-  private void runPipelineOnCommunicationSectionsAndSentences(Communication comm)
-      throws AnnotationException, IOException {
+  private void annotateSects(Communication comm) throws AnnotationException,
+      IOException {
     // if called multiple times, reset the sentence count
     sentenceCount = 1;
-    String commText = comm.isSetText() ? comm.getText() : comm
-        .getOriginalText();
+    String commText = comm.getText();
     StringBuilder sb = new StringBuilder();
     logger.debug("Annotating communication: {}", comm.getId());
     logger.debug("\tuuid = " + comm.getUuid());
     logger.debug("\ttype = " + comm.getType());
-    logger.debug("\treading from " + (comm.isSetText() ? "text" : "raw text"));
     logger.debug("\tfull = " + commText);
 
     List<Tokenization> tokenizations = new ArrayList<>();
     List<Section> sections = comm.getSectionList();
     // List<Integer> numberOfSentences = new ArrayList<Integer>();
     Annotation documentAnnotation = getSeededDocumentAnnotation();
-    logger.debug("documentAnnotation = " + documentAnnotation);
 
     int previousSectionEnding = 0;
     for (Section section : sections) {
-      if (section.isSetSentenceList() && section.isSetRawTextSpan()) {
+      if (!section.isSetRawTextSpan()) {
+        throw new AnnotationException("Cannot process section "
+            + section.getUuid() + ", as it has no .rawTextSpan");
+      }
+      if (section.isSetSentenceList()) {
         int interSectionWhitespaceDifference = section.getRawTextSpan()
             .getStart() - previousSectionEnding;
         charOffset += interSectionWhitespaceDifference;
@@ -240,52 +247,11 @@ public class StanfordAgigaPipe {
       // 1) First *perform* the tokenization & sentence splits
       // Note we do this first, even before checking the content-type
       String sectionText = commText.substring(sts.getStart(), sts.getEnding());
-      Annotation sectionAnnotation = pipeline.handleSection(section,
+      Annotation sectionAnnotation = pipeline.splitAndTokenizeSection(section,
           sectionText);
-      logger.debug("Annotating Section: {}", section.getUuid());
-      logger.debug("\ttext = " + sectionText);
-      logger.debug("\tkind = " + section.getKind() + " in annotateNames: "
-          + this.kindsToProcessSet);
-      boolean allButCoref = kindsForNoCoref.contains(section.getKind());
-      boolean allWithCoref = kindsToProcessSet.contains(section.getKind());
-      if (!allWithCoref && !allButCoref) {
-        // We MUST update the character offset
-        logger.debug("no good section: from " + charOffset + " to ");
-        // NOTE: It's possible we want to account for sentences in
-        // non-contentful sections
-        // If that's the case, then we need to update the globalToken and
-        // sentence offset
-        // variables correctly.
-        if (sectionAnnotation == null) {
-          logger.debug("" + charOffset);
-          continue;
-        }
+      dispatchSection(section, sectionText, sectionAnnotation,
+          sectionStartCharOffset, tokenizations, sb);
 
-        // Note that we need to update the global character offset...
-        List<CoreLabel> sentTokens = sectionAnnotation
-            .get(TokensAnnotation.class);
-        // int tokCount = 0;
-        for (CoreLabel badToken : sentTokens) {
-          updateCharOffsetSetToken(badToken, false, false);
-        }
-
-        logger.debug("" + charOffset);
-        logger.debug("\t" + sectionText);
-      } else if (allButCoref) {
-        // Only tokenize & sentence split
-        logger.debug("Special handling for section type {} section: {}",
-            section.getKind(), section.getUuid());
-        logger.debug(">> SectionText=[" + sectionText + "]");
-        processSectionForNoCoref(section, sectionAnnotation,
-            sectionStartCharOffset, sb);
-      } else {
-        // 2) Second, perform the other localized processing
-        logger.debug("Additional processing on section: {}", section.getUuid());
-        logger.debug(">> SectionText=[" + sectionText + "]");
-        processSection(section, sectionAnnotation, documentAnnotation,
-            sectionStartCharOffset, sb);
-        addTokenizations(section, tokenizations);
-      }
       // between sections are two line feeds
       // one is counted for in the sentTokens loop above
       processedCharOffset++;
@@ -299,6 +265,61 @@ public class StanfordAgigaPipe {
     // 3) Third, do coref; cross-reference against sectionUUIDs
     logger.debug("Running coref.");
     processCoref(comm, documentAnnotation, tokenizations);
+  }
+
+  private void dispatchSection(Section section, String sectionText,
+      Annotation sectionAnnotation, int sectionStartCharOffset,
+      List<Tokenization> tokenizations, StringBuilder sb)
+      throws AnnotationException, IOException {
+    // TODO Auto-generated method stub
+    logger.debug("Annotating Section: {}", section.getUuid());
+    logger.debug("\ttext = " + sectionText);
+    logger.debug("\tkind = " + section.getKind() + " in annotateNames: "
+        + this.kindsToProcessSet);
+    boolean allButCoref = kindsForNoCoref.contains(section.getKind());
+    boolean allWithCoref = kindsToProcessSet.contains(section.getKind());
+    if (!allWithCoref && !allButCoref) {
+      basicProcessingOnly(sectionAnnotation, sectionText);
+    } else if (allButCoref) {
+      // Only tokenize & sentence split
+      logger.debug("Special handling for section type {} section: {}",
+          section.getKind(), section.getUuid());
+      logger.debug(">> SectionText=[" + sectionText + "]");
+      processSectionForNoCoref(section, sectionAnnotation,
+          sectionStartCharOffset, sb);
+    } else {
+      // 2) Second, perform the other localized processing
+      logger.debug("Additional processing on section: {}", section.getUuid());
+      logger.debug(">> SectionText=[" + sectionText + "]");
+      processSection(section, sectionAnnotation, documentAnnotation,
+          sectionStartCharOffset, sb);
+      addTokenizations(section, tokenizations);
+    }
+  }
+
+  /**
+   * This method handles sections that we are explicitly <b>not</b> annotating
+   * beyond tokenizing. The code updates the character offsets (global state)
+   * 
+   * @param sectionAnnotation
+   * @param sectionText
+   */
+  private void basicProcessingOnly(Annotation sectionAnnotation,
+      String sectionText) {
+    logger.debug("no good section: from " + charOffset + " to ");
+    if (sectionAnnotation == null) {
+      logger.debug("" + charOffset);
+      return;
+    }
+
+    // We need to update the global character offset...
+    List<CoreLabel> sentTokens = sectionAnnotation.get(TokensAnnotation.class);
+    for (CoreLabel badToken : sentTokens) {
+      updateCharOffsetSetToken(badToken, false, false);
+    }
+
+    logger.debug("" + charOffset);
+    logger.debug("\t" + sectionText);
   }
 
   private void addTokenizations(Section section,
