@@ -21,6 +21,7 @@ import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.UUID;
 import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe.PrereqValidator;
 import edu.jhu.hlt.concrete.util.ConcreteException;
+import edu.jhu.hlt.concrete.util.Timing;
 import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 
 /**
@@ -54,6 +55,7 @@ public class ConcreteAgigaPipePreqeqValidatorTest extends PrereqValidator {
     // check for metadata
     assertFalse(verifyCommunication(comm, useThrow));
     AnnotationMetadata metadata = new AnnotationMetadata();
+    metadata.setTimestamp(Timing.currentLocalTime());
     comm.setMetadata(metadata);
     // check for set tool name
     assertFalse(verifyCommunication(comm, useThrow));
