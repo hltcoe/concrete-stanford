@@ -2,6 +2,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>edu.jhu.hlt</groupId>
+    <artifactId>concrete-parent</artifactId>
+    <version>4.4</version>
+  </parent>
+
   <groupId>edu.jhu.hlt.concrete</groupId>
   <artifactId>concrete-stanford</artifactId>
   <version>4.4.2-SNAPSHOT</version>
@@ -9,42 +15,11 @@
 
   <name>Concrete Stanford</name>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
-
   <build>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-        </configuration>
-        <version>3.2</version>
-      </plugin>
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.5.3</version>
-        <configuration>
-          <descriptorRefs>
-            <descriptorRef>jar-with-dependencies</descriptorRef>
-          </descriptorRefs>
-        </configuration>
-        <executions>
-          <execution>
-            <id>make-assembly</id> <!-- this is used for inheritance merges -->
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>2.7</version>
         <executions>
           <execution>
             <id>prepare-filtered-java-source</id>
@@ -67,7 +42,6 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.9.1</version>
         <executions>
           <execution>
             <id>add-filtered-java-source</id>
@@ -98,13 +72,12 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.11</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-ingesters-gigaword</artifactId>
-      <version>4.4.4</version>
+      <version>4.4.8</version>
       <scope>test</scope>
     </dependency>
 
@@ -132,7 +105,7 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>acute</artifactId>
-      <version>2.0.2</version>
+      <version>2.0.3</version>
     </dependency>
   </dependencies>
 
@@ -144,7 +117,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.10.1</version>
+            <version>2.10.3</version>
             <configuration>
               <additionalparam>-Xdoclint:none</additionalparam>
             </configuration>
@@ -176,5 +149,4 @@
       </distributionManagement>
     </profile>
   </profiles>
-
 </project>
