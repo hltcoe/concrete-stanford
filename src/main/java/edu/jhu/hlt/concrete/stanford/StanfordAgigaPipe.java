@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import concrete.tools.AnnotationException;
-import edu.jhu.agiga.AgigaDocument;
 import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.EntityMentionSet;
@@ -93,13 +92,7 @@ public class StanfordAgigaPipe {
     return useOriginalCharOffsets;
   }
 
-  // public void setUsingOriginalCharOffsets(boolean b){
-  // this.useOriginalCharOffsets = b;
-  // }
-
   private int globalTokenOffset = 0;
-
-  private Annotation documentAnnotation;
 
   private void resetGlobals() {
     globalTokenOffset = 0;
@@ -250,7 +243,7 @@ public class StanfordAgigaPipe {
       Annotation sectionAnnotation = pipeline.splitAndTokenizeSection(section,
           sectionText);
       dispatchSection(section, sectionText, sectionAnnotation,
-          sectionStartCharOffset, tokenizations, sb);
+          documentAnnotation, sectionStartCharOffset, tokenizations, sb);
 
       // between sections are two line feeds
       // one is counted for in the sentTokens loop above
@@ -268,10 +261,9 @@ public class StanfordAgigaPipe {
   }
 
   private void dispatchSection(Section section, String sectionText,
-      Annotation sectionAnnotation, int sectionStartCharOffset,
-      List<Tokenization> tokenizations, StringBuilder sb)
-      throws AnnotationException, IOException {
-    // TODO Auto-generated method stub
+      Annotation sectionAnnotation, Annotation documentAnnotation,
+      int sectionStartCharOffset, List<Tokenization> tokenizations,
+      StringBuilder sb) throws AnnotationException, IOException {
     logger.debug("Annotating Section: {}", section.getUuid());
     logger.debug("\ttext = " + sectionText);
     logger.debug("\tkind = " + section.getKind() + " in annotateNames: "
@@ -346,25 +338,16 @@ public class StanfordAgigaPipe {
    * @throws AnnotationException
    *
    */
-  private AgigaDocument annotate(Annotation annotation)
+  private boolean annotateLocalStages(Annotation annotation)
       throws AnnotationException {
     try {
-      return pipeline.annotate(annotation);
+      return pipeline.annotateLocalStages(annotation);
     } catch (IOException e) {
       throw new AnnotationException(e);
     }
   }
 
-  private AgigaDocument getAgigaDocAllButCoref(Annotation annotation)
-      throws AnnotationException {
-    try {
-      return pipeline.getAgigaDocAllButCoref(annotation);
-    } catch (IOException e) {
-      throw new AnnotationException(e);
-    }
-  }
-
-  private AgigaDocument annotateCoref(Annotation annotation)
+  private boolean annotateCoref(Annotation annotation)
       throws AnnotationException {
     try {
       return pipeline.annotateCoref(annotation);
@@ -380,8 +363,8 @@ public class StanfordAgigaPipe {
    * updated here.
    *
    */
-  private void sentencesToSection(Section concreteSection, CoreMap sectAnno,
-      Annotation document) throws AnnotationException {
+  private void aggregateTokenizedSentences(Section concreteSection,
+      CoreMap sectAnno, Annotation document) throws AnnotationException {
     if (sectAnno == null) {
       logger.warn("Encountered null annotated section. Skipping.");
       return;
@@ -404,11 +387,10 @@ public class StanfordAgigaPipe {
       concreteSentencesSet = true;
       concreteSentences = concreteSection.getSentenceList();
       numConcreteSentences = concreteSentences.size();
-      if (concreteSection.getSentenceList().size() != sentAnnos.size()) {
+      if (numConcreteSentences != sentAnnos.size()) {
         throw new AnnotationException("Section " + concreteSection.getUuid()
-            + " has " + concreteSection.getSentenceList().size()
-            + " sentences already created," + " but CoreNLP only found "
-            + sentAnnos.size());
+            + " has " + numConcreteSentences + " sentences already created,"
+            + " but CoreNLP only found " + sentAnnos.size());
       }
     }
     for (CoreMap sentAnno : sentAnnos) {
@@ -558,29 +540,33 @@ public class StanfordAgigaPipe {
     }
   }
 
+  /**
+   * This updates the global character offset counter {@code charOffset}. It
+   * also changes the {@code token} character offsets to represent the
+   * <i>original</i> textspans. Optionally, the processed character offset will
+   * be updated too.
+   * 
+   * @param token
+   * @param isFirst
+   * @param updateProcessedOff
+   */
   private void updateCharOffsetSetToken(CoreLabel token, boolean isFirst,
       boolean updateProcessedOff) {
-    if (usingOriginalCharOffsets()) {
-      if (isFirst) {
-        // this is because when we have text like "foo bar", foo.after == " "
-        // AND bar.before == " "
-        int beforeLength = token.before().length();
-        charOffset += beforeLength;
-      }
-      logger.debug("[" + token.before() + ", " + token.before().length() + "] "
-          + "[" + token.originalText() + "]" + " [" + token.after() + ", "
-          + token.after().length() + "] :: " + charOffset + " --> "
-          + (charOffset + token.originalText().length()));
-      token.set(CharacterOffsetBeginAnnotation.class, charOffset);
-      charOffset += token.originalText().length();
-      token.set(CharacterOffsetEndAnnotation.class, charOffset);
-      charOffset += token.after().length();
-    } else {
-      token.set(CharacterOffsetBeginAnnotation.class, charOffset);
-      charOffset += token.get(TextAnnotation.class).length();
-      token.set(CharacterOffsetEndAnnotation.class, charOffset);
-      charOffset++;
+    if (isFirst) {
+      // this is because when we have text like "foo bar", foo.after == " "
+      // AND bar.before == " "
+      int beforeLength = token.before().length();
+      charOffset += beforeLength;
     }
+    logger.debug("[" + token.before() + ", " + token.before().length() + "] "
+        + "[" + token.originalText() + "]" + " [" + token.after() + ", "
+        + token.after().length() + "] :: " + charOffset + " --> "
+        + (charOffset + token.originalText().length()));
+    token.set(CharacterOffsetBeginAnnotation.class, charOffset);
+    charOffset += token.originalText().length();
+    token.set(CharacterOffsetEndAnnotation.class, charOffset);
+    charOffset += token.after().length();
+
     if (updateProcessedOff) {
       processedCharOffset += token.get(TextAnnotation.class).length() + 1;
     }
@@ -627,14 +613,20 @@ public class StanfordAgigaPipe {
       throws AnnotationException, IOException {
     sentencesToSection(section, sentenceSplitText);
 
-    // AgigaDocument agigaDoc = getAgigaDoc(sentenceSplitText, true);
-    AgigaDocument agigaDoc = getAgigaDocAllButCoref(sentenceSplitText);
-    logger.debug("after annotating");
+    boolean successfulAnnotation = annotateLocalStages(sentenceSplitText);
+    logger.debug("after annotating, annotation was successful? ({})",
+        successfulAnnotation);
 
-    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(
-        usingOriginalCharOffsets(), this.language);
-    agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb, true);
+    ConcreteAnnotator addToConcrete = this.getFreshConcreteAnnotator();
+    addToConcrete.convertSection(section, sentenceSplitText, sectionOffset, sb,
+        true);
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
+  }
+
+  private void logDebugSentencesAnnotation(Annotation anno, String message) {
+    logger.debug(message);
+    for (CoreMap cm : anno.get(SentencesAnnotation.class))
+      logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
   }
 
   /**
@@ -648,20 +640,17 @@ public class StanfordAgigaPipe {
   private void processSection(Section section, Annotation sentenceSplitText,
       Annotation docAnnotation, int sectionOffset, StringBuilder sb)
       throws AnnotationException, IOException {
-    sentencesToSection(section, sentenceSplitText, docAnnotation);
-    logger.debug("after sentencesToSection, before annotating");
-    for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class))
-      logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
-
-    AgigaDocument agigaDoc = annotate(sentenceSplitText);
-    logger.debug("after annotating");
-    for (CoreMap cm : sentenceSplitText.get(SentencesAnnotation.class))
-      logger.debug(cm.get(SentenceIndexAnnotation.class).toString());
-
+    aggregateTokenizedSentences(section, sentenceSplitText, docAnnotation);
+    logDebugSentencesAnnotation(sentenceSplitText,
+        "after sentencesToSection, before annotating");
+    boolean successfulAnnotation = annotateLocalStages(sentenceSplitText);
+    logger.debug("after annotating, annotation was successful? ({})",
+        successfulAnnotation);
+    logDebugSentencesAnnotation(sentenceSplitText, "after annotating");
     transferAnnotations(sentenceSplitText, docAnnotation);
-    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(
-        usingOriginalCharOffsets(), this.language);
-    agigaToConcrete.convertSection(section, agigaDoc, sectionOffset, sb, true);
+    ConcreteAnnotator agigaToConcrete = this.getFreshConcreteAnnotator();
+    agigaToConcrete.convertSection(section, sentenceSplitText, sectionOffset,
+        sb, true);
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
   }
 
@@ -683,11 +672,12 @@ public class StanfordAgigaPipe {
 
   private void processCoref(Communication comm, Annotation docAnnotation,
       List<Tokenization> tokenizations) throws AnnotationException, IOException {
-    AgigaDocument agigaDoc = annotateCoref(docAnnotation);
-    AgigaConcreteAnnotator agigaToConcrete = new AgigaConcreteAnnotator(
-        usingOriginalCharOffsets(), this.language);
+    boolean successfulAnnotation = annotateCoref(docAnnotation);
+    logger.debug("after annotating, annotation was successful? ({})",
+        successfulAnnotation);
+    ConcreteAnnotator agigaToConcrete = this.getFreshConcreteAnnotator();
     SimpleEntry<EntityMentionSet, EntitySet> tuple = agigaToConcrete
-        .convertCoref(comm, agigaDoc, tokenizations);
+        .convertCoref(comm, docAnnotation, tokenizations);
     EntityMentionSet ems = tuple.getKey();
     EntitySet es = tuple.getValue();
 
@@ -716,6 +706,10 @@ public class StanfordAgigaPipe {
       comm.addToEntitySetList(es);
   }
 
+  private ConcreteAnnotator getFreshConcreteAnnotator() throws IOException {
+    return new ConcreteAnnotator(this.language);
+  }
+
   public Set<String> getSectionTypesToAnnotate() {
     return new HashSet<>(this.kindsToProcessSet);
   }
@@ -727,6 +721,7 @@ public class StanfordAgigaPipe {
    * @return
    * @throws IOException
    */
+  @Deprecated
   protected String getText(Tree t) throws IOException {
     if (t == null)
       return null;

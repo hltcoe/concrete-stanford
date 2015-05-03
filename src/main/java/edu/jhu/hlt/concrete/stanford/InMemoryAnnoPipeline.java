@@ -321,125 +321,52 @@ public class InMemoryAnnoPipeline {
     return sentence;
   }
 
-  public AgigaDocument annotate(Annotation annotation) throws IOException {
+  public boolean annotateLocalStages(Annotation annotation) throws IOException {
     return annotate(pipeline, annotation);
   }
 
-  public AgigaDocument annotateCoref(Annotation annotation) throws IOException {
+  private boolean annotate(StanfordCoreNLP pipeline, Annotation annotation)
+      throws IOException {
+    boolean exceptionThrown = false;
+    for (String stage : documentLevelStages) {
+      logger.debug("Annotation stage: {}", stage);
+      try {
+        (StanfordCoreNLP.getExistingAnnotator(stage)).annotate(annotation);
+        if (stage.equals("parse")) {
+          fixNullDependencyGraphs(annotation);
+        }
+      } catch (Exception e) {
+        logger.warn("Error annotating stage: {}" + stage);
+        exceptionThrown = true;
+      }
+    }
+    logger.debug("Local processing annotation keys :: {}", annotation.keySet()
+        .toString());
+    logger.debug("annotation has "
+        + annotation.get(SentencesAnnotation.class).size());
+    logger.debug("annotation has " + annotation.get(SentencesAnnotation.class));
+    return exceptionThrown;
+  }
+
+  public boolean annotateCoref(Annotation annotation) throws IOException {
     return annotateCoref(pipeline, annotation);
   }
 
-  public AgigaDocument annotate(StanfordCoreNLP pipeline, Annotation annotation)
+  private boolean annotateCoref(StanfordCoreNLP pipeline, Annotation annotation)
       throws IOException {
-    for (String stage : documentLevelStages) {
-      logger.debug("Annotation stage: {}", stage);
-      try {
-        (StanfordCoreNLP.getExistingAnnotator(stage)).annotate(annotation);
-        if (stage.equals("parse")) {
-          fixNullDependencyGraphs(annotation);
-        }
-      } catch (Exception e) {
-        logger.warn("Error annotating stage: {}" + stage);
-      }
-    }
-    logger.debug("Local processing annotation keys :: {}", annotation.keySet()
-        .toString());
-    // Convert to an XML document.
-    Document xmlDoc = this.stanfordToXML(pipeline, annotation);
-    AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc);
-    logger.info("Parse text == " + agigaDoc.getSents().get(0).getParseText());
-    logger.info("Now number of leaves == "
-        + agigaDoc.getSents().get(0).getStanfordContituencyTree().getLeaves()
-            .size());
-
-    logger.debug("agigaDoc has " + agigaDoc.getSents().size() + " sentences");
-    logger.debug("annotation has "
-        + annotation.get(SentencesAnnotation.class).size());
-    logger.debug("annotation has " + annotation.get(SentencesAnnotation.class));
-
-    return agigaDoc;
-  }
-
-  public AgigaDocument getAgigaDoc(Annotation annotation, boolean tokensOnly)
-      throws IOException {
-    logger.debug("Local processing annotation keys :: {}", annotation.keySet()
-        .toString());
-    // Convert to an XML document.
-    Document xmlDoc = this.stanfordToXML(pipeline, annotation, tokensOnly);
-    AgigaPrefs prefs = new AgigaPrefs();
-    if (tokensOnly) {
-      prefs.setAll(false);
-      prefs.setWord(true);
-      prefs.setOffsets(true);
-    } else {
-      prefs.setAll(true);
-    }
-    AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc, prefs);
-
-    logger.debug("agigaDoc has " + agigaDoc.getSents().size() + " sentences");
-    logger.debug("annotation has "
-        + annotation.get(SentencesAnnotation.class).size());
-    logger.debug("annotation has " + annotation.get(SentencesAnnotation.class));
-
-    return agigaDoc;
-  }
-
-  public AgigaDocument getAgigaDocAllButCoref(Annotation annotation)
-      throws IOException {
-    logger.debug("Local processing annotation keys :: {}", annotation.keySet()
-        .toString());
-    for (String stage : documentLevelStages) {
-      logger.debug("Annotation stage: {}", stage);
-      try {
-        (StanfordCoreNLP.getExistingAnnotator(stage)).annotate(annotation);
-        if (stage.equals("parse")) {
-          fixNullDependencyGraphs(annotation);
-        }
-      } catch (Exception e) {
-        logger.warn("Error annotating stage: {}" + stage);
-      }
-    }
-    // Convert to an XML document.
-    Document xmlDoc = this.stanfordToXML(pipeline, annotation);
-    AgigaPrefs prefs = new AgigaPrefs();
-    prefs.setAll(true);
-    AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc, prefs);
-
-    logger.debug("agigaDoc has " + agigaDoc.getSents().size() + " sentences");
-    logger.debug("annotation has "
-        + annotation.get(SentencesAnnotation.class).size());
-    logger.debug("annotation has " + annotation.get(SentencesAnnotation.class));
-
-    return agigaDoc;
-  }
-
-  public AgigaDocument annotateCoref(StanfordCoreNLP pipeline,
-      Annotation annotation) throws IOException {
     String stage = "dcoref";
     logger.debug("DEBUG: annotation stage = " + stage);
     fixNullDependencyGraphs(annotation);
+    boolean exceptionThrown = false;
     try {
       (StanfordCoreNLP.getExistingAnnotator(stage)).annotate(annotation);
     } catch (Exception e) {
       logger.error("Error annotating: {}", stage);
       logger.error(e.getMessage(), e);
+      exceptionThrown = true;
     }
-
     logger.debug("annotation keys :: " + annotation.keySet().toString());
-    // Convert to an XML document.
-    Document xmlDoc = this.stanfordToXML(pipeline, annotation);
-    AgigaPrefs agigaPrefs = new AgigaPrefs();
-    agigaPrefs.setAll(false);
-    agigaPrefs.setCoref(true);
-    agigaPrefs.setWord(true);
-    agigaPrefs.setOffsets(true);
-    AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc, agigaPrefs);
-    logger.debug("agigaDoc has " + agigaDoc.getSents().size() + " sentences");
-    logger.debug("annotation has "
-        + annotation.get(SentencesAnnotation.class).size());
-    logger.debug("annotation has " + annotation.get(SentencesAnnotation.class));
-
-    return agigaDoc;
+    return exceptionThrown;
   }
 
   /**
@@ -447,7 +374,7 @@ public class InMemoryAnnoPipeline {
    * dependency annotations. make sure these are empty dependencies instead to
    * prevent coref-resolution from dying
    **/
-  public static void fixNullDependencyGraphs(Annotation anno) {
+  private static void fixNullDependencyGraphs(Annotation anno) {
     for (CoreMap sent : anno.get(SentencesAnnotation.class)) {
       if (sent.get(CollapsedDependenciesAnnotation.class) == null) {
         sent.set(CollapsedDependenciesAnnotation.class, new SemanticGraph());
@@ -455,47 +382,8 @@ public class InMemoryAnnoPipeline {
     }
   }
 
-  /**
-   * This method assumes only one <DOC/> is contained in the xmlDoc. This also
-   * sets AgigaPrefs.setAll(true)
-   */
-  private static AgigaDocument xmlToAgigaDoc(Document xmlDoc)
-      throws UnsupportedEncodingException, IOException {
-    AgigaPrefs prefs = new AgigaPrefs();
-    prefs.setAll(true);
-    return xmlToAgigaDoc(xmlDoc, prefs);
-  }
-
-  /** This method assumes only one <DOC/> is contained in the xmlDoc. */
-  private static AgigaDocument xmlToAgigaDoc(Document xmlDoc,
-      AgigaPrefs agigaPrefs) throws UnsupportedEncodingException, IOException {
-    // Serialize to a byte array.
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    Serializer ser = new Serializer(baos, "UTF-8");
-    ser.setIndent(2);
-    ser.setMaxLength(0);
-    // The anno-pipeline used a customized version of the
-    // nu.xom.Serializer that gave public access to otherwise protected
-    // methods. Instead, we just write the entire document at once as above.
-    ser.write(xmlDoc);
-    ser.flush();
-
-    BytesAgigaDocumentReader adr = new BytesAgigaDocumentReader(
-        baos.toByteArray(), agigaPrefs);
-    if (!adr.hasNext()) {
-      throw new IllegalStateException("No documents found.");
-    }
-    AgigaDocument agigaDoc = adr.next();
-    if (adr.hasNext()) {
-      throw new IllegalStateException("Multiple documents found.");
-    }
-    return agigaDoc;
-  }
-
   private static void fillInParseAnnotations(boolean verbose, CoreMap sentence,
       Tree tree) {
-    // ParserAnnotatorUtils.fillInParseAnnotations(verbose, true, gsf, sentence,
-    // tree);
     ParserAnnotatorUtils.fillInParseAnnotations(verbose, true, gsf, sentence,
         tree, GrammaticalStructure.Extras.NONE);
   }
@@ -752,4 +640,100 @@ public class InMemoryAnnoPipeline {
     return StanfordCoreNLP.getExistingAnnotator("dcoref");
   }
 
+  /*
+   * Below are a number of methods that can be deleted as they rely on agiga.
+   */
+  @Deprecated
+  public AgigaDocument getAgigaDoc(Annotation annotation, boolean tokensOnly)
+      throws IOException {
+    logger.debug("Local processing annotation keys :: {}", annotation.keySet()
+        .toString());
+    // Convert to an XML document.
+    Document xmlDoc = this.stanfordToXML(pipeline, annotation, tokensOnly);
+    AgigaPrefs prefs = new AgigaPrefs();
+    if (tokensOnly) {
+      prefs.setAll(false);
+      prefs.setWord(true);
+      prefs.setOffsets(true);
+    } else {
+      prefs.setAll(true);
+    }
+    AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc, prefs);
+
+    logger.debug("agigaDoc has " + agigaDoc.getSents().size() + " sentences");
+    logger.debug("annotation has "
+        + annotation.get(SentencesAnnotation.class).size());
+    logger.debug("annotation has " + annotation.get(SentencesAnnotation.class));
+
+    return agigaDoc;
+  }
+
+  @Deprecated
+  public AgigaDocument getAgigaDocAllButCoref(Annotation annotation)
+      throws IOException {
+    logger.debug("Local processing annotation keys :: {}", annotation.keySet()
+        .toString());
+    for (String stage : documentLevelStages) {
+      logger.debug("Annotation stage: {}", stage);
+      try {
+        (StanfordCoreNLP.getExistingAnnotator(stage)).annotate(annotation);
+        if (stage.equals("parse")) {
+          fixNullDependencyGraphs(annotation);
+        }
+      } catch (Exception e) {
+        logger.warn("Error annotating stage: {}" + stage);
+      }
+    }
+    // Convert to an XML document.
+    Document xmlDoc = this.stanfordToXML(pipeline, annotation);
+    AgigaPrefs prefs = new AgigaPrefs();
+    prefs.setAll(true);
+    AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc, prefs);
+
+    logger.debug("agigaDoc has " + agigaDoc.getSents().size() + " sentences");
+    logger.debug("annotation has "
+        + annotation.get(SentencesAnnotation.class).size());
+    logger.debug("annotation has " + annotation.get(SentencesAnnotation.class));
+
+    return agigaDoc;
+  }
+
+  /**
+   * This method assumes only one <DOC/> is contained in the xmlDoc. This also
+   * sets AgigaPrefs.setAll(true)
+   */
+  @SuppressWarnings("unused")
+  @Deprecated
+  private static AgigaDocument xmlToAgigaDoc(Document xmlDoc)
+      throws UnsupportedEncodingException, IOException {
+    AgigaPrefs prefs = new AgigaPrefs();
+    prefs.setAll(true);
+    return xmlToAgigaDoc(xmlDoc, prefs);
+  }
+
+  /** This method assumes only one <DOC/> is contained in the xmlDoc. */
+  private static AgigaDocument xmlToAgigaDoc(Document xmlDoc,
+      AgigaPrefs agigaPrefs) throws UnsupportedEncodingException, IOException {
+    // Serialize to a byte array.
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    Serializer ser = new Serializer(baos, "UTF-8");
+    ser.setIndent(2);
+    ser.setMaxLength(0);
+    // The anno-pipeline used a customized version of the
+    // nu.xom.Serializer that gave public access to otherwise protected
+    // methods. Instead, we just write the entire document at once as above.
+    ser.write(xmlDoc);
+    ser.flush();
+
+    BytesAgigaDocumentReader adr = new BytesAgigaDocumentReader(
+        baos.toByteArray(), agigaPrefs);
+    if (!adr.hasNext()) {
+      throw new IllegalStateException("No documents found.");
+    }
+    AgigaDocument agigaDoc = adr.next();
+    if (adr.hasNext()) {
+      throw new IllegalStateException("Multiple documents found.");
+    }
+    return agigaDoc;
+  }
 }

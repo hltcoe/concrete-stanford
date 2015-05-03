@@ -91,7 +91,7 @@ public class AnnotateTokenizedConcrete {
       try {
         // Run the in-memory anno pipeline to (1) create Stanford objects,
         // (2) convert them to XML, and (3) read that XML into AGiga API objects.
-        AgigaDocument aDoc = pipeline.annotate(sSectionAnno);
+        AgigaDocument aDoc = pipeline.annotateLocalStages(sSectionAnno);
         // Convert the AgigaDocument with annotations for this section
         // to annotations on this section.
         String[] annotationList = {"pos", "cparse", "dparse"};
@@ -123,7 +123,7 @@ public class AnnotateTokenizedConcrete {
     try {
       // Run the in-memory anno pipeline to (1) create Stanford objects,
       // (2) convert them to XML, and (3) read that XML into AGiga API objects.
-      AgigaDocument aDoc = pipeline.annotate(sSentAnno);
+      AgigaDocument aDoc = pipeline.annotateLocalStages(sSentAnno);
       if (aDoc.getSents().size() != 1) {
         throw new AnnotationException("Multiple sentences in AgigaDoc which should contain only 1.");
       }
