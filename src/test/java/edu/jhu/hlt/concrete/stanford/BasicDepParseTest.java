@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.Test;
 
+import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.Dependency;
 import edu.jhu.hlt.concrete.DependencyParse;
@@ -65,6 +66,8 @@ public class BasicDepParseTest {
 
     Communication c = new Communication();
     c.setUuid(UUIDFactory.newUUID());
+    c.setId("Dummy_Communication");
+    c.setMetadata(new AnnotationMetadata().setTool("BasicDepParseTester").setTimestamp(1));
     c.addToSectionList(sect);
     c.setText(text);
     return c;

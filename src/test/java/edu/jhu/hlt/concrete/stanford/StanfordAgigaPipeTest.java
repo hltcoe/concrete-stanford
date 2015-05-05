@@ -678,11 +678,12 @@ public class StanfordAgigaPipeTest {
     assertTrue(firstSentList.size() == 1);
     assertTrue("firstSent.rawTextSpan should be set", firstSent.isSetRawTextSpan());
     assertEquals("Beginning char should be 0.", 0, firstSent.getRawTextSpan().getStart());
-    assertEquals("Ending char should be 48.", 48, firstSent.getRawTextSpan().getEnding());
+    assertEquals("SHAKE_HAND_TEXT_STRING has a different length.", 49, SHAKE_HAND_TEXT_STRING.length());
+    assertEquals("Ending char should be 49.", 49, firstSent.getRawTextSpan().getEnding());
 
     TextSpan tts = firstSent.getRawTextSpan();
     String pulledText = docText.substring(tts.getStart(), tts.getEnding());
-    assertTrue(pulledText.equals(SHAKE_HAND_TEXT_STRING.trim()));
+    assertEquals(pulledText.trim(), SHAKE_HAND_TEXT_STRING.trim());
 
     // Test # Tokens
     StringBuilder actualTokensSB = new StringBuilder();

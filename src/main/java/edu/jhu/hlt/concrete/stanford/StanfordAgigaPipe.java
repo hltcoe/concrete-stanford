@@ -211,7 +211,7 @@ public class StanfordAgigaPipe {
       IOException {
     // if called multiple times, reset the sentence count
     sentenceCount = 1;
-    String commText = comm.getText();
+    String commText = comm.getOriginalText();
     StringBuilder sb = new StringBuilder();
     logger.debug("Annotating communication: {}", comm.getId());
     logger.debug("\tuuid = " + comm.getUuid());
@@ -316,8 +316,10 @@ public class StanfordAgigaPipe {
 
   private void addTokenizations(Section section,
       List<Tokenization> tokenizations) {
-    if (!section.isSetSentenceList())
+    if (!section.isSetSentenceList()) {
+      logger.warn("Section " + section.getUuid() + " has no sentence list set");
       return;
+    }
     for (Sentence sentence : section.getSentenceList()) {
       if (sentence.isSetTokenization())
         tokenizations.add(sentence.getTokenization());
@@ -372,9 +374,8 @@ public class StanfordAgigaPipe {
 
     List<CoreMap> docSents = document.get(SentencesAnnotation.class);
     List<CoreLabel> docTokens = document.get(TokensAnnotation.class);
-    logger
-        .debug("converting list of CoreMap sentences to Annotations, starting at token offset "
-            + globalTokenOffset);
+    logger.debug("converting list of CoreMap sentences to Annotations, starting at token offset "
+                 + globalTokenOffset);
 
     List<CoreMap> sentAnnos = sectAnno.get(SentencesAnnotation.class);
     int maxCharEnding = -1;

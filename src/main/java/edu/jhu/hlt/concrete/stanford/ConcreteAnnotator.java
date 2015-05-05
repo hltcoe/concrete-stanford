@@ -561,16 +561,18 @@ class ConcreteAnnotator {
       Entity concEntity = new Entity().setUuid(UUIDFactory.newUUID());
       CorefChain.CorefMention coreHeadMention = chain
           .getRepresentativeMention();
+      // CoreNLP uses 1-based indexing for the sentences
       EntityMention concHeadMention = makeEntityMention(coreHeadMention,
-          getTokenizationUuidSafe(tokenizations, coreHeadMention.sentNum), true);
+                                                        getTokenizationUuidSafe(tokenizations, ConcreteAnnotator.coreMentionSentenceAsIndex(coreHeadMention.sentNum)), true);
       concEntity.setCanonicalName(coreHeadMention.mentionSpan);
       concEntity.addToMentionIdList(concHeadMention.getUuid());
       ems.addToMentionList(concHeadMention);
       for (CorefChain.CorefMention mention : chain.getMentionsInTextualOrder()) {
         if (mention == coreHeadMention)
           continue;
+        // CoreNLP uses 1-based indexing for the sentences
         EntityMention concMention = this.makeEntityMention(mention,
-            getTokenizationUuidSafe(tokenizations, mention.sentNum), false);
+                                                           getTokenizationUuidSafe(tokenizations, ConcreteAnnotator.coreMentionSentenceAsIndex(mention.sentNum)), false);
         ems.addToMentionList(concMention);
         concEntity.addToMentionIdList(concMention.getUuid());
       }
@@ -622,85 +624,72 @@ class ConcreteAnnotator {
     sb.append("\n\n");
   }
 
-  public void augmentTokenization() {
-    /**
-     * Create a Tokenization based on the given sentence. If we're looking to
-     * add TextSpans, then we will first default to using the token character
-     * offsets within the sentence itself if charOffset is negative. If those
-     * are not set, then we will use the provided charOffset, as long as it is
-     * non-negative. Otherwise, this will throw a runtime exception.
-     * 
-     * @throws AnnotationException
-     */
-    public Tokenization makeTokenization(Tokenization tokenization, CoreMap sent, int charOffset)
-        throws AnnotationException {
-      if (charOffset < 0) {
-        throw new AnnotationException(
-            "The provided character offset cannot be < 0");
-      }
-      UUID tUuid = tokenization.getUuid();
-      TokenTagging lemma = new TokenTagging().setUuid(UUIDFactory.newUUID())
-          .setMetadata(getMetadata()).setTaggingType("LEMMA");
-      TokenTagging pos = new TokenTagging().setUuid(UUIDFactory.newUUID())
-          .setMetadata(getMetadata()).setTaggingType("POS");
-      TokenTagging ner = new TokenTagging().setUuid(UUIDFactory.newUUID())
-          .setMetadata(getMetadata()).setTaggingType("NER");
-      List<CoreLabel> tokens = verifyNonNull(sent
-          .get(CoreAnnotations.TokensAnnotation.class));
-      final int numTaggings = 3;
-      boolean[] tagsGood = { true, true, true };
-      List<Class<? extends TypesafeMap.Key<String>>> annotClasses = new ArrayList<>();
-      annotClasses.add(CoreAnnotations.LemmaAnnotation.class);
-      annotClasses.add(CoreAnnotations.PartOfSpeechAnnotation.class);
-      annotClasses.add(CoreAnnotations.NamedEntityTagAnnotation.class);
-      TokenTagging[] tokenTaggingLists = { lemma, pos, ner };
-      int tokId = 0;
-      for (CoreLabel token : tokens) {
-        Token concToken = makeToken(token, tokId, charOffset);
-        tokenList.addToTokenList(concToken);
-        for (int i = 0; i < numTaggings; ++i) {
-          String tag = token.get(annotClasses.get(i));
-          // TODO: ensure this knows to check for annotations that may not be
-          // there and fail gracefully
-          if (tag != null) {
-            TaggedToken tagTok = this.makeTaggedToken(tag, tokId);
-            tokenTaggingLists[i].addToTaggedTokenList(tagTok);
-          }
-        }
-        ++tokId;
-        // a single space between tokens
-        charOffset += concToken.getText().length() + 1;
-      }
-
-      if (!tokenList.isSetTokenList()) {
-        tokenList.setTokenList(new ArrayList<Token>());
-        logger.warn("Tokenization {} has empty list of tokens",
-            tokenization.getUuid());
-      }
-      tokenization.setTokenList(tokenList);
-
+  /**
+   * Create a Tokenization based on the given sentence. If we're looking to add
+   * TextSpans, then we will first default to using the token character offsets
+   * within the sentence itself if charOffset is negative. If those are not set,
+   * then we will use the provided charOffset, as long as it is non-negative.
+   * Otherwise, this will throw a runtime exception.
+   * 
+   * @throws AnnotationException
+   */
+  public void augmentTokenization(Tokenization tokenization, CoreMap sent,
+      ConcreteCreator cc, int charOffset) throws AnnotationException {
+    if (charOffset < 0) {
+      throw new AnnotationException(
+          "The provided character offset cannot be < 0");
+    }
+    UUID tUuid = tokenization.getUuid();
+    TokenTagging lemma = new TokenTagging().setUuid(UUIDFactory.newUUID())
+        .setMetadata(getMetadata()).setTaggingType("LEMMA");
+    TokenTagging pos = new TokenTagging().setUuid(UUIDFactory.newUUID())
+        .setMetadata(getMetadata()).setTaggingType("POS");
+    TokenTagging ner = new TokenTagging().setUuid(UUIDFactory.newUUID())
+        .setMetadata(getMetadata()).setTaggingType("NER");
+    List<CoreLabel> tokens = verifyNonNull(sent
+        .get(CoreAnnotations.TokensAnnotation.class));
+    final int numTaggings = 3;
+    boolean[] tagsGood = { true, true, true };
+    List<Class<? extends TypesafeMap.Key<String>>> annotClasses = new ArrayList<>();
+    annotClasses.add(CoreAnnotations.LemmaAnnotation.class);
+    annotClasses.add(CoreAnnotations.PartOfSpeechAnnotation.class);
+    annotClasses.add(CoreAnnotations.NamedEntityTagAnnotation.class);
+    TokenTagging[] tokenTaggingLists = { lemma, pos, ner };
+    int tokId = 0;
+    for (CoreLabel token : tokens) {
       for (int i = 0; i < numTaggings; ++i) {
-        if (tagsGood[i]) {
-          tokenization.addToTokenTaggingList(tokenTaggingLists[i]);
+        String tag = token.get(annotClasses.get(i));
+        // TODO: ensure this knows to check for annotations that may not be
+        // there and fail gracefully
+        if (tag != null) {
+          TaggedToken tagTok = cc.makeTaggedToken(tag, tokId);
+          tokenTaggingLists[i].addToTaggedTokenList(tagTok);
         }
       }
+      ++tokId;
+    }
 
-      Tree tree = sent.get(TreeCoreAnnotations.TreeAnnotation.class);
-      if (tree != null) {
-        List<Parse> parseList = new ArrayList<Parse>();
-        parseList.add(makeConcreteCParse(tree, tokId, tUuid));
-        tokenization.setParseList(parseList);
-      } else {
-        logger.warn("Tokenization {} has an empty constituency parse",
-            tokenization.getUuid());
+    for (int i = 0; i < numTaggings; ++i) {
+      if (tagsGood[i]) {
+        tokenization.addToTokenTaggingList(tokenTaggingLists[i]);
       }
-      List<DependencyParse> dependencyParses = constructDependencyParses(sent,
-          tUuid);
-      tokenization.setDependencyParseList(dependencyParses);
-      return tokenization;
-    
+    }
+
+    Tree tree = sent.get(TreeCoreAnnotations.TreeAnnotation.class);
+    if (tree != null) {
+      List<Parse> parseList = new ArrayList<Parse>();
+      parseList.add(cc.makeConcreteCParse(tree, tokId, tUuid));
+      tokenization.setParseList(parseList);
+    } else {
+      logger.warn("Tokenization {} has an empty constituency parse",
+          tokenization.getUuid());
+    }
+    List<DependencyParse> dependencyParses = cc.constructDependencyParses(sent,
+        tUuid);
+    tokenization.setDependencyParseList(dependencyParses);
+
   }
-  
+
   /**
    * This assumes that {@code concSect} has a SentenceList already initialized.
    */
@@ -813,6 +802,20 @@ class ConcreteAnnotator {
       }
     }
     return tb;
+  }
+
+  /**
+   * Convert from 1-based indexing to 0-based indexing. This is useful
+   * for getting the proper sentence (out of a list or array) that a 
+   * given CoreNLP mention occurs in, since CoreNLP uses 1-based indexing
+   * when referring to the sentence of a mention.
+   *
+   * While there might be some overhead in this function call, the JVM will
+   * hopefully inline the function. However, even if it doesn't, it's better
+   * to keep the book-keeping code as its own.
+   */
+  public static int coreMentionSentenceAsIndex(int sentNum) {
+    return sentNum - 1;
   }
 
 }
