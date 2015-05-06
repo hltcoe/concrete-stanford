@@ -89,7 +89,6 @@ public class AnnotateTokenizedConcrete {
    */
   public void annotateWithStanfordNlp(Communication comm)
       throws AnnotationException {
-    StringBuilder verifySb = new StringBuilder();
     try {
       PrereqValidator.verifyCommunication(comm, true);
     } catch (ConcreteException e1) {
@@ -130,10 +129,8 @@ public class AnnotateTokenizedConcrete {
       pipeline.annotateLocalStages(sSentAnno);
       String[] annotationList = { "pos", "cparse", "dparse" };
       ConcreteAnnotator ca = new ConcreteAnnotator(language, annotationList);
-      ConcreteAnnotator.ConcreteCreator cc = ca.new ConcreteCreator();
       int procCharOffset = cSent.getTextSpan().getStart();
-      ca.augmentTokenization(cSent.getTokenization(), sSentAnno, cc,
-          procCharOffset);
+      ca.augmentTokenization(cSent.getTokenization(), sSentAnno, procCharOffset);
     } catch (IOException e) {
       throw new AnnotationException(e);
     }

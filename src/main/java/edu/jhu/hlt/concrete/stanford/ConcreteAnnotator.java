@@ -75,7 +75,6 @@ class ConcreteAnnotator {
   */
   private static final HeadFinder HEAD_FINDER = new SemanticHeadFinder();
 
-  // TODO: refactor the ConcreteAgigaProperties
   private final ConcreteStanfordProperties csProps;
   // private final boolean allowEmptyMentions;
   private final String language;
@@ -103,6 +102,7 @@ class ConcreteAnnotator {
         System.currentTimeMillis() / 1000);
   }
 
+  @SuppressWarnings("unused")
   private AnnotationMetadata getMetadata() {
     return getMetadata(null);
   }
@@ -261,34 +261,12 @@ class ConcreteAnnotator {
               getMetadata(" http://nlp.stanford.edu/software/tokensregex.shtml"))
           .setKind(TokenizationKind.TOKEN_LIST);
       TokenList tokenList = new TokenList();
-      TokenTagging lemma = new TokenTagging().setUuid(UUIDFactory.newUUID())
-          .setMetadata(getMetadata()).setTaggingType("LEMMA");
-      TokenTagging pos = new TokenTagging().setUuid(UUIDFactory.newUUID())
-          .setMetadata(getMetadata()).setTaggingType("POS");
-      TokenTagging ner = new TokenTagging().setUuid(UUIDFactory.newUUID())
-          .setMetadata(getMetadata()).setTaggingType("NER");
       List<CoreLabel> tokens = verifyNonNull(sent
           .get(CoreAnnotations.TokensAnnotation.class));
-      final int numTaggings = 3;
-      boolean[] tagsGood = { true, true, true };
-      List<Class<? extends TypesafeMap.Key<String>>> annotClasses = new ArrayList<>();
-      annotClasses.add(CoreAnnotations.LemmaAnnotation.class);
-      annotClasses.add(CoreAnnotations.PartOfSpeechAnnotation.class);
-      annotClasses.add(CoreAnnotations.NamedEntityTagAnnotation.class);
-      TokenTagging[] tokenTaggingLists = { lemma, pos, ner };
       int tokId = 0;
       for (CoreLabel token : tokens) {
         Token concToken = makeToken(token, tokId, charOffset);
         tokenList.addToTokenList(concToken);
-        for (int i = 0; i < numTaggings; ++i) {
-          String tag = token.get(annotClasses.get(i));
-          // TODO: ensure this knows to check for annotations that may not be
-          // there and fail gracefully
-          if (tag != null) {
-            TaggedToken tagTok = this.makeTaggedToken(tag, tokId);
-            tokenTaggingLists[i].addToTaggedTokenList(tagTok);
-          }
-        }
         ++tokId;
         // a single space between tokens
         charOffset += concToken.getText().length() + 1;
@@ -301,24 +279,8 @@ class ConcreteAnnotator {
       }
       tokenization.setTokenList(tokenList);
 
-      for (int i = 0; i < numTaggings; ++i) {
-        if (tagsGood[i]) {
-          tokenization.addToTokenTaggingList(tokenTaggingLists[i]);
-        }
-      }
+      augmentTokenization(tokenization, sent, this, charOffset);
 
-      Tree tree = sent.get(TreeCoreAnnotations.TreeAnnotation.class);
-      if (tree != null) {
-        List<Parse> parseList = new ArrayList<Parse>();
-        parseList.add(makeConcreteCParse(tree, tokId, tUuid));
-        tokenization.setParseList(parseList);
-      } else {
-        logger.warn("Tokenization {} has an empty constituency parse",
-            tokenization.getUuid());
-      }
-      List<DependencyParse> dependencyParses = constructDependencyParses(sent,
-          tUuid);
-      tokenization.setDependencyParseList(dependencyParses);
       return tokenization;
     }
 
@@ -466,7 +428,6 @@ class ConcreteAnnotator {
         throw new AnnotationException("bad character offset of "
             + charsFromStartOfCommunication + " for converting sent");
       }
-      // TODO: add raw text span
       concSent.setTextSpan(new TextSpan().setStart(
           charsFromStartOfCommunication).setEnding(
           charsFromStartOfCommunication + sentenceText.length()));
@@ -657,7 +618,8 @@ class ConcreteAnnotator {
   }
 
   /**
-   * Augment an existing Tokenization based on the given sentence.
+   * Augment an existing {@link Tokenization} based on the given sentence. The
+   * {@link Tokenization} must have a populated {@link TokenList}.
    * 
    * @throws AnnotationException
    */
@@ -715,13 +677,10 @@ class ConcreteAnnotator {
     List<CoreLabel> tokens = verifyNonNull(sent
         .get(CoreAnnotations.TokensAnnotation.class));
     final int numTaggings = annotClasses.size();
-    boolean[] tagsGood = { true, true, true };
     int tokId = 0;
     for (CoreLabel token : tokens) {
       for (int i = 0; i < numTaggings; ++i) {
         String tag = token.get(annotClasses.get(i));
-        // TODO: ensure this knows to check for annotations that may not be
-        // there and fail gracefully
         if (tag != null) {
           TaggedToken tagTok = cc.makeTaggedToken(tag, tokId);
           tokenTaggingLists.get(i).addToTaggedTokenList(tagTok);
@@ -731,10 +690,26 @@ class ConcreteAnnotator {
     }
 
     for (int i = 0; i < numTaggings; ++i) {
-      if (tagsGood[i]) {
-        tokenization.addToTokenTaggingList(tokenTaggingLists.get(i));
+      tokenization.addToTokenTaggingList(tokenTaggingLists.get(i));
+      if (tokenTaggingLists.get(i).getTaggedTokenListSize() != tokId) {
+        logger.warn("In Tokenization " + tokenization.getUuid()
+            + ", TokenTagging " + tokenTaggingLists.get(i).getTaggingType()
+            + " has " + tokenTaggingLists.get(i).getTaggedTokenListSize()
+            + " tagged tokens, but there are " + tokId + " recorded tokens.");
       }
     }
+
+  }
+
+  /**
+   * Augment an existing Tokenization based on the given sentence.
+   * 
+   * @throws AnnotationException
+   */
+  public void augmentTokenization(Tokenization tokenization, CoreMap sent,
+      int charOffset) throws AnnotationException {
+    ConcreteCreator cc = this.new ConcreteCreator();
+    this.augmentTokenization(tokenization, sent, cc, charOffset);
   }
 
   /**
@@ -831,8 +806,6 @@ class ConcreteAnnotator {
 
       List<Token> tokenList = tokenization.getTokenList().getTokenList();
       int numTokens = tokenList.size();
-      // TODO: I'm not sure we actually need to set the raw textspan on the
-      // sentence
       if (!concSent.isSetRawTextSpan()) {
         logger
             .warn("Concrete sentence "
