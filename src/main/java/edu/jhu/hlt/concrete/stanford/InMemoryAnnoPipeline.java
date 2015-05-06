@@ -4,9 +4,7 @@
  */
 package edu.jhu.hlt.concrete.stanford;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -15,14 +13,10 @@ import nu.xom.Attribute;
 import nu.xom.Document;
 import nu.xom.Element;
 import nu.xom.Elements;
-import nu.xom.Serializer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import edu.jhu.agiga.AgigaDocument;
-import edu.jhu.agiga.AgigaPrefs;
-import edu.jhu.agiga.BytesAgigaDocumentReader;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
@@ -79,8 +73,6 @@ public class InMemoryAnnoPipeline {
   // NOTE: we're only using this for its annotationToDoc method
   private StanfordCoreNLP pipeline;
   private static GrammaticalStructureFactory gsf;
-  // private static String[] documentLevelStages = { "pos", "lemma", "parse",
-  // "ner" };
   private String[] documentLevelStages;
 
   private static String firstPassTokArgs = "" + "invertible=true," + // default
@@ -638,102 +630,5 @@ public class InMemoryAnnoPipeline {
 
   public Annotator getDCorefAnnotator() {
     return StanfordCoreNLP.getExistingAnnotator("dcoref");
-  }
-
-  /*
-   * Below are a number of methods that can be deleted as they rely on agiga.
-   */
-  @Deprecated
-  public AgigaDocument getAgigaDoc(Annotation annotation, boolean tokensOnly)
-      throws IOException {
-    logger.debug("Local processing annotation keys :: {}", annotation.keySet()
-        .toString());
-    // Convert to an XML document.
-    Document xmlDoc = this.stanfordToXML(pipeline, annotation, tokensOnly);
-    AgigaPrefs prefs = new AgigaPrefs();
-    if (tokensOnly) {
-      prefs.setAll(false);
-      prefs.setWord(true);
-      prefs.setOffsets(true);
-    } else {
-      prefs.setAll(true);
-    }
-    AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc, prefs);
-
-    logger.debug("agigaDoc has " + agigaDoc.getSents().size() + " sentences");
-    logger.debug("annotation has "
-        + annotation.get(SentencesAnnotation.class).size());
-    logger.debug("annotation has " + annotation.get(SentencesAnnotation.class));
-
-    return agigaDoc;
-  }
-
-  @Deprecated
-  public AgigaDocument getAgigaDocAllButCoref(Annotation annotation)
-      throws IOException {
-    logger.debug("Local processing annotation keys :: {}", annotation.keySet()
-        .toString());
-    for (String stage : documentLevelStages) {
-      logger.debug("Annotation stage: {}", stage);
-      try {
-        (StanfordCoreNLP.getExistingAnnotator(stage)).annotate(annotation);
-        if (stage.equals("parse")) {
-          fixNullDependencyGraphs(annotation);
-        }
-      } catch (Exception e) {
-        logger.warn("Error annotating stage: {}" + stage);
-      }
-    }
-    // Convert to an XML document.
-    Document xmlDoc = this.stanfordToXML(pipeline, annotation);
-    AgigaPrefs prefs = new AgigaPrefs();
-    prefs.setAll(true);
-    AgigaDocument agigaDoc = xmlToAgigaDoc(xmlDoc, prefs);
-
-    logger.debug("agigaDoc has " + agigaDoc.getSents().size() + " sentences");
-    logger.debug("annotation has "
-        + annotation.get(SentencesAnnotation.class).size());
-    logger.debug("annotation has " + annotation.get(SentencesAnnotation.class));
-
-    return agigaDoc;
-  }
-
-  /**
-   * This method assumes only one <DOC/> is contained in the xmlDoc. This also
-   * sets AgigaPrefs.setAll(true)
-   */
-  @SuppressWarnings("unused")
-  @Deprecated
-  private static AgigaDocument xmlToAgigaDoc(Document xmlDoc)
-      throws UnsupportedEncodingException, IOException {
-    AgigaPrefs prefs = new AgigaPrefs();
-    prefs.setAll(true);
-    return xmlToAgigaDoc(xmlDoc, prefs);
-  }
-
-  /** This method assumes only one <DOC/> is contained in the xmlDoc. */
-  private static AgigaDocument xmlToAgigaDoc(Document xmlDoc,
-      AgigaPrefs agigaPrefs) throws UnsupportedEncodingException, IOException {
-    // Serialize to a byte array.
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    Serializer ser = new Serializer(baos, "UTF-8");
-    ser.setIndent(2);
-    ser.setMaxLength(0);
-    // The anno-pipeline used a customized version of the
-    // nu.xom.Serializer that gave public access to otherwise protected
-    // methods. Instead, we just write the entire document at once as above.
-    ser.write(xmlDoc);
-    ser.flush();
-
-    BytesAgigaDocumentReader adr = new BytesAgigaDocumentReader(
-        baos.toByteArray(), agigaPrefs);
-    if (!adr.hasNext()) {
-      throw new IllegalStateException("No documents found.");
-    }
-    AgigaDocument agigaDoc = adr.next();
-    if (adr.hasNext()) {
-      throw new IllegalStateException("Multiple documents found.");
-    }
-    return agigaDoc;
   }
 }

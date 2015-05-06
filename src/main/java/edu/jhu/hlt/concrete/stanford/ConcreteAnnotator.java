@@ -13,7 +13,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import concrete.agiga.util.ConcreteAgigaProperties;
 import concrete.tools.AnnotationException;
 import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
@@ -77,27 +76,23 @@ class ConcreteAnnotator {
   private static final HeadFinder HEAD_FINDER = new SemanticHeadFinder();
 
   // TODO: refactor the ConcreteAgigaProperties
-  @Deprecated
-  private final ConcreteAgigaProperties agigaProps;
   private final ConcreteStanfordProperties csProps;
-  private final boolean allowEmptyMentions;
+  // private final boolean allowEmptyMentions;
   private final String language;
 
   private final String[] annotatorList;
 
   public ConcreteAnnotator(String language) throws IOException {
-    this.agigaProps = new ConcreteAgigaProperties();
     this.csProps = new ConcreteStanfordProperties();
-    this.allowEmptyMentions = this.csProps.getAllowEmptyMentions();
+    // this.allowEmptyMentions = this.csProps.getAllowEmptyMentions();
     this.language = language;
     this.annotatorList = ConcreteAnnotator.getDefaultAnnotators();
   }
 
   public ConcreteAnnotator(String language, String[] annotators)
       throws IOException {
-    this.agigaProps = new ConcreteAgigaProperties();
     this.csProps = new ConcreteStanfordProperties();
-    this.allowEmptyMentions = this.csProps.getAllowEmptyMentions();
+    // this.allowEmptyMentions = this.csProps.getAllowEmptyMentions();
     this.language = language;
     this.annotatorList = annotators;
   }
@@ -167,8 +162,8 @@ class ConcreteAnnotator {
     TheoryDependencies td = new TheoryDependencies();
     for (Tokenization t : tokenizations)
       td.addToTokenizationTheoryList(t.getUuid());
-    AnnotationMetadata md = this
-        .getMetadata(this.agigaProps.getCorefToolName()).setDependencies(td);
+    AnnotationMetadata md = this.getMetadata(this.csProps.getCorefToolName())
+        .setDependencies(td);
     ems.setMetadata(md);
 
     Map<Integer, CorefChain> coreNlpChains = coreNlpDoc
@@ -373,7 +368,7 @@ class ConcreteAnnotator {
       Parse p = new Parse().setUuid(UUIDFactory.newUUID());
       TheoryDependencies deps = new TheoryDependencies();
       deps.addToTokenizationTheoryList(tokenizationUUID);
-      AnnotationMetadata md = getMetadata(agigaProps.getCParseToolName())
+      AnnotationMetadata md = getMetadata(csProps.getCParseToolName())
           .setDependencies(deps);
       p.setMetadata(md);
       constructConstituent(root, idCounter, left, right, n, p, tokenizationUUID);
@@ -512,7 +507,7 @@ class ConcreteAnnotator {
       depParse.setUuid(UUIDFactory.newUUID());
       TheoryDependencies td = new TheoryDependencies();
       td.addToTokenizationTheoryList(tokenizationUUID);
-      String toolName = depParseType + " " + agigaProps.getDParseToolName();
+      String toolName = depParseType + " " + csProps.getDParseToolName();
       AnnotationMetadata md = getMetadata(toolName).setDependencies(td);
       depParse.setMetadata(md);
       List<Dependency> dependencies = makeDependencies(semGraph);
@@ -895,11 +890,11 @@ class ConcreteAnnotator {
    */
   public AnnotationMetadata getLemmaMetadata(UUID tUuid) {
     return this.createTokenizationDependentMetadata(tUuid,
-        this.agigaProps.getLemmatizerToolName());
+        this.csProps.getLemmatizerToolName());
   }
 
   public AnnotationMetadata getCorefMetadata() {
-    return this.getMetadata(this.agigaProps.getCorefToolName());
+    return this.getMetadata(this.csProps.getCorefToolName());
   }
 
   /**
@@ -910,7 +905,7 @@ class ConcreteAnnotator {
    */
   public AnnotationMetadata getPOSMetadata(UUID tUuid) {
     return this.createTokenizationDependentMetadata(tUuid,
-        this.agigaProps.getPOSToolName());
+        this.csProps.getPOSToolName());
   }
 
   /**
@@ -921,7 +916,7 @@ class ConcreteAnnotator {
    */
   public AnnotationMetadata getNERMetadata(UUID tUuid) {
     return this.createTokenizationDependentMetadata(tUuid,
-        this.agigaProps.getNERToolName());
+        this.csProps.getNERToolName());
   }
 
   /**
@@ -966,6 +961,10 @@ class ConcreteAnnotator {
    */
   public static int coreMentionSentenceAsIndex(int sentNum) {
     return sentNum - 1;
+  }
+
+  public String getLanguage() {
+    return language;
   }
 
 }
