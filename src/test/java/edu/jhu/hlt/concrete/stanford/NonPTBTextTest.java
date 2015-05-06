@@ -1,5 +1,6 @@
 package edu.jhu.hlt.concrete.stanford;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import concrete.validation.CommunicationValidator;
 import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.concrete.Constituent;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
@@ -28,13 +30,8 @@ public class NonPTBTextTest {
 
   RandomConcreteFactory cf = new RandomConcreteFactory();
 
-  // public static final String chineseText1 =
-  // "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 Hanfeng 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 ChinaHuanengGroup 和 中信 CITIC .";
-  // public static final String chineseText1 =
-  // "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 ( Hanfeng ) 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 ( ChinaHuanengGroup ) 和 中信 ( CITIC ) .";
-  public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 （ Hanfeng ） 火力 发电厂 40% 的 股份 转让 给 中国 华 能 集团 （ ChinaHuanengGroup ） 和 中信 （ CITIC ） 。";
-  // public static final String englishText1 = "John ( a boy ) ran fast .";
-  public static final String englishText1 = "John -LRB- a boy -RRB- ran fast [ to the park ] { on Friday } .";
+  public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 ( Hanfeng ) 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 ( ChinaHuanengGroup ) 和 中信 ( CITIC ) .";
+  public static final String englishText1 = "John ( a boy ) ran fast .";
 
   @Test
   public void testChinese1() throws Exception {
@@ -69,11 +66,14 @@ public class NonPTBTextTest {
     }
     tokenization.setTokenTaggingList(new ArrayList<>());
     tokenization.setTokenList(tokenList);
-
     sentence.setTokenization(tokenization);
+
     assertTrue(new CommunicationValidator(chineseComm).validate());
+
     AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete("cn");
     atc.annotateWithStanfordNlp(chineseComm);
+    assertTrue(tokenization.isSetParseList());
+    assertEquals(1, tokenization.getParseListSize());
   }
 
   @Test
@@ -113,5 +113,28 @@ public class NonPTBTextTest {
     assertTrue(new CommunicationValidator(englishComm).validate());
     AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete("en");
     atc.annotateWithStanfordNlp(englishComm);
+    String[] expectedTokens = englishText1.split(" +");
+    assertEquals(expectedTokens.length, tokenList.getTokenListSize());
+    assertTrue(tokenization.isSetParseList());
+    assertEquals(1, tokenization.getParseListSize());
+    int maxCParseSpan = 0;
+    for (Constituent cons : tokenization.getParseList().get(0)
+        .getConstituentList()) {
+      maxCParseSpan = cons.getEnding() > maxCParseSpan ? cons.getEnding()
+          : maxCParseSpan;
+    }
+    assertEquals(8, maxCParseSpan);
+    assertEquals("(", tokenList.getTokenList().get(1).getText());
+    int tokIdx = 0;
+    tokenStart = 0;
+    tokenEnd = 0;
+    for (String tokenStr : expectedTokens) {
+      assertEquals(tokenStr, tokenList.getTokenList().get(tokIdx).getText());
+      tokenEnd += tokenStr.length();
+      assertEquals(tokenStr, englishText1.substring(tokenStart, tokenEnd));
+      tokenStart = tokenEnd + 1;
+      tokenEnd = tokenStart;
+      ++tokIdx;
+    }
   }
 }
