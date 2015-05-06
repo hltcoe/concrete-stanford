@@ -88,7 +88,7 @@ public class StanfordAgigaPipeTest {
   Communication wonkyNYT;
   Communication nyt1999;
 
-  StanfordAgigaPipe pipe;
+  AnnotateNonTokenizedConcrete pipe;
   Set<String> kindsToAnnotate;
 
   /**
@@ -96,7 +96,7 @@ public class StanfordAgigaPipeTest {
    */
   @Before
   public void setUp() throws Exception {
-    this.pipe = new StanfordAgigaPipe();
+    this.pipe = new AnnotateNonTokenizedConcrete();
     this.kindsToAnnotate = this.pipe.getSectionTypesToAnnotate();
 
     Communication c = this.cf.communication();
@@ -125,7 +125,7 @@ public class StanfordAgigaPipeTest {
 
   /**
    * Test method for
-   * {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}
+   * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
    * 
    * @throws TException
@@ -150,7 +150,7 @@ public class StanfordAgigaPipeTest {
 
   /**
    * Test method for
-   * {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}
+   * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
    * 
    * @throws TException
@@ -177,7 +177,7 @@ public class StanfordAgigaPipeTest {
 
   /**
    * Test method for
-   * {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}
+   * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
    * 
    * @throws TException
@@ -725,7 +725,7 @@ public class StanfordAgigaPipeTest {
 
   /**
    * Test method for
-   * {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}
+   * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
    * 
    * @throws TException
@@ -890,7 +890,7 @@ public class StanfordAgigaPipeTest {
 
   /**
    * Test method for
-   * {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}
+   * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
    * 
    * @throws TException
@@ -1086,7 +1086,7 @@ public class StanfordAgigaPipeTest {
 
   /**
    * Test method for
-   * {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}
+   * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
    * 
    * @throws TException

@@ -131,7 +131,7 @@ public class BasicDepParseTest {
   @Test
   public void test() throws Exception {
     Communication c = getTestCommunication();
-    StanfordAgigaPipe pipe = new StanfordAgigaPipe();
+    AnnotateNonTokenizedConcrete pipe = new AnnotateNonTokenizedConcrete();
     c = pipe.process(c);
     Set<String> gold = getExpectedBasicDependencies();
     Set<String> hyp = getObservedBasicDependencies(c);

@@ -19,7 +19,7 @@ import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.UUID;
-import edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe.PrereqValidator;
+import edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete.PrereqValidator;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.Timing;
 import edu.jhu.hlt.concrete.uuid.UUIDFactory;

@@ -43,12 +43,10 @@ import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.util.CoreMap;
 
-public class StanfordAgigaPipe {
+public class AnnotateNonTokenizedConcrete {
 
   private static final Logger logger = LoggerFactory
-      .getLogger(StanfordAgigaPipe.class);
-  // private static final String[] DEFAULT_KINDS_TO_ANNOTATE = new String[] {
-  // "Passage", "Other" };
+      .getLogger(AnnotateNonTokenizedConcrete.class);
 
   static final String usage = "You must specify an input path: java edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe --input path/to/input/file --output path/to/output/file\n"
       + "  Optional arguments: \n"
@@ -60,10 +58,6 @@ public class StanfordAgigaPipe {
       "Dateline" };
 
   private int sentenceCount = 1; // for flat files, no document structure
-
-  // private boolean aggregateSectionsByFirst = false;
-  // private boolean tokenize = true;
-  // private boolean parse = false;
 
   private final InMemoryAnnoPipeline pipeline;
   private final Set<String> kindsToProcessSet;
@@ -119,17 +113,17 @@ public class StanfordAgigaPipe {
     ConcreteStanfordAnnotator.main(args);
   }
 
-  public StanfordAgigaPipe() throws IOException {
+  public AnnotateNonTokenizedConcrete() throws IOException {
     this(Arrays.asList(defaultKindsToFullyProcess), Arrays
         .asList(defaultKindsNoCoref), true);
   }
 
-  public StanfordAgigaPipe(String lang) throws IOException {
+  public AnnotateNonTokenizedConcrete(String lang) throws IOException {
     this();
     this.language = lang;
   }
 
-  public StanfordAgigaPipe(Collection<String> typesToAnnotate,
+  public AnnotateNonTokenizedConcrete(Collection<String> typesToAnnotate,
       Collection<String> typesToTokenizeOnly, boolean allowEmptyMentions)
       throws IOException {
     this.kindsToProcessSet = new HashSet<>();
@@ -374,8 +368,9 @@ public class StanfordAgigaPipe {
 
     List<CoreMap> docSents = document.get(SentencesAnnotation.class);
     List<CoreLabel> docTokens = document.get(TokensAnnotation.class);
-    logger.debug("converting list of CoreMap sentences to Annotations, starting at token offset "
-                 + globalTokenOffset);
+    logger
+        .debug("converting list of CoreMap sentences to Annotations, starting at token offset "
+            + globalTokenOffset);
 
     List<CoreMap> sentAnnos = sectAnno.get(SentencesAnnotation.class);
     int maxCharEnding = -1;
@@ -619,7 +614,8 @@ public class StanfordAgigaPipe {
         successfulAnnotation);
 
     ConcreteAnnotator addToConcrete = this.getFreshConcreteAnnotator();
-    addToConcrete.augmentSectionAnnotations(section, sentenceSplitText, sectionOffset, sb);
+    addToConcrete.augmentSectionAnnotations(section, sentenceSplitText,
+        sectionOffset, sb);
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
   }
 
@@ -649,8 +645,8 @@ public class StanfordAgigaPipe {
     logDebugSentencesAnnotation(sentenceSplitText, "after annotating");
     transferAnnotations(sentenceSplitText, docAnnotation);
     ConcreteAnnotator agigaToConcrete = this.getFreshConcreteAnnotator();
-    agigaToConcrete.augmentSectionAnnotations(section, sentenceSplitText, sectionOffset,
-        sb);
+    agigaToConcrete.augmentSectionAnnotations(section, sentenceSplitText,
+        sectionOffset, sb);
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
   }
 

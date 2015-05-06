@@ -5,6 +5,6 @@
 # Arg 2 : input file
 # Arg 3 : output file
 ##################################
-java -cp $1 edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe \
+java -cp $1 edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete \
     $2 \
     $3

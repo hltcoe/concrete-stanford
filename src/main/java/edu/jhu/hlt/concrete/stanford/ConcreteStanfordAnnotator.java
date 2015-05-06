@@ -94,7 +94,7 @@ public class ConcreteStanfordAnnotator {
         LOGGER.error("Input file extension was not '.concrete', '.tar', or '.tar.gz'; exiting.");
         System.exit(1);
       } else if (isConcreteExt) {
-        StanfordAgigaPipe pipe = new StanfordAgigaPipe();
+        AnnotateNonTokenizedConcrete pipe = new AnnotateNonTokenizedConcrete();
         // IF .concrete, run single communication.
         LOGGER.info("Annotating single .concrete file at: {}", initPath.toString());
         byte[] inputBytes = Files.readAllBytes(initPath);
@@ -105,7 +105,7 @@ public class ConcreteStanfordAnnotator {
         Path concreteOutPath = outPath.resolve(fileName);
         new SuperCommunication(annotated).writeToFile(concreteOutPath, true);
       } else {
-        StanfordAgigaPipe pipe = new StanfordAgigaPipe();
+        AnnotateNonTokenizedConcrete pipe = new AnnotateNonTokenizedConcrete();
         int nElementsInitPath = initPath.getNameCount();
         Path inputFileName = initPath.getName(nElementsInitPath - 1);
         // LOGGER.info("Input FN: {}", inputFileName.toString());
