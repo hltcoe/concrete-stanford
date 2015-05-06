@@ -49,10 +49,10 @@ import gigaword.interfaces.GigawordDocument;
  * @author max
  * @author fferraro
  */
-public class StanfordAgigaPipeTest {
+public class AnnotateNonTokenizedConcreteTest {
 
   private static final Logger logger = LoggerFactory
-      .getLogger(StanfordAgigaPipeTest.class);
+      .getLogger(AnnotateNonTokenizedConcreteTest.class);
 
   public static final String SHAKE_HAND_TEXT_STRING = "The man ran to shake the U.S. \nPresident's hand. ";
   public static final String AFP_0623_TEXT = ""
@@ -213,7 +213,7 @@ public class StanfordAgigaPipeTest {
     final String[] stokens = { "The", "man", "ran", "to", "shake", "the",
         "U.S.", "President", "'s", "hand", "." };
 
-    assertTrue(docText.equals(StanfordAgigaPipeTest.SHAKE_HAND_TEXT_STRING));
+    assertTrue(docText.equals(AnnotateNonTokenizedConcreteTest.SHAKE_HAND_TEXT_STRING));
 
     // Sections
     verifyNumSections(shakeHandComm, processedShakeHandComm);
@@ -766,7 +766,7 @@ public class StanfordAgigaPipeTest {
     final String[] stokens = { "The", "man", "ran", "to", "shake", "the",
         "U.S.", "President", "'s", "hand", "." };
 
-    assertTrue(docText.equals(StanfordAgigaPipeTest.SHAKE_HAND_TEXT_STRING));
+    assertTrue(docText.equals(AnnotateNonTokenizedConcreteTest.SHAKE_HAND_TEXT_STRING));
 
     // Sections
     verifyNumSections(shakeHandComm, processedShakeHandComm);
