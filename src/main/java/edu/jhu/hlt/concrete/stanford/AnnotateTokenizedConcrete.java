@@ -59,7 +59,7 @@ import edu.stanford.nlp.util.CoreMap;
  * @author mgormley
  * @author npeng
  */
-public class AnnotateTokenizedConcrete {
+public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
 
   private static final Logger log = LoggerFactory
       .getLogger(AnnotateTokenizedConcrete.class);
@@ -90,7 +90,7 @@ public class AnnotateTokenizedConcrete {
   public void annotateWithStanfordNlp(Communication comm)
       throws AnnotationException {
     try {
-      PrereqValidator.verifyCommunication(comm, true);
+      this.ensurePreconditionsMet(comm, true);
     } catch (ConcreteException e1) {
       throw new AnnotationException(e1);
     }
@@ -112,6 +112,25 @@ public class AnnotateTokenizedConcrete {
         throw new RuntimeException(e);
       }
     }
+  }
+
+  /**
+   * 
+   * @param comm
+   *          : An input {@code Communication} that passes
+   *          {@code PrereqValidator.verifyCommunication}.
+   * @return An annotated deep copy of the input {@code Communication}. The
+   *         input Communication will be unchanged.
+   * @throws IOException
+   * @throws ConcreteException
+   * @throws AnnotationException
+   */
+  @Override
+  public Communication process(Communication comm) throws IOException,
+      ConcreteException, AnnotationException {
+    Communication commCopy = comm.deepCopy();
+    annotateWithStanfordNlp(commCopy);
+    return commCopy;
   }
 
   /**
@@ -377,6 +396,12 @@ public class AnnotateTokenizedConcrete {
         }
       }
     }
+  }
+
+  @Override
+  public boolean ensurePreconditionsMet(Communication comm, boolean useThrow)
+      throws ConcreteException {
+    return PrereqValidator.verifyCommunication(comm, useThrow);
   }
 
   /**

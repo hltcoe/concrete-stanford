@@ -36,29 +36,36 @@ import edu.jhu.hlt.utilt.AutoCloseableIterator;
  */
 public class ConcreteStanfordAnnotator {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ConcreteStanfordAnnotator.class);
+  private static final Logger LOGGER = LoggerFactory
+      .getLogger(ConcreteStanfordAnnotator.class);
+
+  private static String defaultLanguage = "en";
 
   private ConcreteStanfordAnnotator() {
-
   }
 
   public static void main(String[] args) {
     if (args.length != 2) {
       LOGGER.info("This program takes 2 arguments.");
-      LOGGER.info("The first is a path to a .concrete file, .tar file containing .concrete files, or "
-          + "a .tar.gz with .concrete files.");
+      LOGGER
+          .info("The first is a path to a .concrete file, .tar file containing .concrete files, or "
+              + "a .tar.gz with .concrete files.");
       LOGGER.info("Each .concrete file must contain section segmentations.");
-      LOGGER.info("The second argument is a path to the output file, matching the input file "
-          + "(if arg 1 == .concrete file, then output == .concrete file, etc.)");
+      LOGGER
+          .info("The second argument is a path to the output file, matching the input file "
+              + "(if arg 1 == .concrete file, then output == .concrete file, etc.)");
       LOGGER.info("Example usage: ");
-      LOGGER.info(ConcreteStanfordAnnotator.class.getName() + " " + "/path/to/.concrete/file /path/to/output/file");
+      LOGGER.info(ConcreteStanfordAnnotator.class.getName() + " "
+          + "/path/to/.concrete/file /path/to/output/file");
       System.exit(1);
     }
 
     String initPathStr = args[0];
     Path initPath = Paths.get(initPathStr);
     if (!Files.exists(initPath)) {
-      LOGGER.error("Path {} does not exist. Ensure it exists and re-run this program.", initPathStr);
+      LOGGER.error(
+          "Path {} does not exist. Ensure it exists and re-run this program.",
+          initPathStr);
       System.exit(1);
     }
 
@@ -69,7 +76,8 @@ public class ConcreteStanfordAnnotator {
         LOGGER.debug("Attempting to create output directory.");
         Files.createDirectories(outPath);
       } catch (IOException ioe) {
-        LOGGER.error("Caught IOException while creating output directory.", ioe);
+        LOGGER
+            .error("Caught IOException while creating output directory.", ioe);
         System.exit(1);
       }
     }
@@ -91,21 +99,23 @@ public class ConcreteStanfordAnnotator {
 
       // If no extention matches, exit.
       if (!isTarExt && !isTarGzExt && !isConcreteExt) {
-        LOGGER.error("Input file extension was not '.concrete', '.tar', or '.tar.gz'; exiting.");
+        LOGGER
+            .error("Input file extension was not '.concrete', '.tar', or '.tar.gz'; exiting.");
         System.exit(1);
       } else if (isConcreteExt) {
-        AnnotateNonTokenizedConcrete pipe = new AnnotateNonTokenizedConcrete();
         // IF .concrete, run single communication.
-        LOGGER.info("Annotating single .concrete file at: {}", initPath.toString());
+        LOGGER.info("Annotating single .concrete file at: {}",
+            initPath.toString());
         byte[] inputBytes = Files.readAllBytes(initPath);
 
         Communication c = ser.fromBytes(inputBytes);
+        GenericStanfordAnnotator pipe = StanfordAnnotatorFactory
+            .getAppropriateAnnotator(c, defaultLanguage);
         Communication annotated = pipe.process(c);
         String fileName = annotated.getId() + ".concrete";
         Path concreteOutPath = outPath.resolve(fileName);
         new SuperCommunication(annotated).writeToFile(concreteOutPath, true);
       } else {
-        AnnotateNonTokenizedConcrete pipe = new AnnotateNonTokenizedConcrete();
         int nElementsInitPath = initPath.getNameCount();
         Path inputFileName = initPath.getName(nElementsInitPath - 1);
         // LOGGER.info("Input FN: {}", inputFileName.toString());
@@ -126,10 +136,25 @@ public class ConcreteStanfordAnnotator {
           else
             iter = new TarGzArchiveEntryByteIterator(bis);
 
-          LOGGER.info("Iterating over archive: {}", initPath.toString());
-          StopWatch sw = new StopWatch();
-          sw.start();
+          GenericStanfordAnnotator pipe = null;
+          StopWatch sw = null;
           int docCtr = 0;
+          if (iter.hasNext()) {
+            Communication comm = ser.fromBytes(iter.next());
+            pipe = StanfordAnnotatorFactory.getAppropriateAnnotator(comm,
+                defaultLanguage);
+            LOGGER.info("Iterating over archive: {}", initPath.toString());
+            sw = new StopWatch();
+            sw.start();
+            Communication annot = pipe.process(comm);
+            archiver.addEntry(new ArchivableCommunication(annot));
+            docCtr++;
+          } else {
+            LOGGER.info("Iterating over archive: {}", initPath.toString());
+            LOGGER.warn("Archive {} is empty", initPath.toString());
+            sw = new StopWatch();
+            sw.start();
+          }
           while (iter.hasNext()) {
             Communication n = ser.fromBytes(iter.next());
             LOGGER.info("Annotating communication: {}", n.getId());
@@ -153,13 +178,14 @@ public class ConcreteStanfordAnnotator {
           LOGGER.info("Runtime: approximately {} minutes.", minutesInt);
           LOGGER.info("Processed {} documents.", docCtr);
           if (docCtr > 0 && minutesInt > 0) {
-            float perMin = (float)docCtr / (float)minutesInt;
+            float perMin = (float) docCtr / (float) minutesInt;
             LOGGER.info("Processed approximately {} documents/minute.", perMin);
           }
         }
       }
     } catch (IOException | ConcreteException | AnnotationException e) {
-      LOGGER.error("Caught exception while running StanfordAgigaPipe over archive.", e);
+      LOGGER.error(
+          "Caught exception while running StanfordAgigaPipe over archive.", e);
     }
   }
 }

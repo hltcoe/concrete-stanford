@@ -42,7 +42,7 @@ import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.util.CoreMap;
 
-public class AnnotateNonTokenizedConcrete {
+public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
 
   private static final Logger logger = LoggerFactory
       .getLogger(AnnotateNonTokenizedConcrete.class);
@@ -130,9 +130,10 @@ public class AnnotateNonTokenizedConcrete {
    * @throws ConcreteException
    * @throws AnnotationException
    */
+  @Override
   public Communication process(Communication comm) throws IOException,
       ConcreteException, AnnotationException {
-    PrereqValidator.verifyCommunication(comm, true);
+    this.ensurePreconditionsMet(comm, true);
 
     PerspectiveCommunication pc = new PerspectiveCommunication(comm,
         "PerspectiveCreator");
@@ -711,6 +712,12 @@ public class AnnotateNonTokenizedConcrete {
       sb.append(" ");
     }
     return sb.toString().trim();
+  }
+
+  @Override
+  public boolean ensurePreconditionsMet(Communication comm, boolean useThrow)
+      throws ConcreteException {
+    return PrereqValidator.verifyCommunication(comm, useThrow);
   }
 
   /**
