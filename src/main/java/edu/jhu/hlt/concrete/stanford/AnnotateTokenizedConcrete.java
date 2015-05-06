@@ -89,6 +89,12 @@ public class AnnotateTokenizedConcrete {
    */
   public void annotateWithStanfordNlp(Communication comm)
       throws AnnotationException {
+    StringBuilder verifySb = new StringBuilder();
+    try {
+      PrereqValidator.verifyCommunication(comm, true);
+    } catch (ConcreteException e1) {
+      throw new AnnotationException(e1);
+    }
     StringBuilder sb = new StringBuilder();
     for (Section cSection : comm.getSectionList()) {
       if (cSection.isSetLabel()
@@ -96,12 +102,7 @@ public class AnnotateTokenizedConcrete {
         continue;
       Annotation sSectionAnno = getSectionAsAnnotation(cSection, comm);
       try {
-        // Run the in-memory anno pipeline to (1) create Stanford objects,
-        // (2) convert them to XML, and (3) read that XML into AGiga API
-        // objects.
         pipeline.annotateLocalStages(sSectionAnno);
-        // Convert the AgigaDocument with annotations for this section
-        // to annotations on this section.
         String[] annotationList = { "pos", "cparse", "dparse" };
         ConcreteAnnotator ca = new ConcreteAnnotator(language, annotationList);
         int procCharOffset = cSection.getTextSpan().getStart();
@@ -110,10 +111,7 @@ public class AnnotateTokenizedConcrete {
         throw new RuntimeException(e);
       } catch (AnnotationException e) {
         throw new RuntimeException(e);
-      } /*
-         * catch(Exception e) { log.error(e.toString()); e.printStackTrace();
-         * throw new RuntimeException(e); }
-         */
+      }
     }
   }
 
@@ -129,11 +127,7 @@ public class AnnotateTokenizedConcrete {
       throws AnnotationException {
     Annotation sSentAnno = getSentenceAsAnnotation(cSent, comm);
     try {
-      // Run the in-memory anno pipeline to (1) create Stanford objects,
-      // (2) convert them to XML, and (3) read that XML into AGiga API objects.
       pipeline.annotateLocalStages(sSentAnno);
-      // Convert the AgigaSentence with annotations for this sentence
-      // to annotations on this sentence.
       String[] annotationList = { "pos", "cparse", "dparse" };
       ConcreteAnnotator ca = new ConcreteAnnotator(language, annotationList);
       ConcreteAnnotator.ConcreteCreator cc = ca.new ConcreteCreator();
@@ -385,6 +379,250 @@ public class AnnotateTokenizedConcrete {
               outPath.resolve(inFile.getFileName()), true);
         }
       }
+    }
+  }
+
+  /**
+   * A validator object to ensure that all prerequisites are met. The
+   * communication must:
+   * <ul>
+   * <li>Have a non-empty .text field
+   * <li>Have sections with
+   * </ul>
+   */
+  static class PrereqValidator {
+    /**
+     * 
+     * @param comm
+     * @param useThrow
+     *          If true, throw an exception rather than returning {@code false}
+     *          if given a non-valid communication. Otherwise, return
+     *          true/false.
+     * @return True iff {@code comm} satisfies the requirements of a
+     *         communication to be annotated.
+     *         <ul>
+     *         <li>It must not be null.</li>
+     *         <li>It must be a valid Concrete communication. In particular:
+     *         <ul>
+     *         <li>It must have a non-empty .id field set.</li>
+     *         <li>It must have a non-empty .text field set.</li>
+     *         </ul>
+     *         <li>It must have verifiable sections (see {@code verifySentence}.
+     *         </li>
+     *         <li>It must have a .metadata field set with a non-empty .tool
+     *         field.</li>
+     *         </ul>
+     */
+    public static boolean verifyCommunication(Communication comm,
+        boolean useThrow) throws ConcreteException {
+      StringBuffer sb = new StringBuffer();
+      boolean good = true;
+      if (comm == null) {
+        sb.append("Communication must not be null.\n");
+        return false;
+      }
+      // TODO: call a thrift-backed validator to make sure all required fields
+      // are set
+      if (!comm.isSetId() || comm.getId().equals("")) {
+        sb.append("Communication must have id set.\n");
+        good = false;
+      }
+      if (!comm.isSetText() || comm.getText().equals("")) {
+        sb.append("Expecting Communication Text, but was empty or none.\n");
+        good = false;
+      }
+      boolean sectNull = false;
+      if (!comm.isSetSectionList()) {
+        sb.append("Expecting Communication to have a section list set.\n");
+        sectNull = true;
+        good = false;
+      } else {
+        if (!sectNull && comm.getSectionList().isEmpty()) {
+          sb.append("Expecting Communication to have a non-empty section list.\n");
+          good = false;
+        }
+        for (Section section : comm.getSectionList()) {
+          good &= verifySection(section, sb);
+        }
+      }
+      if (!comm.isSetMetadata()) {
+        sb.append("Communication must have metadata set.\n");
+        good = false;
+      } else {
+        if (!comm.getMetadata().isSetTool()
+            || comm.getMetadata().getTool().length() == 0) {
+          sb.append("Communication metadata must have non-empty tool name set.\n");
+          good = false;
+        }
+      }
+      if (sb.length() > 0 && useThrow) {
+        throw new ConcreteException(sb.toString());
+      }
+      return good;
+    }
+
+    /**
+     * 
+     * @param section
+     * @param sb
+     * @return True iff {@code section} satisfies the requirements of a section
+     *         to be annotated.
+     *         <ul>
+     *         <li>It must not be null.</li>
+     *         <li>It must have a .textSpan field set.</li>
+     *         <li>It must have verifiable Sentences.</li>
+     *         </ul>
+     */
+
+    public static boolean verifySection(Section section, StringBuffer sb) {
+      boolean good = true;
+      if (section == null) {
+        sb.append("Section cannot be null.\n");
+        return false;
+      }
+      if (!section.isSetTextSpan()) {
+        sb.append("Section " + section.getUuid().toString()
+            + " must have .textSpan set.\n");
+        good = false;
+      } else {
+        good &= verifyTextSpan(section.getTextSpan(), sb);
+      }
+      if (!section.isSetSentenceList() || section.getSentenceList() == null
+          || section.getSentenceListSize() == 0) {
+        sb.append("Section " + section.getUuid()
+            + " must have a non-empty sentence list");
+        good = false;
+      } else {
+        for (Sentence sentence : section.getSentenceList()) {
+          good &= verifySentence(sentence, sb);
+        }
+      }
+      return good;
+    }
+
+    /**
+     * 
+     * @param sentence
+     * @param sb
+     * @return True iff {@code sentence} satisfies the requirements of a
+     *         sentence to be annotated.
+     *         <ul>
+     *         <li>It must not be null.</li>
+     *         <li>It must have a .textSpan field set.</li>
+     *         <li>It must have a .tokenization field.</li>
+     *         </ul>
+     */
+    public static boolean verifySentence(Sentence sentence, StringBuffer sb) {
+      boolean good = true;
+      if (sentence == null) {
+        sb.append("Sentence cannot be null.\n");
+        return false;
+      }
+      if (!sentence.isSetTextSpan()) {
+        sb.append("Sentence " + sentence.getUuid().toString()
+            + " must have a .textSpan set.\n");
+        good = false;
+      } else {
+        good &= verifyTextSpan(sentence.getTextSpan(), sb);
+      }
+      if (!sentence.isSetTokenization()) {
+        sb.append("Sentence " + sentence.getUuid().toString()
+            + " must have a tokenization set.\n");
+        good = false;
+      } else {
+        good &= verifyTokenization(sentence.getTokenization(), sb);
+      }
+      return good;
+    }
+
+    /**
+     * 
+     * @param tokenization
+     * @param sb
+     * @return True iff:
+     *         <ul>
+     *         <li>The tokenization is not null and has a set .tokenList
+     *         <li>Every token in .tokenList is a valid token
+     *         </ul>
+     */
+    private static boolean verifyTokenization(Tokenization tokenization,
+        StringBuffer sb) {
+      boolean good = true;
+      if (tokenization == null) {
+        sb.append("Tokenization must not be null.\n");
+        return false;
+      }
+      if (!tokenization.isSetTokenList()) {
+        sb.append("Tokenization must have TokenList set (in the future, this may grab the one-best from the lattice.\n");
+        return false;
+      }
+      for (Token token : tokenization.getTokenList().getTokenList()) {
+        good &= verifyToken(token, sb);
+      }
+      return good;
+    }
+
+    /**
+     * 
+     * @param token
+     * @param sb
+     * @return True iff {@code token}:
+     *         <ul>
+     *         <li>Is not null;
+     *         <li>Has a valid .textSpan; and
+     *         <li>Has a valid .text set.
+     *         </ul>
+     */
+    private static boolean verifyToken(Token token, StringBuffer sb) {
+      boolean good = true;
+      if (token == null) {
+        sb.append("Token must not be null.\n");
+        return false;
+      }
+      if (!token.isSetTextSpan()) {
+        sb.append("Token must have .textSpan set.\n");
+        good = false;
+      } else {
+        good &= verifyTextSpan(token.getTextSpan(), sb);
+      }
+      if (!token.isSetText()) {
+        sb.append("Token must have .text set.\n");
+        good = false;
+      }
+      return good;
+    }
+
+    /**
+     * 
+     * @param textSpan
+     * @param sb
+     * @return True iff {@code textSpan} satisfies the requirements of a valid
+     *         (enough) TextSpan.
+     *         <ul>
+     *         <li>It must not be null.</li>
+     *         <li>Its endpoints must be non-negative.</li>
+     *         <li>It must have non-zero length.</li>
+     *         </ul>
+     */
+    public static boolean verifyTextSpan(TextSpan textSpan, StringBuffer sb) {
+      boolean good = true;
+      if (textSpan == null) {
+        sb.append("TextSpan cannot be null.\n");
+        return false;
+      }
+      int start = textSpan.getStart();
+      int end = textSpan.getEnding();
+      if (start < 0 || end < 0) {
+        sb.append("TextSpan " + textSpan.toString()
+            + " cannot have negative endpoints.\n");
+        good = false;
+      }
+      if (end <= start) {
+        sb.append("TextSpan " + textSpan.toString()
+            + "cannot have end before (<=) start.\n");
+        good = false;
+      }
+      return good;
     }
   }
 }
