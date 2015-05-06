@@ -19,7 +19,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import concrete.agiga.util.ConcreteAgigaProperties;
 import concrete.tools.AnnotationException;
 import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
@@ -52,10 +51,12 @@ import gigaword.interfaces.GigawordDocument;
  */
 public class StanfordAgigaPipeTest {
 
-  private static final Logger logger = LoggerFactory.getLogger(StanfordAgigaPipeTest.class);
+  private static final Logger logger = LoggerFactory
+      .getLogger(StanfordAgigaPipeTest.class);
 
   public static final String SHAKE_HAND_TEXT_STRING = "The man ran to shake the U.S. \nPresident's hand. ";
-  public static final String AFP_0623_TEXT = "" + "Protest over arrest of Sri Lanka reporter linked to Fonseka"
+  public static final String AFP_0623_TEXT = ""
+      + "Protest over arrest of Sri Lanka reporter linked to Fonseka"
       + "\nCOLOMBO, March 18, 2010 (AFP)"
       + "\nSri Lankan media groups Thursday protested against the arrest of a reporter"
       + "\nclose to Sarath Fonseka, the detained ex-army chief who tried to unseat the"
@@ -103,12 +104,15 @@ public class StanfordAgigaPipeTest {
 
     GigawordDocumentConverter conv = new GigawordDocumentConverter();
     GigawordDocument pdc = conv.fromPathString(this.pathToAFPComm);
-    this.mapped = new CommunicationizableGigawordDocument(pdc).toCommunication();
+    this.mapped = new CommunicationizableGigawordDocument(pdc)
+        .toCommunication();
     this.randomTestComm = new Communication(c);
 
-    this.wonkyNYT = new CommunicationizableGigawordDocument(conv.fromPathString(this.pathToNYTComm)).toCommunication();
+    this.wonkyNYT = new CommunicationizableGigawordDocument(
+        conv.fromPathString(this.pathToNYTComm)).toCommunication();
 
-    this.nyt1999 = new CommunicationizableGigawordDocument(conv.fromPathString(this.pathTo1999NYTComm)).toCommunication();
+    this.nyt1999 = new CommunicationizableGigawordDocument(
+        conv.fromPathString(this.pathTo1999NYTComm)).toCommunication();
   }
 
   /**
@@ -120,7 +124,9 @@ public class StanfordAgigaPipeTest {
   }
 
   /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * Test method for
+   * {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}
+   * .
    * 
    * @throws TException
    * @throws AsphaltException
@@ -130,18 +136,22 @@ public class StanfordAgigaPipeTest {
    * @throws AnnotationException
    */
   @Test
-  public void processPassages() throws TException, IOException, ConcreteException, AnnotationException {
+  public void processPassages() throws TException, IOException,
+      ConcreteException, AnnotationException {
     SuperCommunication sc = new SuperCommunication(this.randomTestComm);
     assertTrue(sc.hasSections());
 
     Communication nc = this.pipe.process(this.randomTestComm);
     assertTrue(nc.isSetEntityMentionSetList());
     assertTrue(nc.isSetEntitySetList());
-    new SuperCommunication(nc).writeToFile("src/test/resources/post-stanford.concrete", true);
+    new SuperCommunication(nc).writeToFile(
+        "src/test/resources/post-stanford.concrete", true);
   }
 
   /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * Test method for
+   * {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}
+   * .
    * 
    * @throws TException
    * @throws AsphaltException
@@ -151,7 +161,8 @@ public class StanfordAgigaPipeTest {
    * @throws AnnotationException
    */
   @Test
-  public void testNoMentions() throws TException, IOException, ConcreteException, AnnotationException {
+  public void testNoMentions() throws TException, IOException,
+      ConcreteException, AnnotationException {
     Communication c = this.cf.communication().setText("gobljsfoewj");
     c.addToSectionList(new SuperCommunication(c).singleSection("Passage"));
     SuperCommunication sc = new SuperCommunication(c);
@@ -160,11 +171,14 @@ public class StanfordAgigaPipeTest {
     Communication nc = this.pipe.process(c);
     assertTrue(nc.isSetEntityMentionSetList());
     assertTrue(nc.isSetEntitySetList());
-    new SuperCommunication(nc).writeToFile("target/post-stanford_garbage_processed.concrete", true);
+    new SuperCommunication(nc).writeToFile(
+        "target/post-stanford_garbage_processed.concrete", true);
   }
 
   /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * Test method for
+   * {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}
+   * .
    * 
    * @throws TException
    * @throws AsphaltException
@@ -174,13 +188,19 @@ public class StanfordAgigaPipeTest {
    * @throws AnnotationException
    */
   @Test
-  public void processHandshakeCommunication() throws TException, IOException, ConcreteException, AnnotationException {
-    Communication shakeHandComm = this.cf.communication().setText(SHAKE_HAND_TEXT_STRING);
-    AnnotationMetadata md = new AnnotationMetadata().setTool("concrete-stanford:test").setTimestamp(
+  public void processHandshakeCommunication() throws TException, IOException,
+      ConcreteException, AnnotationException {
+    Communication shakeHandComm = this.cf.communication().setText(
+        SHAKE_HAND_TEXT_STRING);
+    AnnotationMetadata md = new AnnotationMetadata().setTool(
+        "concrete-stanford:test").setTimestamp(
         System.currentTimeMillis() / 1000);
     shakeHandComm.setMetadata(md);
-    Section section = new Section().setUuid(UUIDFactory.newUUID())
-        .setTextSpan(new TextSpan().setStart(0).setEnding(SHAKE_HAND_TEXT_STRING.length())).setKind("Passage");
+    Section section = new Section()
+        .setUuid(UUIDFactory.newUUID())
+        .setTextSpan(
+            new TextSpan().setStart(0).setEnding(
+                SHAKE_HAND_TEXT_STRING.length())).setKind("Passage");
     shakeHandComm.addToSectionList(section);
 
     assertTrue("Error in creating original communication",
@@ -190,7 +210,8 @@ public class StanfordAgigaPipeTest {
     assertTrue("Error in serializing processed communication",
         cs.toBytes(processedShakeHandComm) != null);
     final String docText = processedShakeHandComm.getOriginalText();
-    final String[] stokens = { "The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
+    final String[] stokens = { "The", "man", "ran", "to", "shake", "the",
+        "U.S.", "President", "'s", "hand", "." };
 
     assertTrue(docText.equals(StanfordAgigaPipeTest.SHAKE_HAND_TEXT_STRING));
 
@@ -205,9 +226,12 @@ public class StanfordAgigaPipeTest {
 
     // Test spans
     assertTrue(firstSentList.size() == 1);
-    assertTrue("firstSent.rawTextSpan should be set", firstSent.isSetRawTextSpan());
-    assertEquals("Beginning char should be 0.", 0, firstSent.getRawTextSpan().getStart());
-    assertEquals("Ending char should be 48.", 48, firstSent.getRawTextSpan().getEnding());
+    assertTrue("firstSent.rawTextSpan should be set",
+        firstSent.isSetRawTextSpan());
+    assertEquals("Beginning char should be 0.", 0, firstSent.getRawTextSpan()
+        .getStart());
+    assertEquals("Ending char should be 48.", 48, firstSent.getRawTextSpan()
+        .getEnding());
 
     TextSpan tts = firstSent.getRawTextSpan();
     String pulledText = docText.substring(tts.getStart(), tts.getEnding());
@@ -216,19 +240,23 @@ public class StanfordAgigaPipeTest {
     // Test # Tokens
     StringBuilder actualTokensSB = new StringBuilder();
     for (Token tok : firstTokenization.getTokenList().getTokenList()) {
-      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex() + ") ");
+      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex()
+          + ") ");
     }
-    assertTrue(
-        "Expected tokens length = " + stokens.length + ";" + "Actual   tokens length = "
-            + firstTokenization.getTokenList().getTokenList().size() + "; " + "Actual tokens = "
-            + actualTokensSB.toString(), firstTokenization.getTokenList().getTokenList().size() == stokens.length);
+    assertTrue("Expected tokens length = " + stokens.length + ";"
+        + "Actual   tokens length = "
+        + firstTokenization.getTokenList().getTokenList().size() + "; "
+        + "Actual tokens = " + actualTokensSB.toString(), firstTokenization
+        .getTokenList().getTokenList().size() == stokens.length);
 
     // Verify tokens
     int tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      assertTrue("tokIdx = " + tokIdx + "; token.getTokenIndex() = " + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
-      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = [" + token.getText() + "]",
-          token.getText().equals(stokens[tokIdx]));
+      assertTrue(
+          "tokIdx = " + tokIdx + "; token.getTokenIndex() = "
+              + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
+      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = ["
+          + token.getText() + "]", token.getText().equals(stokens[tokIdx]));
       tokIdx++;
     }
 
@@ -236,8 +264,8 @@ public class StanfordAgigaPipeTest {
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
       String substr = docText.substring(tts.getStart(), tts.getEnding());
-      assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts + ") = [" + substr + "]", token.getText()
-          .equals(substr));
+      assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts
+          + ") = [" + substr + "]", token.getText().equals(substr));
     }
 
     // Verify tokens to full seeded
@@ -245,8 +273,8 @@ public class StanfordAgigaPipeTest {
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
       String substr = docText.substring(tts.getStart(), tts.getEnding());
-      assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts + ") = [" + substr + "]",
-          stokens[tokIdx].equals(substr));
+      assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts
+          + ") = [" + substr + "]", stokens[tokIdx].equals(substr));
       tokIdx++;
     }
 
@@ -256,21 +284,27 @@ public class StanfordAgigaPipeTest {
     tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
-      assertTrue(token.getText() + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx],
+      assertTrue(
+          token.getText() + "(" + tokIdx + ") starts at " + tts.getStart()
+              + "; it should start at " + start[tokIdx],
           tts.getStart() == start[tokIdx]);
-      assertTrue(token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx],
+      assertTrue(
+          token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding()
+              + "; it should start at " + end[tokIdx],
           tts.getEnding() == end[tokIdx]);
       tokIdx++;
     }
 
     // Verify # entities
     assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
-    assertEquals("Should be three entities.", 3, processedShakeHandComm.getEntitySetList().get(0).getEntityList()
-        .size());
+    assertEquals("Should be three entities.", 3, processedShakeHandComm
+        .getEntitySetList().get(0).getEntityList().size());
 
     // Verify # Singleton entities
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0).getEntityList()) {
-      assertEquals(entity.getCanonicalName() + " is not singleton", 1, entity.getMentionIdList().size());
+    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+        .getEntityList()) {
+      assertEquals(entity.getCanonicalName() + " is not singleton", 1, entity
+          .getMentionIdList().size());
     }
 
     // Verify entity names
@@ -279,7 +313,8 @@ public class StanfordAgigaPipeTest {
     expEnts.add("the U.S. President 's hand");
     expEnts.add("the U.S. President 's");
     Set<String> seenEnts = new HashSet<String>();
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0).getEntityList()) {
+    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+        .getEntityList()) {
       seenEnts.add(entity.getCanonicalName());
     }
     assertTrue(seenEnts.equals(expEnts));
@@ -287,8 +322,10 @@ public class StanfordAgigaPipeTest {
     // Verify some canonical entity names
     assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
     boolean atLeastOne = false;
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0).getEntityList()) {
-      atLeastOne |= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
+    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+        .getEntityList()) {
+      atLeastOne |= (entity.getCanonicalName() != null && entity
+          .getCanonicalName().length() > 0);
     }
     assertTrue(atLeastOne);
 
@@ -298,36 +335,44 @@ public class StanfordAgigaPipeTest {
 
   private void verifyNumSections(Communication orig, Communication proc) {
     assertTrue("orig comm " + orig.getUuid() + " does not have a section list",
-               orig.isSetSectionList());
-    assertTrue("processed comm " + proc.getUuid() + " does not have a section list",
-               proc.isSetSectionList());
-    assertTrue("num sections in original comm (" + orig.getUuid() + ") = " + orig.getSectionList().size() + " != num sections in processed comm (" + proc.getUuid() + ") = " + proc.getSectionList().size(),
-               orig.getSectionList().size() == proc.getSectionList().size());
+        orig.isSetSectionList());
+    assertTrue("processed comm " + proc.getUuid()
+        + " does not have a section list", proc.isSetSectionList());
+    assertTrue("num sections in original comm (" + orig.getUuid() + ") = "
+        + orig.getSectionList().size() + " != num sections in processed comm ("
+        + proc.getUuid() + ") = " + proc.getSectionList().size(), orig
+        .getSectionList().size() == proc.getSectionList().size());
   }
 
   private void verifyTitleSection(Communication processed) {
     int sectionIdx = 0;
     int foundTitleIn = -1;
     int numFound = 0;
-    for(Section section : processed.getSectionList()) {
-      if(section.getKind().equals("Title")) {
+    for (Section section : processed.getSectionList()) {
+      if (section.getKind().equals("Title")) {
         numFound++;
         foundTitleIn = sectionIdx;
       }
       sectionIdx++;
     }
-    assertTrue("Found " + numFound + " title sections in " + processed.getUuid() + "/" + processed.getId(),
-               numFound == 1);
+    assertTrue(
+        "Found " + numFound + " title sections in " + processed.getUuid() + "/"
+            + processed.getId(), numFound == 1);
     Section title = processed.getSectionList().get(foundTitleIn);
-    assertTrue("Title section (" + title.getUuid() +") in comm " + processed.getId() + " does not have text span set",
-               title.isSetTextSpan());
-    assertTrue("Title section (" + title.getUuid() +") in comm " + processed.getId() + " does not have sentences",
-               title.isSetSentenceList());
-    assertTrue("Title section (" + title.getUuid() +") in comm " + processed.getId() + " does not have one sentence",
-               title.getSentenceList().size() == 1);
+    assertTrue(
+        "Title section (" + title.getUuid() + ") in comm " + processed.getId()
+            + " does not have text span set", title.isSetTextSpan());
+    assertTrue(
+        "Title section (" + title.getUuid() + ") in comm " + processed.getId()
+            + " does not have sentences", title.isSetSentenceList());
+    assertTrue(
+        "Title section (" + title.getUuid() + ") in comm " + processed.getId()
+            + " does not have one sentence",
+        title.getSentenceList().size() == 1);
     Sentence sentence = title.getSentenceList().get(0);
-    assertTrue("Title sentence (" + sentence.getUuid() +") in comm " + processed.getId() + " does not have text span set",
-               title.isSetTextSpan());
+    assertTrue("Title sentence (" + sentence.getUuid() + ") in comm "
+        + processed.getId() + " does not have text span set",
+        title.isSetTextSpan());
   }
 
   private void verifyToolNamesSub(String given, String prefix, String expected) {
@@ -336,32 +381,37 @@ public class StanfordAgigaPipeTest {
   }
 
   private void verifyToolNames(Communication comm) throws IOException {
-    ConcreteAgigaProperties props = new ConcreteAgigaProperties();
-    ConcreteStanfordProperties csProps = new ConcreteStanfordProperties();
+    ConcreteStanfordProperties props = new ConcreteStanfordProperties();
 
-    String toolNamePrefix = csProps.getToolName();
+    String toolNamePrefix = props.getToolName();
     for (Section section : comm.getSectionList()) {
       // we don't verify section toolnames
       if (section.isSetSentenceList())
         for (Sentence sentence : section.getSentenceList()) {
           if (sentence.isSetTokenization()) {
             Tokenization tokenization = sentence.getTokenization();
-            verifyToolNamesSub(tokenization.getMetadata().getTool(), toolNamePrefix, props.getTokenizerToolName());
+            verifyToolNamesSub(tokenization.getMetadata().getTool(),
+                toolNamePrefix, props.getTokenizerToolName());
             if (tokenization.isSetTokenTaggingList()) {
-              for (TokenTagging tokenTagging : tokenization.getTokenTaggingList()) {
+              for (TokenTagging tokenTagging : tokenization
+                  .getTokenTaggingList()) {
                 switch (tokenTagging.getTaggingType()) {
                 case "POS":
-                  verifyToolNamesSub(tokenTagging.getMetadata().getTool(), toolNamePrefix, props.getPOSToolName());
+                  verifyToolNamesSub(tokenTagging.getMetadata().getTool(),
+                      toolNamePrefix, props.getPOSToolName());
                   break;
                 case "LEMMA":
-                  verifyToolNamesSub(tokenTagging.getMetadata().getTool(), toolNamePrefix,
-                      props.getLemmatizerToolName());
+                  verifyToolNamesSub(tokenTagging.getMetadata().getTool(),
+                      toolNamePrefix, props.getLemmatizerToolName());
                   break;
                 case "NER":
-                  verifyToolNamesSub(tokenTagging.getMetadata().getTool(), toolNamePrefix, props.getNERToolName());
+                  verifyToolNamesSub(tokenTagging.getMetadata().getTool(),
+                      toolNamePrefix, props.getNERToolName());
                   break;
                 default:
-                  assertTrue("unknown tagging type " + tokenTagging.getTaggingType(), false);
+                  assertTrue(
+                      "unknown tagging type " + tokenTagging.getTaggingType(),
+                      false);
                   break;
                 }
               }
@@ -369,13 +419,17 @@ public class StanfordAgigaPipeTest {
 
             if (tokenization.isSetParseList())
               for (Parse parse : tokenization.getParseList())
-                verifyToolNamesSub(parse.getMetadata().getTool(), toolNamePrefix, props.getCParseToolName());
+                verifyToolNamesSub(parse.getMetadata().getTool(),
+                    toolNamePrefix, props.getCParseToolName());
 
             if (tokenization.isSetDependencyParseList()) {
-              for (DependencyParse dparse : tokenization.getDependencyParseList()) {
-                String[] wsSplit = dparse.getMetadata().getTool().trim().split(" ");
-                verifyToolNamesSub(dparse.getMetadata().getTool(), toolNamePrefix, props.getDParseToolName() + " "
-                    + wsSplit[wsSplit.length - 1]);
+              for (DependencyParse dparse : tokenization
+                  .getDependencyParseList()) {
+                String[] wsSplit = dparse.getMetadata().getTool().trim()
+                    .split(" ");
+                verifyToolNamesSub(dparse.getMetadata().getTool(),
+                    toolNamePrefix, props.getDParseToolName() + " "
+                        + wsSplit[wsSplit.length - 1]);
               }
             }
           }
@@ -384,12 +438,14 @@ public class StanfordAgigaPipeTest {
     // verify coref
     if (comm.isSetEntityMentionSetList()) {
       for (EntityMentionSet ems : comm.getEntityMentionSetList()) {
-        verifyToolNamesSub(ems.getMetadata().getTool(), toolNamePrefix, props.getCorefToolName());
+        verifyToolNamesSub(ems.getMetadata().getTool(), toolNamePrefix,
+            props.getCorefToolName());
       }
     }
     if (comm.isSetEntitySetList()) {
       for (EntitySet es : comm.getEntitySetList()) {
-        verifyToolNamesSub(es.getMetadata().getTool(), toolNamePrefix, props.getCorefToolName());
+        verifyToolNamesSub(es.getMetadata().getTool(), toolNamePrefix,
+            props.getCorefToolName());
       }
     }
   }
@@ -406,9 +462,11 @@ public class StanfordAgigaPipeTest {
       if (sect.isSetSentenceList())
         for (Sentence st : sect.getSentenceList()) {
           TextSpan span = st.getRawTextSpan();
-          String grabbed = processedOriginalText.substring(span.getStart(), span.getEnding()).trim();
-          //assertTrue("SentId = " + sentIdx + ", grabbing [[" + grabbed + "]], should be looking at <<" + sentences[sentIdx] + ">>",
-          //grabbed.equals(sentences[sentIdx]));
+          String grabbed = processedOriginalText.substring(span.getStart(),
+              span.getEnding()).trim();
+          // assertTrue("SentId = " + sentIdx + ", grabbing [[" + grabbed +
+          // "]], should be looking at <<" + sentences[sentIdx] + ">>",
+          // grabbed.equals(sentences[sentIdx]));
           assertEquals(sentences[sentIdx], grabbed);
           sentIdx++;
         }
@@ -416,19 +474,24 @@ public class StanfordAgigaPipeTest {
   }
 
   private void verifyTokens(Communication target, boolean useRawTokens) {
-    String textToCheck = useRawTokens ? target.getOriginalText() : target.getText();
+    String textToCheck = useRawTokens ? target.getOriginalText() : target
+        .getText();
     int numEq = 0;
     int numTot = 0;
     // wrt the raw text
     for (Section nsect : target.getSectionList()) {
       if (nsect.isSetSentenceList())
         for (Sentence nsent : nsect.getSentenceList()) {
-          for (Token token : nsent.getTokenization().getTokenList().getTokenList()) {
-            TextSpan span = useRawTokens ? token.getRawTextSpan() : token.getTextSpan();
-            String substr = textToCheck.substring(span.getStart(), span.getEnding());
+          for (Token token : nsent.getTokenization().getTokenList()
+              .getTokenList()) {
+            TextSpan span = useRawTokens ? token.getRawTextSpan() : token
+                .getTextSpan();
+            String substr = textToCheck.substring(span.getStart(),
+                span.getEnding());
             boolean areEq = token.getText().equals(substr);
             if (!areEq)
-              logger.warn("expected = [" + token.getText() + "];" + "docText(" + span + ") = [" + substr + "]");
+              logger.warn("expected = [" + token.getText() + "];" + "docText("
+                  + span + ") = [" + substr + "]");
             else
               numEq++;
 
@@ -437,16 +500,18 @@ public class StanfordAgigaPipeTest {
         }
     }
     double fracPassing = ((double) numEq / (double) numTot);
-    assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing >= 0.8);
+    assertTrue("WARNING: only " + fracPassing + "% of tokens matched!",
+        fracPassing >= 0.8);
   }
 
-  private void testSectionOffsetsSet(List<Section> nsects, Set<String> kindsThatShouldHaveSections) {
+  private void testSectionOffsetsSet(List<Section> nsects,
+      Set<String> kindsThatShouldHaveSections) {
     int i = 0;
     for (Section sect : nsects) {
       assertTrue(sect.isSetKind());
       if (kindsThatShouldHaveSections.contains(sect.getKind())) {
-        assertTrue("section #" + i + " (uuid = " + sect.getUuid() + ") doesn't have text spans set",
-            sect.isSetTextSpan());
+        assertTrue("section #" + i + " (uuid = " + sect.getUuid()
+            + ") doesn't have text spans set", sect.isSetTextSpan());
         i++;
       }
     }
@@ -460,7 +525,8 @@ public class StanfordAgigaPipeTest {
 
     // Text equality
     assertEquals("Text should be equal.", AFP_0623_TEXT, processedRawText);
-    assertTrue("Communication should have text field set", afpProcessedComm.isSetText());
+    assertTrue("Communication should have text field set",
+        afpProcessedComm.isSetText());
 
     // Sections
     List<Section> nsects = afpProcessedComm.getSectionList();
@@ -482,15 +548,18 @@ public class StanfordAgigaPipeTest {
     assertEquals("Should have found 10 sentences.", 10, numSents);
 
     // First sentence span test wrt RAW
-    Sentence ofInterest = afpProcessedComm.getSectionList().get(1).getSentenceList().get(0);
+    Sentence ofInterest = afpProcessedComm.getSectionList().get(1)
+        .getSentenceList().get(0);
     TextSpan raw = ofInterest.getRawTextSpan();
     this.testTextSpan(raw, 60, 89);
 
     // First sentence span test wrt processed
-    this.testTextSpan(afpProcessedComm.getSectionList().get(1).getSentenceList().get(0).getTextSpan(), 61, 102);
+    this.testTextSpan(afpProcessedComm.getSectionList().get(1)
+        .getSentenceList().get(0).getTextSpan(), 61, 102);
 
     // Second sentence span test wrt processed
-    this.testTextSpan(afpProcessedComm.getSectionList().get(2).getSentenceList().get(0).getTextSpan(), 104, 288);
+    this.testTextSpan(afpProcessedComm.getSectionList().get(2)
+        .getSentenceList().get(0).getTextSpan(), 104, 288);
 
     // Sentences test
     String[] sentences = {
@@ -508,7 +577,8 @@ public class StanfordAgigaPipeTest {
         "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation\n"
             + "Tigers of Tamil Eelam (LTTE) were crushed in May, but the two men later fell out\n"
             + "and contested the presidency in January's elections.",
-        "Fonseka was arrested soon after losing the poll and appeared in front of a court\n" + "martial this week.",
+        "Fonseka was arrested soon after losing the poll and appeared in front of a court\n"
+            + "martial this week.",
         "The case was adjourned.",
         "Local and international rights groups have accused Rajapakse of cracking down on\n"
             + "dissent, a charge the government has denied." };
@@ -516,15 +586,16 @@ public class StanfordAgigaPipeTest {
     // test sentences wrt processed
     String[] processedSentences = {
 
-      "Protest over arrest of Sri Lanka reporter linked to Fonseka",
-      "Sri Lankan media groups Thursday protested against the arrest of a reporter close to Sarath Fonseka , the detained ex-army chief who tried to unseat the president in recent elections .",
-      "The groups issued a joint statement demanding the release of Ruwan Weerakoon , a reporter with the Nation newspaper , who was arrested this week .",
-      "`` We request the Inspector General of Police to disclose the reasons behind the arrest and detention of Ruwan Weerakoon and make arrangements for him to receive legal aid immediately , '' the statement added .",
-      "Weerakoon maintained close contact with Fonseka when the general led the military during the final phase of last year 's war against Tamil Tiger rebels .",
-      "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation Tigers of Tamil Eelam -LRB- LTTE -RRB- were crushed in May , but the two men later fell out and contested the presidency in January 's elections .",
-      "Fonseka was arrested soon after losing the poll and appeared in front of a court martial this week .", "The case was adjourned .",
-      "Local and international rights groups have accused Rajapakse of cracking down on dissent , a charge the government has denied ." };
-    
+        "Protest over arrest of Sri Lanka reporter linked to Fonseka",
+        "Sri Lankan media groups Thursday protested against the arrest of a reporter close to Sarath Fonseka , the detained ex-army chief who tried to unseat the president in recent elections .",
+        "The groups issued a joint statement demanding the release of Ruwan Weerakoon , a reporter with the Nation newspaper , who was arrested this week .",
+        "`` We request the Inspector General of Police to disclose the reasons behind the arrest and detention of Ruwan Weerakoon and make arrangements for him to receive legal aid immediately , '' the statement added .",
+        "Weerakoon maintained close contact with Fonseka when the general led the military during the final phase of last year 's war against Tamil Tiger rebels .",
+        "Fonseka was an ally of President Mahinda Rajapakse when the rebel Liberation Tigers of Tamil Eelam -LRB- LTTE -RRB- were crushed in May , but the two men later fell out and contested the presidency in January 's elections .",
+        "Fonseka was arrested soon after losing the poll and appeared in front of a court martial this week .",
+        "The case was adjourned .",
+        "Local and international rights groups have accused Rajapakse of cracking down on dissent , a charge the government has denied ." };
+
     // this.testSentenceText(sentences, afpProcessedComm);
 
     // TODO: fix this failure
@@ -541,23 +612,29 @@ public class StanfordAgigaPipeTest {
 
     // Verify some NEs
     assertTrue(afpProcessedComm.getEntitySetList().size() > 0);
-    assertTrue(afpProcessedComm.getEntitySetList().get(0).getEntityList().size() > 0);
+    assertTrue(afpProcessedComm.getEntitySetList().get(0).getEntityList()
+        .size() > 0);
     boolean allSet = true;
-    for (Entity entity : afpProcessedComm.getEntitySetList().get(0).getEntityList())
-      allSet &= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
+    for (Entity entity : afpProcessedComm.getEntitySetList().get(0)
+        .getEntityList())
+      allSet &= (entity.getCanonicalName() != null && entity.getCanonicalName()
+          .length() > 0);
 
     assertTrue(allSet);
 
     // Verify anchor tokens
     int numWithout = 0;
-    for (EntityMention em : afpProcessedComm.getEntityMentionSetList().get(0).getMentionList())
+    for (EntityMention em : afpProcessedComm.getEntityMentionSetList().get(0)
+        .getMentionList())
       numWithout += (em.getTokens().getAnchorTokenIndex() >= 0 ? 0 : 1);
 
     assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
 
     assertTrue("Error in serializing processed communication",
         cs.toBytes(afpProcessedComm) != null);
-    new SuperCommunication(afpProcessedComm).writeToFile("src/test/resources/AFP_ENG_20100318.0623_processed.compact.concrete", true);
+    new SuperCommunication(afpProcessedComm).writeToFile(
+        "src/test/resources/AFP_ENG_20100318.0623_processed.compact.concrete",
+        true);
   }
 
   private void testNDependencyParses(int expected, Communication target) {
@@ -567,15 +644,19 @@ public class StanfordAgigaPipeTest {
           Tokenization tokenization = nsent.getTokenization();
           assertEquals(expected, tokenization.getDependencyParseList().size());
           for (DependencyParse depParse : tokenization.getDependencyParseList())
-            assertTrue("Shouldn't get an empty DepParse.", depParse.getDependencyList().size() > 0);
+            assertTrue("Shouldn't get an empty DepParse.", depParse
+                .getDependencyList().size() > 0);
         }
     }
   }
 
   /**
-   * This following test is useful because it uses a number of numeric fractions. The Stanford tokenizer is a bit strange with those: for a fraction of K n/m
-   * (e.g., 66 6/16), it will add a non-breaking space in between K and n. Therefore, it may appear that "K n/m" is two tokens, but it really is one. This test
-   * primarily verifies that those boundaries are respected in both the token.getText() and token.getText()Span fields.
+   * This following test is useful because it uses a number of numeric
+   * fractions. The Stanford tokenizer is a bit strange with those: for a
+   * fraction of K n/m (e.g., 66 6/16), it will add a non-breaking space in
+   * between K and n. Therefore, it may appear that "K n/m" is two tokens, but
+   * it really is one. This test primarily verifies that those boundaries are
+   * respected in both the token.getText() and token.getText()Span fields.
    */
   @Test
   public void process1999NYTComm() throws Exception {
@@ -583,12 +664,14 @@ public class StanfordAgigaPipeTest {
     final String processedText = nytProcessedComm.getText();
     final String processedRawText = nytProcessedComm.getOriginalText();
 
-    assertTrue("Communication should have text field set", nytProcessedComm.isSetText());
+    assertTrue("Communication should have text field set",
+        nytProcessedComm.isSetText());
 
     // Sections
     List<Section> nsects = nytProcessedComm.getSectionList();
     final int correctSections = 16;
-    assertEquals("Should have found " + correctSections +  ".", correctSections, nsects.size());
+    assertEquals("Should have found " + correctSections + ".", correctSections,
+        nsects.size());
     verifyNumSections(this.nyt1999, nytProcessedComm);
     verifyTitleSection(nytProcessedComm);
 
@@ -596,11 +679,13 @@ public class StanfordAgigaPipeTest {
     Section first = nsects.get(0);
     TextSpan fts = first.getTextSpan();
     this.testTextSpan(fts, 0, 52);
-    logger.info("First text span text: {}", new SuperTextSpan(fts, nytProcessedComm).getText());
+    logger.info("First text span text: {}", new SuperTextSpan(fts,
+        nytProcessedComm).getText());
     Section second = nsects.get(1);
     TextSpan sts = second.getTextSpan();
     this.testTextSpan(sts, 54, 87);
-    logger.info("Second text span text: {}", new SuperTextSpan(sts, nytProcessedComm).getText());
+    logger.info("Second text span text: {}", new SuperTextSpan(sts,
+        nytProcessedComm).getText());
 
     // Verify tokens wrt RAW
     this.verifyTokens(nytProcessedComm, true);
@@ -613,26 +698,35 @@ public class StanfordAgigaPipeTest {
 
     // Verify some NEs
     assertTrue(nytProcessedComm.getEntitySetList().size() > 0);
-    assertTrue(nytProcessedComm.getEntitySetList().get(0).getEntityList().size() > 0);
+    assertTrue(nytProcessedComm.getEntitySetList().get(0).getEntityList()
+        .size() > 0);
     boolean allSet = true;
-    for (Entity entity : nytProcessedComm.getEntitySetList().get(0).getEntityList())
-      allSet &= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
+    for (Entity entity : nytProcessedComm.getEntitySetList().get(0)
+        .getEntityList())
+      allSet &= (entity.getCanonicalName() != null && entity.getCanonicalName()
+          .length() > 0);
 
     assertTrue(allSet);
 
     // Verify anchor tokens
     int numWithout = 0;
-    for (EntityMention em : nytProcessedComm.getEntityMentionSetList().get(0).getMentionList())
+    for (EntityMention em : nytProcessedComm.getEntityMentionSetList().get(0)
+        .getMentionList())
       numWithout += (em.getTokens().getAnchorTokenIndex() >= 0 ? 0 : 1);
 
     assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
     assertTrue("Error in serializing processed communication",
         cs.toBytes(nytProcessedComm) != null);
-    new SuperCommunication(nytProcessedComm).writeToFile("src/test/resources/post-stanford.NYT_ENG_19991220.0301.concrete", true);
+    new SuperCommunication(nytProcessedComm)
+        .writeToFile(
+            "src/test/resources/post-stanford.NYT_ENG_19991220.0301.concrete",
+            true);
   }
 
   /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * Test method for
+   * {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}
+   * .
    * 
    * @throws TException
    * @throws AsphaltException
@@ -642,16 +736,24 @@ public class StanfordAgigaPipeTest {
    * @throws AnnotationException
    */
   @Test
-  public void processHandshakeCommunicationWithSentences() throws TException, IOException, ConcreteException, AnnotationException {
-    Communication shakeHandComm = this.cf.communication().setText(SHAKE_HAND_TEXT_STRING);
-    AnnotationMetadata md = new AnnotationMetadata().setTool("concrete-stanford:test").setTimestamp(
+  public void processHandshakeCommunicationWithSentences() throws TException,
+      IOException, ConcreteException, AnnotationException {
+    Communication shakeHandComm = this.cf.communication().setText(
+        SHAKE_HAND_TEXT_STRING);
+    AnnotationMetadata md = new AnnotationMetadata().setTool(
+        "concrete-stanford:test").setTimestamp(
         System.currentTimeMillis() / 1000);
     shakeHandComm.setMetadata(md);
-    Section section = new Section().setUuid(UUIDFactory.newUUID())
-        .setTextSpan(new TextSpan().setStart(0).setEnding(SHAKE_HAND_TEXT_STRING.length())).setKind("Passage");
+    Section section = new Section()
+        .setUuid(UUIDFactory.newUUID())
+        .setTextSpan(
+            new TextSpan().setStart(0).setEnding(
+                SHAKE_HAND_TEXT_STRING.length())).setKind("Passage");
     shakeHandComm.addToSectionList(section);
     Sentence sentence = new Sentence().setUuid(UUIDFactory.newUUID())
-      .setTextSpan(new TextSpan().setStart(0).setEnding(SHAKE_HAND_TEXT_STRING.length()));
+        .setTextSpan(
+            new TextSpan().setStart(0).setEnding(
+                SHAKE_HAND_TEXT_STRING.length()));
     section.addToSentenceList(sentence);
 
     assertTrue("Error in creating original communication",
@@ -661,7 +763,8 @@ public class StanfordAgigaPipeTest {
     assertTrue("Error in serializing processed communication",
         cs.toBytes(processedShakeHandComm) != null);
     final String docText = processedShakeHandComm.getOriginalText();
-    final String[] stokens = { "The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
+    final String[] stokens = { "The", "man", "ran", "to", "shake", "the",
+        "U.S.", "President", "'s", "hand", "." };
 
     assertTrue(docText.equals(StanfordAgigaPipeTest.SHAKE_HAND_TEXT_STRING));
 
@@ -676,10 +779,14 @@ public class StanfordAgigaPipeTest {
 
     // Test spans
     assertTrue(firstSentList.size() == 1);
-    assertTrue("firstSent.rawTextSpan should be set", firstSent.isSetRawTextSpan());
-    assertEquals("Beginning char should be 0.", 0, firstSent.getRawTextSpan().getStart());
-    assertEquals("SHAKE_HAND_TEXT_STRING has a different length.", 49, SHAKE_HAND_TEXT_STRING.length());
-    assertEquals("Ending char should be 49.", 49, firstSent.getRawTextSpan().getEnding());
+    assertTrue("firstSent.rawTextSpan should be set",
+        firstSent.isSetRawTextSpan());
+    assertEquals("Beginning char should be 0.", 0, firstSent.getRawTextSpan()
+        .getStart());
+    assertEquals("SHAKE_HAND_TEXT_STRING has a different length.", 49,
+        SHAKE_HAND_TEXT_STRING.length());
+    assertEquals("Ending char should be 49.", 49, firstSent.getRawTextSpan()
+        .getEnding());
 
     TextSpan tts = firstSent.getRawTextSpan();
     String pulledText = docText.substring(tts.getStart(), tts.getEnding());
@@ -688,19 +795,23 @@ public class StanfordAgigaPipeTest {
     // Test # Tokens
     StringBuilder actualTokensSB = new StringBuilder();
     for (Token tok : firstTokenization.getTokenList().getTokenList()) {
-      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex() + ") ");
+      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex()
+          + ") ");
     }
-    assertTrue(
-        "Expected tokens length = " + stokens.length + ";" + "Actual   tokens length = "
-            + firstTokenization.getTokenList().getTokenList().size() + "; " + "Actual tokens = "
-            + actualTokensSB.toString(), firstTokenization.getTokenList().getTokenList().size() == stokens.length);
+    assertTrue("Expected tokens length = " + stokens.length + ";"
+        + "Actual   tokens length = "
+        + firstTokenization.getTokenList().getTokenList().size() + "; "
+        + "Actual tokens = " + actualTokensSB.toString(), firstTokenization
+        .getTokenList().getTokenList().size() == stokens.length);
 
     // Verify tokens
     int tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      assertTrue("tokIdx = " + tokIdx + "; token.getTokenIndex() = " + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
-      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = [" + token.getText() + "]",
-          token.getText().equals(stokens[tokIdx]));
+      assertTrue(
+          "tokIdx = " + tokIdx + "; token.getTokenIndex() = "
+              + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
+      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = ["
+          + token.getText() + "]", token.getText().equals(stokens[tokIdx]));
       tokIdx++;
     }
 
@@ -708,8 +819,8 @@ public class StanfordAgigaPipeTest {
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
       String substr = docText.substring(tts.getStart(), tts.getEnding());
-      assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts + ") = [" + substr + "]", token.getText()
-          .equals(substr));
+      assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts
+          + ") = [" + substr + "]", token.getText().equals(substr));
     }
 
     // Verify tokens to full seeded
@@ -717,8 +828,8 @@ public class StanfordAgigaPipeTest {
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
       String substr = docText.substring(tts.getStart(), tts.getEnding());
-      assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts + ") = [" + substr + "]",
-          stokens[tokIdx].equals(substr));
+      assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts
+          + ") = [" + substr + "]", stokens[tokIdx].equals(substr));
       tokIdx++;
     }
 
@@ -728,21 +839,27 @@ public class StanfordAgigaPipeTest {
     tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
-      assertTrue(token.getText() + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx],
+      assertTrue(
+          token.getText() + "(" + tokIdx + ") starts at " + tts.getStart()
+              + "; it should start at " + start[tokIdx],
           tts.getStart() == start[tokIdx]);
-      assertTrue(token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx],
+      assertTrue(
+          token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding()
+              + "; it should start at " + end[tokIdx],
           tts.getEnding() == end[tokIdx]);
       tokIdx++;
     }
 
     // Verify # entities
     assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
-    assertEquals("Should be three entities.", 3, processedShakeHandComm.getEntitySetList().get(0).getEntityList()
-        .size());
+    assertEquals("Should be three entities.", 3, processedShakeHandComm
+        .getEntitySetList().get(0).getEntityList().size());
 
     // Verify # Singleton entities
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0).getEntityList()) {
-      assertEquals(entity.getCanonicalName() + " is not singleton", 1, entity.getMentionIdList().size());
+    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+        .getEntityList()) {
+      assertEquals(entity.getCanonicalName() + " is not singleton", 1, entity
+          .getMentionIdList().size());
     }
 
     // Verify entity names
@@ -751,7 +868,8 @@ public class StanfordAgigaPipeTest {
     expEnts.add("the U.S. President 's hand");
     expEnts.add("the U.S. President 's");
     Set<String> seenEnts = new HashSet<String>();
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0).getEntityList()) {
+    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+        .getEntityList()) {
       seenEnts.add(entity.getCanonicalName());
     }
     assertTrue(seenEnts.equals(expEnts));
@@ -759,8 +877,10 @@ public class StanfordAgigaPipeTest {
     // Verify some canonical entity names
     assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
     boolean atLeastOne = false;
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0).getEntityList()) {
-      atLeastOne |= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
+    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+        .getEntityList()) {
+      atLeastOne |= (entity.getCanonicalName() != null && entity
+          .getCanonicalName().length() > 0);
     }
     assertTrue(atLeastOne);
 
@@ -769,7 +889,9 @@ public class StanfordAgigaPipeTest {
   }
 
   /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * Test method for
+   * {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}
+   * .
    * 
    * @throws TException
    * @throws AsphaltException
@@ -779,36 +901,44 @@ public class StanfordAgigaPipeTest {
    * @throws AnnotationException
    */
   @Test
-  public void processHandshakeCommunicationWithRepeatedSentences() throws TException, IOException, ConcreteException, AnnotationException {
+  public void processHandshakeCommunicationWithRepeatedSentences()
+      throws TException, IOException, ConcreteException, AnnotationException {
     String SHAKE_HAND_TEXT_STRING_1 = "The boy ran to shake the U.S. \nPresident's hand. ";
     String SHAKE_HAND_TEXT_STRING_2 = "The dog ran to shake the U.S. \nPresident's hand.";
     final int eachSentenceLength = SHAKE_HAND_TEXT_STRING.length() - 1;
     assertEquals(48, eachSentenceLength);
-    final String origCommText = SHAKE_HAND_TEXT_STRING + SHAKE_HAND_TEXT_STRING_1 + SHAKE_HAND_TEXT_STRING_2;
+    final String origCommText = SHAKE_HAND_TEXT_STRING
+        + SHAKE_HAND_TEXT_STRING_1 + SHAKE_HAND_TEXT_STRING_2;
     Communication shakeHandComm = this.cf.communication().setText(origCommText);
-    AnnotationMetadata md = new AnnotationMetadata().setTool("concrete-stanford:test").setTimestamp(
+    AnnotationMetadata md = new AnnotationMetadata().setTool(
+        "concrete-stanford:test").setTimestamp(
         System.currentTimeMillis() / 1000);
     shakeHandComm.setMetadata(md);
-    Section section1 = new Section().setUuid(UUIDFactory.newUUID())
-        .setTextSpan(new TextSpan().setStart(0).setEnding(2*eachSentenceLength + 1)).setKind("Passage");
+    Section section1 = new Section()
+        .setUuid(UUIDFactory.newUUID())
+        .setTextSpan(
+            new TextSpan().setStart(0).setEnding(2 * eachSentenceLength + 1))
+        .setKind("Passage");
     section1.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
-                               .setTextSpan(new TextSpan().setStart(0).setEnding(eachSentenceLength)));
+        .setTextSpan(new TextSpan().setStart(0).setEnding(eachSentenceLength)));
     section1.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
-                               .setTextSpan(new TextSpan()
-                                            .setStart(eachSentenceLength + 1)
-                                            .setEnding(1 + 2*eachSentenceLength)));
+        .setTextSpan(
+            new TextSpan().setStart(eachSentenceLength + 1).setEnding(
+                1 + 2 * eachSentenceLength)));
     shakeHandComm.addToSectionList(section1);
-    //Section 2
-    int section2Start = 2*eachSentenceLength + 2;
+    // Section 2
+    int section2Start = 2 * eachSentenceLength + 2;
     assertEquals(98, section2Start);
-    int section2End = 3*eachSentenceLength + 2;
+    int section2End = 3 * eachSentenceLength + 2;
     assertEquals(146, section2End);
-    Section section2 = new Section().setUuid(UUIDFactory.newUUID())
-      .setTextSpan(new TextSpan().setStart(section2Start).setEnding(section2End)).setKind("Passage");
+    Section section2 = new Section()
+        .setUuid(UUIDFactory.newUUID())
+        .setTextSpan(
+            new TextSpan().setStart(section2Start).setEnding(section2End))
+        .setKind("Passage");
     section2.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
-                               .setTextSpan(new TextSpan()
-                                            .setStart(section2Start)
-                                            .setEnding(section2End)));
+        .setTextSpan(
+            new TextSpan().setStart(section2Start).setEnding(section2End)));
     shakeHandComm.addToSectionList(section2);
 
     assertTrue("Error in creating original communication",
@@ -818,18 +948,25 @@ public class StanfordAgigaPipeTest {
     assertTrue("Error in serializing processed communication",
         cs.toBytes(processedShakeHandComm) != null);
     final String docText = processedShakeHandComm.getOriginalText();
-    //final String[] stokens = { "The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", ".", "The", "boy", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", ".", "The", "dog", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
-    final String[] stokens = { "The", "dog", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
+    // final String[] stokens = { "The", "man", "ran", "to", "shake", "the",
+    // "U.S.", "President", "'s", "hand", ".", "The", "boy", "ran", "to",
+    // "shake", "the", "U.S.", "President", "'s", "hand", ".", "The", "dog",
+    // "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
+    final String[] stokens = { "The", "dog", "ran", "to", "shake", "the",
+        "U.S.", "President", "'s", "hand", "." };
 
     assertTrue(docText.equals(origCommText));
 
     // Sections
-    assertEquals("Processed communication should have 2 sections; it has " + processedShakeHandComm.getSectionList().size(),
-                 2, processedShakeHandComm.getSectionList().size());
+    assertEquals("Processed communication should have 2 sections; it has "
+        + processedShakeHandComm.getSectionList().size(), 2,
+        processedShakeHandComm.getSectionList().size());
     verifyNumSections(shakeHandComm, processedShakeHandComm);
 
-    assertTrue(processedShakeHandComm.getSectionList().get(0).getSentenceList().size() == 2);
-    final Section secondSection = processedShakeHandComm.getSectionList().get(1);
+    assertTrue(processedShakeHandComm.getSectionList().get(0).getSentenceList()
+        .size() == 2);
+    final Section secondSection = processedShakeHandComm.getSectionList()
+        .get(1);
     final List<Sentence> firstSentList = secondSection.getSentenceList();
     assertTrue(firstSentList.size() == 1);
     final Sentence firstSent = firstSentList.get(0);
@@ -837,31 +974,39 @@ public class StanfordAgigaPipeTest {
 
     // Test spans
     assertTrue(firstSentList.size() == 1);
-    assertTrue("firstSent.rawTextSpan should be set", firstSent.isSetRawTextSpan());
-    assertEquals("Beginning char should be 98.", section2Start, firstSent.getRawTextSpan().getStart());
-    assertEquals("Ending char should be 146.", section2End, firstSent.getRawTextSpan().getEnding());
+    assertTrue("firstSent.rawTextSpan should be set",
+        firstSent.isSetRawTextSpan());
+    assertEquals("Beginning char should be 98.", section2Start, firstSent
+        .getRawTextSpan().getStart());
+    assertEquals("Ending char should be 146.", section2End, firstSent
+        .getRawTextSpan().getEnding());
 
     TextSpan tts = firstSent.getRawTextSpan();
     String pulledText = docText.substring(tts.getStart(), tts.getEnding());
-    assertTrue("Received " + pulledText +", should have gotten " + SHAKE_HAND_TEXT_STRING_2,
-               pulledText.equals(SHAKE_HAND_TEXT_STRING_2.trim()));
+    assertTrue("Received " + pulledText + ", should have gotten "
+        + SHAKE_HAND_TEXT_STRING_2,
+        pulledText.equals(SHAKE_HAND_TEXT_STRING_2.trim()));
 
     // Test # Tokens
     StringBuilder actualTokensSB = new StringBuilder();
     for (Token tok : firstTokenization.getTokenList().getTokenList()) {
-      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex() + ") ");
+      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex()
+          + ") ");
     }
-    assertTrue(
-        "Expected tokens length = " + stokens.length + ";" + "Actual   tokens length = "
-            + firstTokenization.getTokenList().getTokenList().size() + "; " + "Actual tokens = "
-            + actualTokensSB.toString(), firstTokenization.getTokenList().getTokenList().size() == stokens.length);
+    assertTrue("Expected tokens length = " + stokens.length + ";"
+        + "Actual   tokens length = "
+        + firstTokenization.getTokenList().getTokenList().size() + "; "
+        + "Actual tokens = " + actualTokensSB.toString(), firstTokenization
+        .getTokenList().getTokenList().size() == stokens.length);
 
     // Verify tokens
     int tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      assertTrue("tokIdx = " + tokIdx + "; token.getTokenIndex() = " + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
-      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = [" + token.getText() + "]",
-          token.getText().equals(stokens[tokIdx]));
+      assertTrue(
+          "tokIdx = " + tokIdx + "; token.getTokenIndex() = "
+              + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
+      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = ["
+          + token.getText() + "]", token.getText().equals(stokens[tokIdx]));
       tokIdx++;
     }
 
@@ -869,8 +1014,8 @@ public class StanfordAgigaPipeTest {
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
       String substr = docText.substring(tts.getStart(), tts.getEnding());
-      assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts + ") = [" + substr + "]", token.getText()
-          .equals(substr));
+      assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts
+          + ") = [" + substr + "]", token.getText().equals(substr));
     }
 
     // Verify tokens to full seeded
@@ -878,8 +1023,8 @@ public class StanfordAgigaPipeTest {
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
       String substr = docText.substring(tts.getStart(), tts.getEnding());
-      assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts + ") = [" + substr + "]",
-          stokens[tokIdx].equals(substr));
+      assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts
+          + ") = [" + substr + "]", stokens[tokIdx].equals(substr));
       tokIdx++;
     }
 
@@ -891,17 +1036,21 @@ public class StanfordAgigaPipeTest {
     tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
-      assertTrue(token.getText() + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx] + oOffset,
+      assertTrue(
+          token.getText() + "(" + tokIdx + ") starts at " + tts.getStart()
+              + "; it should start at " + start[tokIdx] + oOffset,
           tts.getStart() == start[tokIdx] + oOffset);
-      assertTrue(token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx] + oOffset,
+      assertTrue(
+          token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding()
+              + "; it should start at " + end[tokIdx] + oOffset,
           tts.getEnding() == end[tokIdx] + oOffset);
       tokIdx++;
     }
 
     // Verify # entities
     assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
-    assertEquals("Should be 5 entities.", 5, processedShakeHandComm.getEntitySetList().get(0).getEntityList()
-        .size());
+    assertEquals("Should be 5 entities.", 5, processedShakeHandComm
+        .getEntitySetList().get(0).getEntityList().size());
 
     // Verify entity names
     Set<String> expEnts = new HashSet<String>();
@@ -911,7 +1060,8 @@ public class StanfordAgigaPipeTest {
     expEnts.add("the U.S. President 's hand");
     expEnts.add("the U.S. President 's");
     Set<String> seenEnts = new HashSet<String>();
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0).getEntityList()) {
+    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+        .getEntityList()) {
       seenEnts.add(entity.getCanonicalName());
     }
     assertTrue(seenEnts.equals(expEnts));
@@ -919,18 +1069,25 @@ public class StanfordAgigaPipeTest {
     // Verify some canonical entity names
     assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
     boolean atLeastOne = false;
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0).getEntityList()) {
-      atLeastOne |= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
+    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+        .getEntityList()) {
+      atLeastOne |= (entity.getCanonicalName() != null && entity
+          .getCanonicalName().length() > 0);
     }
     assertTrue(atLeastOne);
 
     // Verify metadata toolnames
     // this.verifyToolNames(processedShakeHandComm);
-    new SuperCommunication(processedShakeHandComm).writeToFile("src/test/resources/post-stanford.handshake_multiple_sections.concrete", true);
+    new SuperCommunication(processedShakeHandComm)
+        .writeToFile(
+            "src/test/resources/post-stanford.handshake_multiple_sections.concrete",
+            true);
   }
 
   /**
-   * Test method for {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}.
+   * Test method for
+   * {@link edu.jhu.hlt.concrete.stanford.StanfordAgigaPipe#process(edu.jhu.hlt.concrete.Communication)}
+   * .
    * 
    * @throws TException
    * @throws AsphaltException
@@ -940,36 +1097,44 @@ public class StanfordAgigaPipeTest {
    * @throws AnnotationException
    */
   @Test
-  public void processHandshakeCommunicationWithRepeatedSentencesAndTitleSection() throws TException, IOException, ConcreteException, AnnotationException {
+  public void processHandshakeCommunicationWithRepeatedSentencesAndTitleSection()
+      throws TException, IOException, ConcreteException, AnnotationException {
     String SHAKE_HAND_TEXT_STRING_1 = "The boy ran to shake the U.S. \nPresident's hand. ";
     String SHAKE_HAND_TEXT_STRING_2 = "The dog ran to shake the U.S. \nPresident's hand.";
     final int eachSentenceLength = SHAKE_HAND_TEXT_STRING.length() - 1;
     assertEquals(48, eachSentenceLength);
-    final String origCommText = SHAKE_HAND_TEXT_STRING + SHAKE_HAND_TEXT_STRING_1 + SHAKE_HAND_TEXT_STRING_2;
+    final String origCommText = SHAKE_HAND_TEXT_STRING
+        + SHAKE_HAND_TEXT_STRING_1 + SHAKE_HAND_TEXT_STRING_2;
     Communication shakeHandComm = this.cf.communication().setText(origCommText);
-    AnnotationMetadata md = new AnnotationMetadata().setTool("concrete-stanford:test").setTimestamp(
+    AnnotationMetadata md = new AnnotationMetadata().setTool(
+        "concrete-stanford:test").setTimestamp(
         System.currentTimeMillis() / 1000);
     shakeHandComm.setMetadata(md);
-    Section section1 = new Section().setUuid(UUIDFactory.newUUID())
-        .setTextSpan(new TextSpan().setStart(0).setEnding(2*eachSentenceLength + 1)).setKind("Title");
+    Section section1 = new Section()
+        .setUuid(UUIDFactory.newUUID())
+        .setTextSpan(
+            new TextSpan().setStart(0).setEnding(2 * eachSentenceLength + 1))
+        .setKind("Title");
     section1.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
-                               .setTextSpan(new TextSpan().setStart(0).setEnding(eachSentenceLength)));
+        .setTextSpan(new TextSpan().setStart(0).setEnding(eachSentenceLength)));
     section1.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
-                               .setTextSpan(new TextSpan()
-                                            .setStart(eachSentenceLength + 1)
-                                            .setEnding(1 + 2*eachSentenceLength)));
+        .setTextSpan(
+            new TextSpan().setStart(eachSentenceLength + 1).setEnding(
+                1 + 2 * eachSentenceLength)));
     shakeHandComm.addToSectionList(section1);
-    //Section 2
-    int section2Start = 2*eachSentenceLength + 2;
+    // Section 2
+    int section2Start = 2 * eachSentenceLength + 2;
     assertEquals(98, section2Start);
-    int section2End = 3*eachSentenceLength + 2;
+    int section2End = 3 * eachSentenceLength + 2;
     assertEquals(146, section2End);
-    Section section2 = new Section().setUuid(UUIDFactory.newUUID())
-      .setTextSpan(new TextSpan().setStart(section2Start).setEnding(section2End)).setKind("Passage");
+    Section section2 = new Section()
+        .setUuid(UUIDFactory.newUUID())
+        .setTextSpan(
+            new TextSpan().setStart(section2Start).setEnding(section2End))
+        .setKind("Passage");
     section2.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
-                               .setTextSpan(new TextSpan()
-                                            .setStart(section2Start)
-                                            .setEnding(section2End)));
+        .setTextSpan(
+            new TextSpan().setStart(section2Start).setEnding(section2End)));
     shakeHandComm.addToSectionList(section2);
 
     assertTrue("Error in creating original communication",
@@ -979,18 +1144,25 @@ public class StanfordAgigaPipeTest {
     assertTrue("Error in serializing processed communication",
         cs.toBytes(processedShakeHandComm) != null);
     final String docText = processedShakeHandComm.getOriginalText();
-    //final String[] stokens = { "The", "man", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", ".", "The", "boy", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", ".", "The", "dog", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
-    final String[] stokens = { "The", "dog", "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
+    // final String[] stokens = { "The", "man", "ran", "to", "shake", "the",
+    // "U.S.", "President", "'s", "hand", ".", "The", "boy", "ran", "to",
+    // "shake", "the", "U.S.", "President", "'s", "hand", ".", "The", "dog",
+    // "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
+    final String[] stokens = { "The", "dog", "ran", "to", "shake", "the",
+        "U.S.", "President", "'s", "hand", "." };
 
     assertTrue(docText.equals(origCommText));
 
     // Sections
-    assertEquals("Processed communication should have 2 sections; it has " + processedShakeHandComm.getSectionList().size(),
-                 2, processedShakeHandComm.getSectionList().size());
+    assertEquals("Processed communication should have 2 sections; it has "
+        + processedShakeHandComm.getSectionList().size(), 2,
+        processedShakeHandComm.getSectionList().size());
     verifyNumSections(shakeHandComm, processedShakeHandComm);
 
-    assertTrue(processedShakeHandComm.getSectionList().get(0).getSentenceList().size() == 2);
-    final Section secondSection = processedShakeHandComm.getSectionList().get(1);
+    assertTrue(processedShakeHandComm.getSectionList().get(0).getSentenceList()
+        .size() == 2);
+    final Section secondSection = processedShakeHandComm.getSectionList()
+        .get(1);
     final List<Sentence> firstSentList = secondSection.getSentenceList();
     assertTrue(firstSentList.size() == 1);
     final Sentence firstSent = firstSentList.get(0);
@@ -998,31 +1170,39 @@ public class StanfordAgigaPipeTest {
 
     // Test spans
     assertTrue(firstSentList.size() == 1);
-    assertTrue("firstSent.rawTextSpan should be set", firstSent.isSetRawTextSpan());
-    assertEquals("Beginning char should be 98.", section2Start, firstSent.getRawTextSpan().getStart());
-    assertEquals("Ending char should be 146.", section2End, firstSent.getRawTextSpan().getEnding());
+    assertTrue("firstSent.rawTextSpan should be set",
+        firstSent.isSetRawTextSpan());
+    assertEquals("Beginning char should be 98.", section2Start, firstSent
+        .getRawTextSpan().getStart());
+    assertEquals("Ending char should be 146.", section2End, firstSent
+        .getRawTextSpan().getEnding());
 
     TextSpan tts = firstSent.getRawTextSpan();
     String pulledText = docText.substring(tts.getStart(), tts.getEnding());
-    assertTrue("Received " + pulledText +", should have gotten " + SHAKE_HAND_TEXT_STRING_2,
-               pulledText.equals(SHAKE_HAND_TEXT_STRING_2.trim()));
+    assertTrue("Received " + pulledText + ", should have gotten "
+        + SHAKE_HAND_TEXT_STRING_2,
+        pulledText.equals(SHAKE_HAND_TEXT_STRING_2.trim()));
 
     // Test # Tokens
     StringBuilder actualTokensSB = new StringBuilder();
     for (Token tok : firstTokenization.getTokenList().getTokenList()) {
-      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex() + ") ");
+      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex()
+          + ") ");
     }
-    assertTrue(
-        "Expected tokens length = " + stokens.length + ";" + "Actual   tokens length = "
-            + firstTokenization.getTokenList().getTokenList().size() + "; " + "Actual tokens = "
-            + actualTokensSB.toString(), firstTokenization.getTokenList().getTokenList().size() == stokens.length);
+    assertTrue("Expected tokens length = " + stokens.length + ";"
+        + "Actual   tokens length = "
+        + firstTokenization.getTokenList().getTokenList().size() + "; "
+        + "Actual tokens = " + actualTokensSB.toString(), firstTokenization
+        .getTokenList().getTokenList().size() == stokens.length);
 
     // Verify tokens
     int tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      assertTrue("tokIdx = " + tokIdx + "; token.getTokenIndex() = " + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
-      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = [" + token.getText() + "]",
-          token.getText().equals(stokens[tokIdx]));
+      assertTrue(
+          "tokIdx = " + tokIdx + "; token.getTokenIndex() = "
+              + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
+      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = ["
+          + token.getText() + "]", token.getText().equals(stokens[tokIdx]));
       tokIdx++;
     }
 
@@ -1030,8 +1210,8 @@ public class StanfordAgigaPipeTest {
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
       String substr = docText.substring(tts.getStart(), tts.getEnding());
-      assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts + ") = [" + substr + "]", token.getText()
-          .equals(substr));
+      assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts
+          + ") = [" + substr + "]", token.getText().equals(substr));
     }
 
     // Verify tokens to full seeded
@@ -1039,8 +1219,8 @@ public class StanfordAgigaPipeTest {
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
       String substr = docText.substring(tts.getStart(), tts.getEnding());
-      assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts + ") = [" + substr + "]",
-          stokens[tokIdx].equals(substr));
+      assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts
+          + ") = [" + substr + "]", stokens[tokIdx].equals(substr));
       tokIdx++;
     }
 
@@ -1052,17 +1232,21 @@ public class StanfordAgigaPipeTest {
     tokIdx = 0;
     for (Token token : firstTokenization.getTokenList().getTokenList()) {
       tts = token.getRawTextSpan();
-      assertTrue(token.getText() + "(" + tokIdx + ") starts at " + tts.getStart() + "; it should start at " + start[tokIdx] + oOffset,
+      assertTrue(
+          token.getText() + "(" + tokIdx + ") starts at " + tts.getStart()
+              + "; it should start at " + start[tokIdx] + oOffset,
           tts.getStart() == start[tokIdx] + oOffset);
-      assertTrue(token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding() + "; it should start at " + end[tokIdx] + oOffset,
+      assertTrue(
+          token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding()
+              + "; it should start at " + end[tokIdx] + oOffset,
           tts.getEnding() == end[tokIdx] + oOffset);
       tokIdx++;
     }
 
     // Verify # entities
     assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
-    assertEquals("Should be 3 entities.", 3, processedShakeHandComm.getEntitySetList().get(0).getEntityList()
-        .size());
+    assertEquals("Should be 3 entities.", 3, processedShakeHandComm
+        .getEntitySetList().get(0).getEntityList().size());
 
     // Verify entity names
     Set<String> expEnts = new HashSet<String>();
@@ -1070,7 +1254,8 @@ public class StanfordAgigaPipeTest {
     expEnts.add("the U.S. President 's hand");
     expEnts.add("the U.S. President 's");
     Set<String> seenEnts = new HashSet<String>();
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0).getEntityList()) {
+    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+        .getEntityList()) {
       seenEnts.add(entity.getCanonicalName());
     }
     assertTrue(seenEnts.equals(expEnts));
@@ -1078,15 +1263,16 @@ public class StanfordAgigaPipeTest {
     // Verify some canonical entity names
     assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
     boolean atLeastOne = false;
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0).getEntityList()) {
-      atLeastOne |= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
+    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+        .getEntityList()) {
+      atLeastOne |= (entity.getCanonicalName() != null && entity
+          .getCanonicalName().length() > 0);
     }
     assertTrue(atLeastOne);
 
     // Verify metadata toolnames
     // this.verifyToolNames(processedShakeHandComm);
   }
-
 
   // @Test
   // public void processWonkyNYTComm() throws Exception {
@@ -1096,18 +1282,21 @@ public class StanfordAgigaPipeTest {
 
   // // Text equality
   // //assertEquals("Text should be equal.", AFP_0623_TEXT, processedRawText);
-  // assertTrue("Communication should have text field set", nytProcessedComm.isSetText());
+  // assertTrue("Communication should have text field set",
+  // nytProcessedComm.isSetText());
 
   // // Sections
   // List<Section> nsects = nytProcessedComm.getSectionList();
-  // assertEquals("Should have found 28 sections (including title): has " + nsects.size(),
+  // assertEquals("Should have found 28 sections (including title): has " +
+  // nsects.size(),
   // 28, nsects.size());
 
   // // First sentence span test wrt RAW
   // // {
   // // int begin = 60;
   // // int end = 242;
-  // // Sentence sent = afpProcessedComm.getSectionList().get(1).getSentenceSegmentationList()
+  // // Sentence sent =
+  // afpProcessedComm.getSectionList().get(1).getSentenceSegmentationList()
   // // .get(0).getSentenceList().get(0);
   // // TextSpan tts = sent.getRawTextSpan();
   // // assertEquals("Start should be " + begin, begin, tts.getStart());
@@ -1123,12 +1312,15 @@ public class StanfordAgigaPipeTest {
   // if (nsect.getSentenceSegmentationList() == null)
   // continue;
   // for (Sentence nsent : nsect.getSentenceList()) {
-  // for (Token token : nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
+  // for (Token token :
+  // nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
   // TextSpan span = token.getRawTextSpan();
-  // String substr = processedRawText.substring(span.getStart(), span.getEnding());
+  // String substr = processedRawText.substring(span.getStart(),
+  // span.getEnding());
   // boolean areEq = token.getText().equals(substr);
   // if (!areEq) {
-  // logger.warn("expected = [" + token.getText() + "];" + "docText(" + span + ") = [" + substr + "]");
+  // logger.warn("expected = [" + token.getText() + "];" + "docText(" + span +
+  // ") = [" + substr + "]");
   // } else {
   // numEq++;
   // }
@@ -1137,7 +1329,8 @@ public class StanfordAgigaPipeTest {
   // }
   // }
   // double fracPassing = ((double) numEq / (double) numTot);
-  // assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing >= 0.8);
+  // assertTrue("WARNING: only " + fracPassing + "% of tokens matched!",
+  // fracPassing >= 0.8);
   // }
   // // Verify tokens wrt PROCESSED
   // {
@@ -1148,16 +1341,20 @@ public class StanfordAgigaPipeTest {
   // if (nsect.getSentenceSegmentationList() == null)
   // continue;
   // for (Sentence nsent : nsect.getSentenceList()) {
-  // for (Token token : nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
-  // assertTrue("token " + token.getTokenIndex() + " shouldn't have null textspan",
+  // for (Token token :
+  // nsent.getTokenizationList().get(0).getTokenList().getTokenList()) {
+  // assertTrue("token " + token.getTokenIndex() +
+  // " shouldn't have null textspan",
   // token.isSetTextSpan());
   // TextSpan span = token.getTextSpan();
-  // assertTrue("ending " + span.getEnding() + " is out of range ("+processedText.length()+")",
+  // assertTrue("ending " + span.getEnding() +
+  // " is out of range ("+processedText.length()+")",
   // span.getEnding() < processedText.length());
   // String substr = processedText.substring(span.getStart(), span.getEnding());
   // boolean areEq = token.getText().equals(substr);
   // if (!areEq) {
-  // logger.warn("expected = [" + token.getText() + "];" + " docText(" + span + ") = [" + substr + "]");
+  // logger.warn("expected = [" + token.getText() + "];" + " docText(" + span +
+  // ") = [" + substr + "]");
   // } else {
   // numEq++;
   // }
@@ -1166,7 +1363,8 @@ public class StanfordAgigaPipeTest {
   // }
   // }
   // double fracPassing = ((double) numEq / (double) numTot);
-  // assertTrue("WARNING: only " + fracPassing + "% of tokens matched!", fracPassing == 1.0);
+  // assertTrue("WARNING: only " + fracPassing + "% of tokens matched!",
+  // fracPassing == 1.0);
   // }
 
   // // Dependency parses
@@ -1177,7 +1375,8 @@ public class StanfordAgigaPipeTest {
   // continue;
   // for (Sentence nsent : nsect.getSentenceList()) {
   // Tokenization tokenization = nsent.getTokenizationList().get(0);
-  // assertEquals(expNumDepParses, tokenization.getDependencyParseList().size());
+  // assertEquals(expNumDepParses,
+  // tokenization.getDependencyParseList().size());
   // }
   // }
   // }
@@ -1190,7 +1389,8 @@ public class StanfordAgigaPipeTest {
   // for (Sentence nsent : nsect.getSentenceList()) {
   // Tokenization tokenization = nsent.getTokenizationList().get(0);
   // for (DependencyParse depParse : tokenization.getDependencyParseList()) {
-  // assertTrue("DependencyParse " + depParse.getMetadata().getTool() + " is empty", depParse.getDependencyList().size() > 0);
+  // assertTrue("DependencyParse " + depParse.getMetadata().getTool() +
+  // " is empty", depParse.getDependencyList().size() > 0);
   // }
   // }
   // }
@@ -1199,10 +1399,13 @@ public class StanfordAgigaPipeTest {
   // // Verify some NEs
   // {
   // assertTrue(nytProcessedComm.getEntitySetList().size() > 0);
-  // assertTrue(nytProcessedComm.getEntitySetList().get(0).getEntityList().size() > 0);
+  // assertTrue(nytProcessedComm.getEntitySetList().get(0).getEntityList().size()
+  // > 0);
   // boolean allSet = true;
-  // for (Entity entity : nytProcessedComm.getEntitySetList().get(0).getEntityList()) {
-  // allSet &= (entity.getCanonicalName() != null && entity.getCanonicalName().length() > 0);
+  // for (Entity entity :
+  // nytProcessedComm.getEntitySetList().get(0).getEntityList()) {
+  // allSet &= (entity.getCanonicalName() != null &&
+  // entity.getCanonicalName().length() > 0);
   // }
   // assertTrue(allSet);
   // }
@@ -1210,7 +1413,8 @@ public class StanfordAgigaPipeTest {
   // // Verify anchor tokens
   // {
   // int numWithout = 0;
-  // for (EntityMention em : nytProcessedComm.getEntityMentionSetList().get(0).getMentionList()) {
+  // for (EntityMention em :
+  // nytProcessedComm.getEntityMentionSetList().get(0).getMentionList()) {
   // numWithout += (em.getTokens().anchorTokenIndex >= 0 ? 0 : 1);
   // }
   // assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
@@ -1226,7 +1430,9 @@ public class StanfordAgigaPipeTest {
   // @Test
   // public void testNYTMessage() throws Exception {
   // Communication processedNYT = this.pipe.process(this.wonkyNYT);
-  // new SuperCommunication(processedNYT).writeToFile("target/test-nyt-out.concrete", true);
+  // new
+  // SuperCommunication(processedNYT).writeToFile("target/test-nyt-out.concrete",
+  // true);
   // }
 
   // @Test
