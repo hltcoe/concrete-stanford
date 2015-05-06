@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,23 +93,6 @@ public class AnnotateNonTokenizedConcrete {
     charOffset = 0;
     processedCharOffset = 0;
     pipeline.prepForNext();
-  }
-
-  /**
-   * Deprecated. This method will be removed in a future release.
-   *
-   * Use {@link ConcreteStanfordAnnotator#main(String[])} instead.
-   *
-   * @param args
-   * @throws TException
-   * @throws IOException
-   * @throws ConcreteException
-   * @throws AnnotationException
-   */
-  @Deprecated
-  public static void main(String[] args) throws TException, IOException,
-      ConcreteException, AnnotationException {
-    ConcreteStanfordAnnotator.main(args);
   }
 
   public AnnotateNonTokenizedConcrete() throws IOException {
