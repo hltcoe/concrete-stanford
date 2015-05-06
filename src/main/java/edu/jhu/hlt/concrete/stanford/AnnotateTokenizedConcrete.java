@@ -232,11 +232,11 @@ public class AnnotateTokenizedConcrete {
       TextSpan cSpan = cTok.getTextSpan();
       String text = cTok.getText();
       if (text.equals("(")) {
-        cTok.setText("（");
-        text = "（";
+        // cTok.setText("（");
+        // text = "（";
       } else if (text.equals(")")) {
-        cTok.setText("）");
-        text = "）";
+        // cTok.setText("）");
+        // text = "）";
       }
       int length = cSpan.getEnding() - cSpan.getStart();
       CoreLabel sTok = coreLabelTokenFactory.makeToken(text, comm.getText(),
