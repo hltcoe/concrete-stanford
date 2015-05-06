@@ -110,7 +110,7 @@ class ConcreteAnnotator {
   private AnnotationMetadata getMetadata(String addToToolName) {
     String fullToolName = toolName;
     if (addToToolName != null)
-      fullToolName += addToToolName;
+      fullToolName += " " + addToToolName;
 
     AnnotationMetadata md = new AnnotationMetadata();
     md.setTool(fullToolName);
