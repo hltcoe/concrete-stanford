@@ -619,8 +619,7 @@ public class StanfordAgigaPipe {
         successfulAnnotation);
 
     ConcreteAnnotator addToConcrete = this.getFreshConcreteAnnotator();
-    addToConcrete.convertSection(section, sentenceSplitText, sectionOffset, sb,
-        true);
+    addToConcrete.augmentSectionAnnotations(section, sentenceSplitText, sectionOffset, sb);
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
   }
 
@@ -650,8 +649,8 @@ public class StanfordAgigaPipe {
     logDebugSentencesAnnotation(sentenceSplitText, "after annotating");
     transferAnnotations(sentenceSplitText, docAnnotation);
     ConcreteAnnotator agigaToConcrete = this.getFreshConcreteAnnotator();
-    agigaToConcrete.convertSection(section, sentenceSplitText, sectionOffset,
-        sb, true);
+    agigaToConcrete.augmentSectionAnnotations(section, sentenceSplitText, sectionOffset,
+        sb);
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
   }
 

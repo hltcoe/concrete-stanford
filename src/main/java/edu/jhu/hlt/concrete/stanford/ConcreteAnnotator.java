@@ -81,11 +81,25 @@ class ConcreteAnnotator {
   private final ConcreteAgigaProperties agigaProps;
   private final ConcreteStanfordProperties csProps;
   private final boolean allowEmptyMentions;
+  private final String language;
+
+  private final String[] annotatorList;
 
   public ConcreteAnnotator(String language) throws IOException {
     this.agigaProps = new ConcreteAgigaProperties();
     this.csProps = new ConcreteStanfordProperties();
     this.allowEmptyMentions = this.csProps.getAllowEmptyMentions();
+    this.language = language;
+    this.annotatorList = ConcreteAnnotator.getDefaultAnnotators();
+  }
+
+  public ConcreteAnnotator(String language, String[] annotators)
+      throws IOException {
+    this.agigaProps = new ConcreteAgigaProperties();
+    this.csProps = new ConcreteStanfordProperties();
+    this.allowEmptyMentions = this.csProps.getAllowEmptyMentions();
+    this.language = language;
+    this.annotatorList = annotators;
   }
 
   @SuppressWarnings("unused")
@@ -197,12 +211,11 @@ class ConcreteAnnotator {
      * @param coreNlpSection
      * @param charOffset
      * @param sb
-     * @param preserveTokenTaggings
      * @throws AnnotationException
      */
     public void makeSentences(Section sectToAnnotate,
-        Annotation coreNlpSection, int charOffset, StringBuilder sb,
-        boolean preserveTokenTaggings) throws AnnotationException {
+        Annotation coreNlpSection, int procCharOffset, StringBuilder sb)
+        throws AnnotationException {
       List<CoreMap> sentAnnos = coreNlpSection.get(SentencesAnnotation.class);
       if (sentAnnos == null) {
         throw new AnnotationException("Section " + sectToAnnotate.getUuid()
@@ -211,14 +224,13 @@ class ConcreteAnnotator {
       final int n = sentAnnos.size();
       logger.debug("Adding " + n + " sentences to section "
           + sectToAnnotate.getUuid());
-      int currOffset = charOffset;
+      int currOffset = procCharOffset;
       assert n > 0 : "n=" + n;
       int i = 0;
       for (CoreMap sentAnno : sentAnnos) {
         String sentText = flattenText(sentAnno);
         // the second argument is the estimated character provenance offset.
-        Sentence st = makeConcreteSentence(sentAnno, currOffset,
-            preserveTokenTaggings, sentText);
+        Sentence st = makeConcreteSentence(sentAnno, currOffset, sentText);
         sb.append(sentText);
         currOffset += sentText.length();
         if ((i + 1) < n) {
@@ -439,8 +451,8 @@ class ConcreteAnnotator {
     }
 
     private Sentence makeConcreteSentence(CoreMap sentAnno,
-        int charsFromStartOfCommunication, boolean preserveTokenTaggings,
-        String sentenceText) throws AnnotationException {
+        int charsFromStartOfCommunication, String sentenceText)
+        throws AnnotationException {
       Tokenization tokenization = makeTokenization(sentAnno,
           charsFromStartOfCommunication);
       // TODO: replace this call to getConcreteUUID with a call to a utility
@@ -562,8 +574,10 @@ class ConcreteAnnotator {
       CorefChain.CorefMention coreHeadMention = chain
           .getRepresentativeMention();
       // CoreNLP uses 1-based indexing for the sentences
-      EntityMention concHeadMention = makeEntityMention(coreHeadMention,
-                                                        getTokenizationUuidSafe(tokenizations, ConcreteAnnotator.coreMentionSentenceAsIndex(coreHeadMention.sentNum)), true);
+      EntityMention concHeadMention = makeEntityMention(
+          coreHeadMention,
+          getTokenizationUuidSafe(tokenizations, ConcreteAnnotator
+              .coreMentionSentenceAsIndex(coreHeadMention.sentNum)), true);
       concEntity.setCanonicalName(coreHeadMention.mentionSpan);
       concEntity.addToMentionIdList(concHeadMention.getUuid());
       ems.addToMentionList(concHeadMention);
@@ -571,13 +585,17 @@ class ConcreteAnnotator {
         if (mention == coreHeadMention)
           continue;
         // CoreNLP uses 1-based indexing for the sentences
-        EntityMention concMention = this.makeEntityMention(mention,
-                                                           getTokenizationUuidSafe(tokenizations, ConcreteAnnotator.coreMentionSentenceAsIndex(mention.sentNum)), false);
+        EntityMention concMention = this.makeEntityMention(
+            mention,
+            getTokenizationUuidSafe(tokenizations,
+                ConcreteAnnotator.coreMentionSentenceAsIndex(mention.sentNum)),
+            false);
         ems.addToMentionList(concMention);
         concEntity.addToMentionIdList(concMention.getUuid());
       }
       return concEntity;
     }
+
   }
 
   /**
@@ -610,26 +628,41 @@ class ConcreteAnnotator {
     return extractTokenRefSequence(start, end, head, tokUuid);
   }
 
-  void convertSection(Section section, Annotation coreNlpSection,
-      int charOffset, StringBuilder sb, boolean preserveTokenTaggings)
+  /**
+   * 
+   * @return
+   */
+  static String[] getDefaultAnnotators() {
+    String[] annotators = { "POS", "NER", "LEMMA", "CPARSE", "DPARSE" };
+    return annotators;
+  }
+
+  /**
+   * 
+   * @param section
+   * @param coreNlpSection
+   * @param procCharOffset
+   *          The current processed offset for the Section. The original offsets
+   *          are stored in the {@code Annotation} object.
+   * @param sb
+   *          An aggregator to store the document text.
+   * @param annotationList
+   * @throws AnnotationException
+   */
+  public void augmentSectionAnnotations(Section section,
+      Annotation coreNlpSection, int procCharOffset, StringBuilder sb)
       throws AnnotationException {
     if (section.isSetSentenceList()) {
-      this.augmentSentences(section, coreNlpSection, charOffset, sb,
-          preserveTokenTaggings);
+      this.augmentSentences(section, coreNlpSection, procCharOffset, sb);
     } else {
       ConcreteCreator cc = new ConcreteCreator();
-      cc.makeSentences(section, coreNlpSection, charOffset, sb,
-          preserveTokenTaggings);
+      cc.makeSentences(section, coreNlpSection, procCharOffset, sb);
     }
     sb.append("\n\n");
   }
 
   /**
-   * Create a Tokenization based on the given sentence. If we're looking to add
-   * TextSpans, then we will first default to using the token character offsets
-   * within the sentence itself if charOffset is negative. If those are not set,
-   * then we will use the provided charOffset, as long as it is non-negative.
-   * Otherwise, this will throw a runtime exception.
+   * Augment an existing Tokenization based on the given sentence.
    * 
    * @throws AnnotationException
    */
@@ -640,21 +673,54 @@ class ConcreteAnnotator {
           "The provided character offset cannot be < 0");
     }
     UUID tUuid = tokenization.getUuid();
-    TokenTagging lemma = new TokenTagging().setUuid(UUIDFactory.newUUID())
-        .setMetadata(getMetadata()).setTaggingType("LEMMA");
-    TokenTagging pos = new TokenTagging().setUuid(UUIDFactory.newUUID())
-        .setMetadata(getMetadata()).setTaggingType("POS");
-    TokenTagging ner = new TokenTagging().setUuid(UUIDFactory.newUUID())
-        .setMetadata(getMetadata()).setTaggingType("NER");
+    List<TokenTagging> tokenTaggingLists = new ArrayList<>();
+    List<Class<? extends TypesafeMap.Key<String>>> annotClasses = new ArrayList<>();
+    for (String annotation : this.annotatorList) {
+      switch (annotation.toLowerCase()) {
+      case "pos":
+        TokenTagging pos = new TokenTagging().setUuid(UUIDFactory.newUUID())
+            .setMetadata(this.getPOSMetadata(tUuid)).setTaggingType("POS");
+        tokenTaggingLists.add(pos);
+        annotClasses.add(CoreAnnotations.PartOfSpeechAnnotation.class);
+        break;
+      case "ner":
+        TokenTagging ner = new TokenTagging().setUuid(UUIDFactory.newUUID())
+            .setMetadata(this.getNERMetadata(tUuid)).setTaggingType("NER");
+        tokenTaggingLists.add(ner);
+        annotClasses.add(CoreAnnotations.NamedEntityTagAnnotation.class);
+        break;
+      case "lemma":
+        TokenTagging lemma = new TokenTagging().setUuid(UUIDFactory.newUUID())
+            .setMetadata(this.getLemmaMetadata(tUuid)).setTaggingType("LEMMA");
+        tokenTaggingLists.add(lemma);
+        annotClasses.add(CoreAnnotations.LemmaAnnotation.class);
+        break;
+      case "cparse":
+        Tree tree = sent.get(TreeCoreAnnotations.TreeAnnotation.class);
+        if (tree != null) {
+          List<Parse> parseList = new ArrayList<Parse>();
+          parseList.add(cc.makeConcreteCParse(tree,
+              verifyNonNull(tokenization.getTokenList()).getTokenListSize(),
+              tUuid));
+          tokenization.setParseList(parseList);
+        } else {
+          logger.warn("Tokenization {} has an empty constituency parse",
+              tokenization.getUuid());
+        }
+        break;
+      case "dparse":
+        List<DependencyParse> dependencyParses = cc.constructDependencyParses(
+            sent, tUuid);
+        tokenization.setDependencyParseList(dependencyParses);
+        break;
+      default:
+        break;
+      }
+    }
     List<CoreLabel> tokens = verifyNonNull(sent
         .get(CoreAnnotations.TokensAnnotation.class));
-    final int numTaggings = 3;
+    final int numTaggings = annotClasses.size();
     boolean[] tagsGood = { true, true, true };
-    List<Class<? extends TypesafeMap.Key<String>>> annotClasses = new ArrayList<>();
-    annotClasses.add(CoreAnnotations.LemmaAnnotation.class);
-    annotClasses.add(CoreAnnotations.PartOfSpeechAnnotation.class);
-    annotClasses.add(CoreAnnotations.NamedEntityTagAnnotation.class);
-    TokenTagging[] tokenTaggingLists = { lemma, pos, ner };
     int tokId = 0;
     for (CoreLabel token : tokens) {
       for (int i = 0; i < numTaggings; ++i) {
@@ -663,7 +729,7 @@ class ConcreteAnnotator {
         // there and fail gracefully
         if (tag != null) {
           TaggedToken tagTok = cc.makeTaggedToken(tag, tokId);
-          tokenTaggingLists[i].addToTaggedTokenList(tagTok);
+          tokenTaggingLists.get(i).addToTaggedTokenList(tagTok);
         }
       }
       ++tokId;
@@ -671,31 +737,29 @@ class ConcreteAnnotator {
 
     for (int i = 0; i < numTaggings; ++i) {
       if (tagsGood[i]) {
-        tokenization.addToTokenTaggingList(tokenTaggingLists[i]);
+        tokenization.addToTokenTaggingList(tokenTaggingLists.get(i));
       }
     }
-
-    Tree tree = sent.get(TreeCoreAnnotations.TreeAnnotation.class);
-    if (tree != null) {
-      List<Parse> parseList = new ArrayList<Parse>();
-      parseList.add(cc.makeConcreteCParse(tree, tokId, tUuid));
-      tokenization.setParseList(parseList);
-    } else {
-      logger.warn("Tokenization {} has an empty constituency parse",
-          tokenization.getUuid());
-    }
-    List<DependencyParse> dependencyParses = cc.constructDependencyParses(sent,
-        tUuid);
-    tokenization.setDependencyParseList(dependencyParses);
-
   }
 
   /**
-   * This assumes that {@code concSect} has a SentenceList already initialized.
+   * This assumes that {@code concSect} has a SentenceList already initialized
+   * and that valid {@code Concrete} {@link Sentence}s populate it. The
+   * sentences may or may not have {@link Tokenization}s, but it must be
+   * all-or-nothing: {@code concSect} cannot have some sentences with
+   * Tokenizations and other sentences without Tokenizations.
+   * 
+   * @param concSect
+   * @param coreNlpSection
+   * @param procCurrOffset
+   *          The current processed offset for the Section. The original offsets
+   *          are stored in the {@code Annotation} object.
+   * @param sb
+   *          An aggregator to store the document text.
+   * @throws AnnotationException
    */
-  private void augmentSentences(Section concSect, Annotation coreNlpSection,
-      int currOffset, StringBuilder sb, boolean preserveTokenTaggings)
-      throws AnnotationException {
+  public void augmentSentences(Section concSect, Annotation coreNlpSection,
+      int procCurrOffset, StringBuilder sb) throws AnnotationException {
     logger.debug("Section has : " + concSect.getSentenceList().size()
         + " sentences");
     logger.debug("convertSentences for " + concSect.getUuid());
@@ -714,22 +778,61 @@ class ConcreteAnnotator {
     assert n > 0 : "n=" + n;
     List<Sentence> concreteSentences = concSect.getSentenceList();
     ConcreteCreator cc = new ConcreteCreator();
+    int whichBranch = 0, priorBranch = 0;
     for (int i = 0; i < n; i++) {
       Sentence concSent = concreteSentences.get(i);
       CoreMap coreSent = sentAnnos.get(i);
-      Tokenization tokenization = cc.makeTokenization(coreSent, currOffset);
-      concSent.setTokenization(tokenization);
-
-      if (currOffset < 0) {
-        throw new AnnotationException("bad character offset of " + currOffset
-            + " for converting sent " + concSent.getUuid());
+      String sentText = ConcreteAnnotator.flattenText(coreSent);
+      Tokenization tokenization;
+      if (concSent.isSetTokenization()) {
+        tokenization = concSent.getTokenization();
+        if (tokenization == null || !tokenization.isSetTokenList()
+            || tokenization.getTokenList() == null) {
+          throw new AnnotationException("Sentence " + concSent.getUuid()
+              + " does not have a valid tokenization or iterable token list");
+        }
+        this.augmentTokenization(tokenization, coreSent, cc, procCurrOffset);
+        whichBranch = 1;
+        if (procCurrOffset != concSent.getTextSpan().getStart()
+            && (procCurrOffset + sentText.length()) != concSent.getTextSpan()
+                .getEnding()) {
+          throw new AnnotationException(
+              "Sentence "
+                  + concSent.getUuid()
+                  + " already has tokens set, but its start/end values ( "
+                  + concSent.getTextSpan()
+                  + ") do not agree with the passed-in value of the processed offset ("
+                  + procCurrOffset + ") and the computed sentence length ("
+                  + sentText.length() + ")");
+        }
+      } else {
+        tokenization = cc.makeTokenization(coreSent, procCurrOffset);
+        concSent.setTokenization(tokenization);
+        whichBranch = -1;
+        // we store the original offsets in the AgigaToken char begin/end
+        // values.
+        // This means that we need to compute the actual offsets on-the-fly.
+        TextSpan sentTS = makeSafeSpan(procCurrOffset, procCurrOffset
+            + sentText.length());
+        concSent.setTextSpan(sentTS);
+      }
+      // now check to make sure that we're not switching branches.
+      if (priorBranch == 0) {
+        priorBranch = whichBranch;
+        continue;
+      } else {
+        if (priorBranch != whichBranch) {
+          throw new AnnotationException(
+              "Section "
+                  + concSect.getUuid()
+                  + " has some sentences with Tokenizations set, and others without Tokenizations set");
+        }
       }
 
-      String sentText = ConcreteAnnotator.flattenText(coreSent);
-      // we store the original offsets in the AgigaToken char begin/end values.
-      // This means that we need to compute the actual offsets on-the-fly.
-      TextSpan sentTS = makeSafeSpan(currOffset, currOffset + sentText.length());
-      concSent.setTextSpan(sentTS);
+      if (procCurrOffset < 0) {
+        throw new AnnotationException("bad character offset of "
+            + procCurrOffset + " for converting sent " + concSent.getUuid());
+      }
 
       List<Token> tokenList = tokenization.getTokenList().getTokenList();
       int numTokens = tokenList.size();
@@ -749,10 +852,10 @@ class ConcreteAnnotator {
       }
       // and finally, add the sentence text to the string builder
       sb.append(sentText);
-      currOffset += sentText.length();
+      procCurrOffset += sentText.length();
       if ((i + 1) < n) {
         sb.append("\n");
-        currOffset++;
+        procCurrOffset++;
       }
       logger.debug(sentText);
     }
@@ -772,6 +875,53 @@ class ConcreteAnnotator {
       throw new AnnotationException("attempting to use a null object");
     }
     return obj;
+  }
+
+  private AnnotationMetadata createTokenizationDependentMetadata(
+      UUID tokenizationUuid, String addlToolName) {
+    TheoryDependencies taggingDeps = new TheoryDependencies();
+    taggingDeps.addToTokenizationTheoryList(tokenizationUuid);
+
+    AnnotationMetadata md = this.getMetadata(addlToolName).setDependencies(
+        taggingDeps);
+    return md;
+  }
+
+  /**
+   * Create a lemma-list tagging {@link AnnotationMetadata} object.
+   *
+   * @param tUuid
+   * @return
+   */
+  public AnnotationMetadata getLemmaMetadata(UUID tUuid) {
+    return this.createTokenizationDependentMetadata(tUuid,
+        this.agigaProps.getLemmatizerToolName());
+  }
+
+  public AnnotationMetadata getCorefMetadata() {
+    return this.getMetadata(this.agigaProps.getCorefToolName());
+  }
+
+  /**
+   * Create a POS tagging {@link AnnotationMetadata} object.
+   *
+   * @param tUuid
+   * @return
+   */
+  public AnnotationMetadata getPOSMetadata(UUID tUuid) {
+    return this.createTokenizationDependentMetadata(tUuid,
+        this.agigaProps.getPOSToolName());
+  }
+
+  /**
+   * Create an NER tagging {@link AnnotationMetadata} object.
+   *
+   * @param tUuid
+   * @return
+   */
+  public AnnotationMetadata getNERMetadata(UUID tUuid) {
+    return this.createTokenizationDependentMetadata(tUuid,
+        this.agigaProps.getNERToolName());
   }
 
   /**
@@ -805,14 +955,14 @@ class ConcreteAnnotator {
   }
 
   /**
-   * Convert from 1-based indexing to 0-based indexing. This is useful
-   * for getting the proper sentence (out of a list or array) that a 
-   * given CoreNLP mention occurs in, since CoreNLP uses 1-based indexing
-   * when referring to the sentence of a mention.
+   * Convert from 1-based indexing to 0-based indexing. This is useful for
+   * getting the proper sentence (out of a list or array) that a given CoreNLP
+   * mention occurs in, since CoreNLP uses 1-based indexing when referring to
+   * the sentence of a mention.
    *
    * While there might be some overhead in this function call, the JVM will
-   * hopefully inline the function. However, even if it doesn't, it's better
-   * to keep the book-keeping code as its own.
+   * hopefully inline the function. However, even if it doesn't, it's better to
+   * keep the book-keeping code as its own.
    */
   public static int coreMentionSentenceAsIndex(int sentNum) {
     return sentNum - 1;

@@ -72,9 +72,8 @@ public class NonPTBTextTest {
 
     sentence.setTokenization(tokenization);
     assertTrue(new CommunicationValidator(chineseComm).validate());
-    assertTrue(false);
-    // AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete("cn");
-    // atc.annotateWithStanfordNlp(chineseComm);
+    AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete("cn");
+    atc.annotateWithStanfordNlp(chineseComm);
   }
 
   @Test
@@ -112,8 +111,7 @@ public class NonPTBTextTest {
     tokenization.setTokenTaggingList(new ArrayList<>());
     sentence.setTokenization(tokenization);
     assertTrue(new CommunicationValidator(englishComm).validate());
-    assertTrue(false);
-    // AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete("en");
-    // atc.annotateWithStanfordNlp(englishComm);
+    AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete("en");
+    atc.annotateWithStanfordNlp(englishComm);
   }
 }
