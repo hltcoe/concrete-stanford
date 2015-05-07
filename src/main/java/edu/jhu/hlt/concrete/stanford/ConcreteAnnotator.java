@@ -54,6 +54,7 @@ import edu.stanford.nlp.trees.HeadFinder;
 import edu.stanford.nlp.trees.SemanticHeadFinder;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations;
+import edu.stanford.nlp.trees.international.pennchinese.ChineseSemanticHeadFinder;
 import edu.stanford.nlp.util.CoreMap;
 import edu.stanford.nlp.util.TypesafeMap;
 
@@ -73,7 +74,7 @@ class ConcreteAnnotator {
   /**
   *
   */
-  private static final HeadFinder HEAD_FINDER = new SemanticHeadFinder();
+  private HeadFinder HEAD_FINDER;
 
   private final ConcreteStanfordProperties csProps;
   // private final boolean allowEmptyMentions;
@@ -86,6 +87,7 @@ class ConcreteAnnotator {
     // this.allowEmptyMentions = this.csProps.getAllowEmptyMentions();
     this.language = language;
     this.annotatorList = ConcreteAnnotator.getDefaultAnnotators();
+    initHeadFinder();
   }
 
   public ConcreteAnnotator(String language, String[] annotators)
@@ -94,6 +96,18 @@ class ConcreteAnnotator {
     // this.allowEmptyMentions = this.csProps.getAllowEmptyMentions();
     this.language = language;
     this.annotatorList = annotators;
+    initHeadFinder();
+  }
+
+  private void initHeadFinder() {
+    if (language.equals("cn"))
+      this.HEAD_FINDER = new ChineseSemanticHeadFinder();
+    else if (language.equals("en")) {
+      this.HEAD_FINDER = new SemanticHeadFinder();
+    } else {
+      logger.warn("Do not support language "+language);
+      throw new IllegalArgumentException("Do not support language "+language);
+    }
   }
 
   @SuppressWarnings("unused")

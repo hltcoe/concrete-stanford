@@ -357,6 +357,22 @@ public class InMemoryAnnoPipeline {
       logger.error(e.getMessage(), e);
       exceptionThrown = true;
     }
+    // add dependency annotations (need to do it this way because CoreNLP
+    // does not include root annotation, and format is different from
+    // AnnotatedGigaword)
+    for (CoreMap sentence : annotation.get(SentencesAnnotation.class)) {
+        try {
+            if (sentence.containsKey(TreeAnnotation.class)) {
+                fillInParseAnnotations(false, sentence,
+                                       sentence.get(TreeAnnotation.class));
+            }
+        } catch (Exception e) {
+            logger
+                .warn("In stanfordToXML. Error filling in parse annotation for sentence "
+                      + sentence);
+        }
+
+    }
     logger.debug("annotation keys :: " + annotation.keySet().toString());
     return exceptionThrown;
   }
