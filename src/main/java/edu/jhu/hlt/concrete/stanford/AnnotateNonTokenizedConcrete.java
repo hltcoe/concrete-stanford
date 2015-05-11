@@ -248,7 +248,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
     boolean allButCoref = kindsForNoCoref.contains(section.getKind());
     boolean allWithCoref = kindsToProcessSet.contains(section.getKind());
     if (!allWithCoref && !allButCoref) {
-      basicProcessingOnly(sectionAnnotation, sectionText);
+      basicProcessingOnly(section, sectionAnnotation, sectionStartCharOffset, sb);
     } else if (allButCoref) {
       // Only tokenize & sentence split
       logger.debug("Special handling for section type {} section: {}",
@@ -273,22 +273,27 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
    * @param sectionAnnotation
    * @param sectionText
    */
-  private void basicProcessingOnly(Annotation sectionAnnotation,
-      String sectionText) {
-    logger.debug("no good section: from " + charOffset + " to ");
-    if (sectionAnnotation == null) {
-      logger.debug("" + charOffset);
+  private void basicProcessingOnly(Section section,
+                                   Annotation sentenceSplitText, int sectionOffset, StringBuilder sb) throws AnnotationException, IOException {
+    logger.debug("tokenize/sent-split ONLY section: from " + sectionOffset + " to ");
+    if (sentenceSplitText == null) {
+      logger.debug("" + sectionOffset);
       return;
     }
 
     // We need to update the global character offset...
-    List<CoreLabel> sentTokens = sectionAnnotation.get(TokensAnnotation.class);
-    for (CoreLabel badToken : sentTokens) {
-      updateCharOffsetSetToken(badToken, false, false);
-    }
+    sentencesToSection(section, sentenceSplitText);
+    ConcreteAnnotator addToConcrete = this.getFreshConcreteAnnotator(new String[]{});
+    addToConcrete.augmentSectionAnnotations(section, sentenceSplitText,
+        sectionOffset, sb);
+    setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
+    // List<CoreLabel> sentTokens = sectionAnnotation.get(TokensAnnotation.class);
+    // for (CoreLabel badToken : sentTokens) {
+    //   updateCharOffsetSetToken(badToken, false, false);
+    // }
 
     logger.debug("" + charOffset);
-    logger.debug("\t" + sectionText);
+    //logger.debug("\t" + sectionText);
   }
 
   private void addTokenizations(Section section,
@@ -687,6 +692,9 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
 
   private ConcreteAnnotator getFreshConcreteAnnotator() throws IOException {
     return new ConcreteAnnotator(this.language);
+  }
+  private ConcreteAnnotator getFreshConcreteAnnotator(String[] annotators) throws IOException {
+    return new ConcreteAnnotator(this.language, annotators);
   }
 
   public Set<String> getSectionTypesToAnnotate() {
