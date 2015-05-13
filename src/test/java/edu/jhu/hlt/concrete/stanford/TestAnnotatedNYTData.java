@@ -30,7 +30,6 @@ import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.ingesters.annotatednyt.CommunicationizableAnnotatedNYTDocument;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
-import edu.jhu.hlt.concrete.util.SuperTextSpan;
 import edu.jhu.hlt.utilt.sys.SystemErrDisabler;
 
 /**
@@ -58,24 +57,12 @@ public class TestAnnotatedNYTData {
   }
 
   private Communication extractNYTDoc(Path p) throws Exception {
-
     byte[] ba = Files.readAllBytes(p);
     NYTCorpusDocument nytd = parser.fromByteArray(ba, false);
     AnnotatedNYTDocument ad = new AnnotatedNYTDocument(nytd);
     Communication c = new CommunicationizableAnnotatedNYTDocument(ad).toCommunication();
-    for (Section s : c.getSectionList()) {
-      SuperTextSpan sts = new SuperTextSpan(s.getTextSpan(), c);
-      logger.info("Got TextSpan text: {}", sts.getText());
-    }
-
     CachedSectionedCommunication csc = new CachedSectionedCommunication(c);
     assertEquals(csc.getRoot(), c);
-
-    for (Section s : c.getSectionList()) {
-      SuperTextSpan sts = new SuperTextSpan(s.getTextSpan(), c);
-      logger.info("Got TextSpan text: {}", sts.getText());
-    }
-
     return c;
   }
 
@@ -109,6 +96,19 @@ public class TestAnnotatedNYTData {
     }
 
     logger.info("Total tokens checked: {} ; number of differences: {}", nTokens, nTokensDiff);
+  }
+
+  @Test
+  public void testOddNYTDoc() throws Exception {
+    SystemErrDisabler dis = new SystemErrDisabler();
+    dis.disable();
+    Path p = Paths.get("src/test/resources/1000052.xml");
+    Communication c = this.extractNYTDoc(p);
+    logger.info("Got text: {}", c.getText());
+    Communication fromStanford = pipe.process(c);
+    String rawOrigText = fromStanford.getOriginalText();
+    assertEquals(c.getText(), rawOrigText);
+    logger.info("New text: {}", fromStanford.getText());
   }
 
   @Test
