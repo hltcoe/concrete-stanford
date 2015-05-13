@@ -24,6 +24,7 @@ import com.nytlabs.corpus.NYTCorpusDocumentParser;
 import edu.jhu.hlt.annotatednyt.AnnotatedNYTDocument;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.Section;
+import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
@@ -87,7 +88,7 @@ public class TestAnnotatedNYTData {
     Communication c = this.extractNYTDoc(p);
     Communication fromStanford = pipe.process(c);
     String rawOrigText = fromStanford.getOriginalText();
-
+    assertEquals(c.getText(), rawOrigText);
     CachedTokenizationCommunication ctc = new CachedTokenizationCommunication(fromStanford);
     int nTokens = 0;
     int nTokensDiff = 0;
@@ -96,9 +97,11 @@ public class TestAnnotatedNYTData {
       for (Token t : tkList) {
         TextSpan rawTS = t.getRawTextSpan();
         String origTokenText = rawOrigText.substring(rawTS.getStart(), rawTS.getEnding());
+        String grabbed = fromStanford.getText().substring(t.getTextSpan().getStart(), t.getTextSpan().getEnding());
         String ttxt = t.getText();
+        logger.debug("Examining token: {}, {}, {}, {}, {}", ttxt, grabbed, origTokenText, t.getTextSpan(), rawTS);
         if (!ttxt.equals(origTokenText)) {
-          logger.info("Got different tokenization texts: new {} vs. orig. {}", ttxt, origTokenText);
+          logger.warn("Got different tokenization texts: new {} vs. orig. {}", ttxt, origTokenText);
           nTokensDiff++;
         }
 

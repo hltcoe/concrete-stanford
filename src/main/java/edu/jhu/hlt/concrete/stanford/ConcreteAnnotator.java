@@ -300,6 +300,7 @@ class ConcreteAnnotator {
       ttok.setRawTextSpan(new TextSpan().setStart(origBegin).setEnding(origEnd));
       ttok.setTextSpan(new TextSpan().setStart(processedOffset).setEnding(
           processedOffset + word.length()));
+      //logger.info("New token: {}, {}, [{}, {}), {}, [{},{}), {}", id, word, origBegin, origEnd, ttok.getRawTextSpan(), processedOffset, processedOffset + word.length(), ttok.getTextSpan());
       return ttok;
     }
 

@@ -193,11 +193,11 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
         throw new AnalyticException("Cannot process section "
             + section.getUuid() + ", as it has no .rawTextSpan");
       }
-      if (section.isSetSentenceList()) {
-        int interSectionWhitespaceDifference = section.getRawTextSpan()
-            .getStart() - previousSectionEnding;
-        charOffset += interSectionWhitespaceDifference;
-      }
+
+      int interSectionWhitespaceDifference = section.getRawTextSpan()
+        .getStart() - previousSectionEnding;
+      charOffset += interSectionWhitespaceDifference;
+
       int sectionStartCharOffset = processedCharOffset;
       logger.debug("new section, processed offset = " + sectionStartCharOffset);
       TextSpan sts = section.getRawTextSpan();
