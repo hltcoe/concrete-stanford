@@ -87,13 +87,10 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
    * @param comm
    *          The concrete communication.
    */
-  public void annotateWithStanfordNlp(Communication comm)
-      throws AnnotationException {
-    try {
-      this.ensurePreconditionsMet(comm, true);
-    } catch (ConcreteException e1) {
-      throw new AnnotationException(e1);
-    }
+  public void annotateWithStanfordNlp(Communication comm) throws AnnotationException {
+    if (!this.ensurePreconditionsMet(comm))
+      throw new AnnotationException("Analytic input was not valid.");
+
     StringBuilder sb = new StringBuilder();
     for (Section cSection : comm.getSectionList()) {
       if (cSection.isSetLabel()
@@ -115,7 +112,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
   }
 
   /**
-   * 
+   *
    * @param comm
    *          : An input {@code Communication} that passes
    *          {@code PrereqValidator.verifyCommunication}.
@@ -399,9 +396,8 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
   }
 
   @Override
-  public boolean ensurePreconditionsMet(Communication comm, boolean useThrow)
-      throws ConcreteException {
-    return PrereqValidator.verifyCommunication(comm, useThrow);
+  public boolean ensurePreconditionsMet(Communication comm) {
+    return PrereqValidator.verifyCommunication(comm);
   }
 
   /**
@@ -414,7 +410,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
    */
   static class PrereqValidator {
     /**
-     * 
+     *
      * @param comm
      * @param useThrow
      *          If true, throw an exception rather than returning {@code false}
@@ -435,9 +431,8 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
      *         field.</li>
      *         </ul>
      */
-    public static boolean verifyCommunication(Communication comm,
-        boolean useThrow) throws ConcreteException {
-      StringBuffer sb = new StringBuffer();
+    public static boolean verifyCommunication(Communication comm) {
+      StringBuilder sb = new StringBuilder();
       boolean good = true;
       if (comm == null) {
         sb.append("Communication must not be null.\n");
@@ -477,14 +472,14 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
           good = false;
         }
       }
-      if (sb.length() > 0 && useThrow) {
-        throw new ConcreteException(sb.toString());
-      }
+      if (sb.length() > 0)
+        log.warn("Communication was not valid for this analytic: {}", sb.toString());
+
       return good;
     }
 
     /**
-     * 
+     *
      * @param section
      * @param sb
      * @return True iff {@code section} satisfies the requirements of a section
@@ -496,7 +491,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
      *         </ul>
      */
 
-    public static boolean verifySection(Section section, StringBuffer sb) {
+    public static boolean verifySection(Section section, StringBuilder sb) {
       boolean good = true;
       if (section == null) {
         sb.append("Section cannot be null.\n");
@@ -523,7 +518,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
     }
 
     /**
-     * 
+     *
      * @param sentence
      * @param sb
      * @return True iff {@code sentence} satisfies the requirements of a
@@ -534,7 +529,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
      *         <li>It must have a .tokenization field.</li>
      *         </ul>
      */
-    public static boolean verifySentence(Sentence sentence, StringBuffer sb) {
+    public static boolean verifySentence(Sentence sentence, StringBuilder sb) {
       boolean good = true;
       if (sentence == null) {
         sb.append("Sentence cannot be null.\n");
@@ -558,7 +553,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
     }
 
     /**
-     * 
+     *
      * @param tokenization
      * @param sb
      * @return True iff:
@@ -568,7 +563,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
      *         </ul>
      */
     private static boolean verifyTokenization(Tokenization tokenization,
-        StringBuffer sb) {
+        StringBuilder sb) {
       boolean good = true;
       if (tokenization == null) {
         sb.append("Tokenization must not be null.\n");
@@ -585,7 +580,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
     }
 
     /**
-     * 
+     *
      * @param token
      * @param sb
      * @return True iff {@code token}:
@@ -595,7 +590,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
      *         <li>Has a valid .text set.
      *         </ul>
      */
-    private static boolean verifyToken(Token token, StringBuffer sb) {
+    private static boolean verifyToken(Token token, StringBuilder sb) {
       boolean good = true;
       if (token == null) {
         sb.append("Token must not be null.\n");
@@ -615,7 +610,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
     }
 
     /**
-     * 
+     *
      * @param textSpan
      * @param sb
      * @return True iff {@code textSpan} satisfies the requirements of a valid
@@ -626,7 +621,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
      *         <li>It must have non-zero length.</li>
      *         </ul>
      */
-    public static boolean verifyTextSpan(TextSpan textSpan, StringBuffer sb) {
+    public static boolean verifyTextSpan(TextSpan textSpan, StringBuilder sb) {
       boolean good = true;
       if (textSpan == null) {
         sb.append("TextSpan cannot be null.\n");

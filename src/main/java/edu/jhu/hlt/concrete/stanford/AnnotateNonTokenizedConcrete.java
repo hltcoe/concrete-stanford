@@ -120,7 +120,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
   }
 
   /**
-   * 
+   *
    * @param comm
    *          : An input {@code Communication} that passes
    *          {@code PrereqValidator.verifyCommunication}.
@@ -133,7 +133,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
   @Override
   public Communication process(Communication comm) throws IOException,
       ConcreteException, AnnotationException {
-    this.ensurePreconditionsMet(comm, true);
+    this.ensurePreconditionsMet(comm);
 
     PerspectiveCommunication pc = new PerspectiveCommunication(comm,
         "PerspectiveCreator");
@@ -176,7 +176,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
    * processed (i.e., all but coref resolution). Once all sections have been
    * locally processed, global processing is done on the entire communication
    * (i.e., coref).
-   * 
+   *
    * It assumes that {@code comm} both passes
    * PrereqValidator.verifyCommunication and has been constructed via a new
    * perspective. In particular, rawTextSpans must be set.
@@ -269,7 +269,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
   /**
    * This method handles sections that we are explicitly <b>not</b> annotating
    * beyond tokenizing. The code updates the character offsets (global state)
-   * 
+   *
    * @param sectionAnnotation
    * @param sectionText
    */
@@ -529,7 +529,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
    * also changes the {@code token} character offsets to represent the
    * <i>original</i> textspans. Optionally, the processed character offset will
    * be updated too.
-   * 
+   *
    * @param token
    * @param isFirst
    * @param updateProcessedOff
@@ -723,9 +723,8 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
   }
 
   @Override
-  public boolean ensurePreconditionsMet(Communication comm, boolean useThrow)
-      throws ConcreteException {
-    return PrereqValidator.verifyCommunication(comm, useThrow);
+  public boolean ensurePreconditionsMet(Communication comm)  {
+    return PrereqValidator.verifyCommunication(comm);
   }
 
   /**
@@ -739,7 +738,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
   static class PrereqValidator {
 
     /**
-     * 
+     *
      * @param comm
      * @param useThrow
      *          If true, throw an exception rather than returning {@code false}
@@ -760,8 +759,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
      *         field.</li>
      *         </ul>
      */
-    public static boolean verifyCommunication(Communication comm,
-        boolean useThrow) throws ConcreteException {
+    public static boolean verifyCommunication(Communication comm) {
       StringBuffer sb = new StringBuffer();
       boolean good = true;
       if (comm == null) {
@@ -802,14 +800,14 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
           good = false;
         }
       }
-      if (sb.length() > 0 && useThrow) {
-        throw new ConcreteException(sb.toString());
-      }
+
+      if (sb.length() > 0)
+        logger.warn("Communication was not valid for this analytic: {}", sb.toString());
       return good;
     }
 
     /**
-     * 
+     *
      * @param section
      * @param sb
      * @return True iff {@code section} satisfies the requirements of a section
@@ -849,7 +847,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
     }
 
     /**
-     * 
+     *
      * @param sentence
      * @param sb
      * @return True iff {@code sentence} satisfies the requirements of a
@@ -882,7 +880,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
     }
 
     /**
-     * 
+     *
      * @param textSpan
      * @param sb
      * @return True iff {@code textSpan} satisfies the requirements of a valid

@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package edu.jhu.hlt.concrete.stanford;
 
@@ -32,39 +32,38 @@ public class ConcreteAgigaPipePreqeqValidatorTest extends PrereqValidator {
 
   @Test
   public void testVerifyCommunication() throws ConcreteException {
-    boolean useThrow = false;
     Communication comm = null;
     // nullity check
-    assertFalse(verifyCommunication(comm, useThrow));
+    assertFalse(verifyCommunication(comm));
     comm = new Communication().setUuid(UUIDFactory.newUUID())
         .setType("A story");
     // check for doc id
-    assertFalse(verifyCommunication(comm, useThrow));
+    assertFalse(verifyCommunication(comm));
     comm.setId("my_story");
     // check for .text
-    assertFalse(verifyCommunication(comm, useThrow));
+    assertFalse(verifyCommunication(comm));
     comm.setText("");
     // check for non-empty .text
-    assertFalse(verifyCommunication(comm, useThrow));
+    assertFalse(verifyCommunication(comm));
     comm.setText("This is some sample text.");
     // check for verifiable sections
-    assertFalse(verifyCommunication(comm, useThrow));
+    assertFalse(verifyCommunication(comm));
     Section section = new Section().setUuid(UUIDFactory.newUUID()).setTextSpan(
         new TextSpan().setStart(0).setEnding(5));
     comm.addToSectionList(section);
     // check for metadata
-    assertFalse(verifyCommunication(comm, useThrow));
+    assertFalse(verifyCommunication(comm));
     AnnotationMetadata metadata = new AnnotationMetadata();
     metadata.setTimestamp(Timing.currentLocalTime());
     comm.setMetadata(metadata);
     // check for set tool name
-    assertFalse(verifyCommunication(comm, useThrow));
+    assertFalse(verifyCommunication(comm));
     metadata.setTool("");
     // check for non-empty tool name
-    assertFalse(verifyCommunication(comm, useThrow));
+    assertFalse(verifyCommunication(comm));
     metadata.setTool("My Analytic");
     // should be good
-    assertTrue(verifyCommunication(comm, useThrow));
+    assertTrue(verifyCommunication(comm));
   }
 
   @Test

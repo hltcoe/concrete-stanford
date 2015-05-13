@@ -77,7 +77,7 @@ public class TestAnnotatedNYTData {
   public void testNYT() throws Exception{
     GenericStanfordAnnotator pipe = new AnnotateNonTokenizedConcrete();
     Communication c = this.extractNYTDoc();
-    assertTrue(pipe.ensurePreconditionsMet(c, false));
+    assertTrue(pipe.ensurePreconditionsMet(c));
     Section first = c.getSectionListIterator().next();
 
     Communication fromStanford = pipe.process(c);

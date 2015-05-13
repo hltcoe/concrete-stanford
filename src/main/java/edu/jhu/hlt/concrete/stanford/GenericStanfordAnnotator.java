@@ -8,7 +8,7 @@ import edu.jhu.hlt.concrete.util.ConcreteException;
 
 public interface GenericStanfordAnnotator {
   /**
-   * 
+   *
    * @param comm
    *          : An input {@code Communication} that passes
    *          {@code PrereqValidator.verifyCommunication}.
@@ -22,16 +22,11 @@ public interface GenericStanfordAnnotator {
       ConcreteException, AnnotationException;
 
   /**
-   * 
+   *
    * @param comm
    *          An input {@link Communication}.
-   * @param useThrow
-   *          Whether or not a failed validation should throw a
-   *          {@link ConcreteException}.
    * @return True iff the {@link Communication} satisfies all preconditions for
    *         this annotator.
-   * @throws ConcreteException
    */
-  public boolean ensurePreconditionsMet(Communication comm, boolean useThrow)
-      throws ConcreteException;
+  public boolean ensurePreconditionsMet(Communication comm);
 }
