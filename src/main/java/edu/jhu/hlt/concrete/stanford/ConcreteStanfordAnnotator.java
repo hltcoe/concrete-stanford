@@ -40,8 +40,6 @@ public class ConcreteStanfordAnnotator {
   private static final Logger LOGGER = LoggerFactory
       .getLogger(ConcreteStanfordAnnotator.class);
 
-  private static String defaultLanguage = "en";
-
   private ConcreteStanfordAnnotator() {
   }
 
@@ -110,8 +108,7 @@ public class ConcreteStanfordAnnotator {
         byte[] inputBytes = Files.readAllBytes(initPath);
 
         Communication c = ser.fromBytes(inputBytes);
-        SectionedCommunicationAnalytic pipe = StanfordAnnotatorFactory
-            .getAppropriateAnnotator(c, defaultLanguage);
+        SectionedCommunicationAnalytic pipe = new AnnotateNonTokenizedConcrete();
         Communication annotated = pipe.annotate(c);
         String fileName = annotated.getId() + ".concrete";
         Path concreteOutPath = outPath.resolve(fileName);
@@ -142,8 +139,7 @@ public class ConcreteStanfordAnnotator {
           int docCtr = 0;
           if (iter.hasNext()) {
             Communication comm = ser.fromBytes(iter.next());
-            pipe = StanfordAnnotatorFactory.getAppropriateAnnotator(comm,
-                defaultLanguage);
+            pipe = new AnnotateNonTokenizedConcrete();
             LOGGER.info("Iterating over archive: {}", initPath.toString());
             sw = new StopWatch();
             sw.start();
