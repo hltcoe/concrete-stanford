@@ -506,7 +506,6 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
 
       if (sentAnno.get(CharacterOffsetEndAnnotation.class) > maxCharEnding)
         maxCharEnding = sentAnno.get(CharacterOffsetEndAnnotation.class);
-
     }
   }
 

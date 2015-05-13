@@ -24,7 +24,6 @@ import com.nytlabs.corpus.NYTCorpusDocumentParser;
 import edu.jhu.hlt.annotatednyt.AnnotatedNYTDocument;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.Section;
-import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
