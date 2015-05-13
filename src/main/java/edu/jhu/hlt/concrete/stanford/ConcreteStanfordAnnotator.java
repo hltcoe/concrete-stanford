@@ -31,6 +31,7 @@ import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.archiver.ArchivableCommunication;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.utilt.AutoCloseableIterator;
+import edu.jhu.hlt.utilt.sys.SystemErrDisabler;
 
 /**
  *
