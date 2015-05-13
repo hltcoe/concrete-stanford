@@ -33,10 +33,15 @@ import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
+import edu.jhu.hlt.concrete.analytics.base.TokenizationedCommunicationAnalytic;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
+import edu.jhu.hlt.concrete.miscommunication.MiscommunicationException;
+import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
+import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.util.ConcreteException;
+import edu.jhu.hlt.concrete.util.Timing;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
@@ -59,7 +64,7 @@ import edu.stanford.nlp.util.CoreMap;
  * @author mgormley
  * @author npeng
  */
-public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
+public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAnalytic {
 
   private static final Logger log = LoggerFactory
       .getLogger(AnnotateTokenizedConcrete.class);
@@ -104,13 +109,6 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
         throw new RuntimeException(e);
       }
     }
-  }
-
-  @Override
-  public Communication process(Communication comm) throws AnalyticException {
-    Communication commCopy = comm.deepCopy();
-    annotateWithStanfordNlp(commCopy);
-    return commCopy;
   }
 
   /**
@@ -378,10 +376,6 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
     }
   }
 
-  @Override
-  public boolean ensurePreconditionsMet(Communication comm) {
-    return PrereqValidator.verifyCommunication(comm);
-  }
 
   /**
    * A validator object to ensure that all prerequisites are met. The
@@ -392,7 +386,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
    * </ul>
    */
   static class PrereqValidator {
-    /**
+    /*
      *
      * @param comm
      * @param useThrow
@@ -414,54 +408,8 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
      *         field.</li>
      *         </ul>
      */
-    public static boolean verifyCommunication(Communication comm) {
-      StringBuilder sb = new StringBuilder();
-      boolean good = true;
-      if (comm == null) {
-        sb.append("Communication must not be null.\n");
-        return false;
-      }
-      // TODO: call a thrift-backed validator to make sure all required fields
-      // are set
-      if (!comm.isSetId() || comm.getId().equals("")) {
-        sb.append("Communication must have id set.\n");
-        good = false;
-      }
-      if (!comm.isSetText() || comm.getText().equals("")) {
-        sb.append("Expecting Communication Text, but was empty or none.\n");
-        good = false;
-      }
-      boolean sectNull = false;
-      if (!comm.isSetSectionList()) {
-        sb.append("Expecting Communication to have a section list set.\n");
-        sectNull = true;
-        good = false;
-      } else {
-        if (!sectNull && comm.getSectionList().isEmpty()) {
-          sb.append("Expecting Communication to have a non-empty section list.\n");
-          good = false;
-        }
-        for (Section section : comm.getSectionList()) {
-          good &= verifySection(section, sb);
-        }
-      }
-      if (!comm.isSetMetadata()) {
-        sb.append("Communication must have metadata set.\n");
-        good = false;
-      } else {
-        if (!comm.getMetadata().isSetTool()
-            || comm.getMetadata().getTool().length() == 0) {
-          sb.append("Communication metadata must have non-empty tool name set.\n");
-          good = false;
-        }
-      }
-      if (sb.length() > 0)
-        log.warn("Communication was not valid for this analytic: {}", sb.toString());
 
-      return good;
-    }
-
-    /**
+    /*
      *
      * @param section
      * @param sb
@@ -474,33 +422,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
      *         </ul>
      */
 
-    public static boolean verifySection(Section section, StringBuilder sb) {
-      boolean good = true;
-      if (section == null) {
-        sb.append("Section cannot be null.\n");
-        return false;
-      }
-      if (!section.isSetTextSpan()) {
-        sb.append("Section " + section.getUuid().toString()
-            + " must have .textSpan set.\n");
-        good = false;
-      } else {
-        good &= verifyTextSpan(section.getTextSpan(), sb);
-      }
-      if (!section.isSetSentenceList() || section.getSentenceList() == null
-          || section.getSentenceListSize() == 0) {
-        sb.append("Section " + section.getUuid()
-            + " must have a non-empty sentence list");
-        good = false;
-      } else {
-        for (Sentence sentence : section.getSentenceList()) {
-          good &= verifySentence(sentence, sb);
-        }
-      }
-      return good;
-    }
-
-    /**
+    /*
      *
      * @param sentence
      * @param sb
@@ -512,30 +434,9 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
      *         <li>It must have a .tokenization field.</li>
      *         </ul>
      */
-    public static boolean verifySentence(Sentence sentence, StringBuilder sb) {
-      boolean good = true;
-      if (sentence == null) {
-        sb.append("Sentence cannot be null.\n");
-        return false;
-      }
-      if (!sentence.isSetTextSpan()) {
-        sb.append("Sentence " + sentence.getUuid().toString()
-            + " must have a .textSpan set.\n");
-        good = false;
-      } else {
-        good &= verifyTextSpan(sentence.getTextSpan(), sb);
-      }
-      if (!sentence.isSetTokenization()) {
-        sb.append("Sentence " + sentence.getUuid().toString()
-            + " must have a tokenization set.\n");
-        good = false;
-      } else {
-        good &= verifyTokenization(sentence.getTokenization(), sb);
-      }
-      return good;
-    }
 
-    /**
+
+    /*
      *
      * @param tokenization
      * @param sb
@@ -545,24 +446,8 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
      *         <li>Every token in .tokenList is a valid token
      *         </ul>
      */
-    private static boolean verifyTokenization(Tokenization tokenization,
-        StringBuilder sb) {
-      boolean good = true;
-      if (tokenization == null) {
-        sb.append("Tokenization must not be null.\n");
-        return false;
-      }
-      if (!tokenization.isSetTokenList()) {
-        sb.append("Tokenization must have TokenList set (in the future, this may grab the one-best from the lattice.\n");
-        return false;
-      }
-      for (Token token : tokenization.getTokenList().getTokenList()) {
-        good &= verifyToken(token, sb);
-      }
-      return good;
-    }
 
-    /**
+    /*
      *
      * @param token
      * @param sb
@@ -573,26 +458,8 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
      *         <li>Has a valid .text set.
      *         </ul>
      */
-    private static boolean verifyToken(Token token, StringBuilder sb) {
-      boolean good = true;
-      if (token == null) {
-        sb.append("Token must not be null.\n");
-        return false;
-      }
-      if (!token.isSetTextSpan()) {
-        sb.append("Token must have .textSpan set.\n");
-        good = false;
-      } else {
-        good &= verifyTextSpan(token.getTextSpan(), sb);
-      }
-      if (!token.isSetText()) {
-        sb.append("Token must have .text set.\n");
-        good = false;
-      }
-      return good;
-    }
 
-    /**
+    /*
      *
      * @param textSpan
      * @param sb
@@ -604,25 +471,51 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
      *         <li>It must have non-zero length.</li>
      *         </ul>
      */
-    public static boolean verifyTextSpan(TextSpan textSpan, StringBuilder sb) {
-      boolean good = true;
-      if (textSpan == null) {
-        sb.append("TextSpan cannot be null.\n");
-        return false;
-      }
-      int start = textSpan.getStart();
-      int end = textSpan.getEnding();
-      if (start < 0 || end < 0) {
-        sb.append("TextSpan " + textSpan.toString()
-            + " cannot have negative endpoints.\n");
-        good = false;
-      }
-      if (end <= start) {
-        sb.append("TextSpan " + textSpan.toString()
-            + "cannot have end before (<=) start.\n");
-        good = false;
-      }
-      return good;
+  }
+
+  /* (non-Javadoc)
+   * @see edu.jhu.hlt.concrete.analytics.base.Analytic#annotate(edu.jhu.hlt.concrete.Communication)
+   */
+  @Override
+  public Communication annotate(Communication arg0) throws AnalyticException {
+    try {
+      return this.annotate(new CachedTokenizationCommunication(arg0));
+    } catch (MiscommunicationException e) {
+      throw new AnalyticException(e);
     }
+  }
+
+  /* (non-Javadoc)
+   * @see edu.jhu.hlt.concrete.safe.metadata.SafeAnnotationMetadata#getTimestamp()
+   */
+  @Override
+  public long getTimestamp() {
+    return Timing.currentLocalTime();
+  }
+
+  /* (non-Javadoc)
+   * @see edu.jhu.hlt.concrete.metadata.tools.MetadataTool#getToolName()
+   */
+  @Override
+  public String getToolName() {
+    return AnnotateTokenizedConcrete.class.getSimpleName();
+  }
+
+  /* (non-Javadoc)
+   * @see edu.jhu.hlt.concrete.metadata.tools.MetadataTool#getToolVersion()
+   */
+  @Override
+  public String getToolVersion() {
+    return ProjectConstants.VERSION;
+  }
+
+  /* (non-Javadoc)
+   * @see edu.jhu.hlt.concrete.analytics.base.TokenizationedCommunicationAnalytic#annotate(edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication)
+   */
+  @Override
+  public Communication annotate(TokenizedCommunication arg0) throws AnalyticException {
+    Communication cpy = new Communication(arg0.getRoot());
+    annotateWithStanfordNlp(cpy);
+    return cpy;
   }
 }
