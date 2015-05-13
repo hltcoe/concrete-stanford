@@ -95,19 +95,18 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
     pipeline.prepForNext();
   }
 
-  public AnnotateNonTokenizedConcrete() throws IOException {
+  public AnnotateNonTokenizedConcrete() {
     this(Arrays.asList(defaultKindsToFullyProcess), Arrays
         .asList(defaultKindsNoCoref), true);
   }
 
-  public AnnotateNonTokenizedConcrete(String lang) throws IOException {
+  public AnnotateNonTokenizedConcrete(String lang) {
     this();
     this.language = lang;
   }
 
   public AnnotateNonTokenizedConcrete(Collection<String> typesToAnnotate,
-      Collection<String> typesToTokenizeOnly, boolean allowEmptyMentions)
-      throws IOException {
+      Collection<String> typesToTokenizeOnly, boolean allowEmptyMentions) {
     this.kindsToProcessSet = new HashSet<>();
     this.kindsToProcessSet.addAll(typesToAnnotate);
 
@@ -119,20 +118,8 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
     this.language = "en";
   }
 
-  /**
-   *
-   * @param comm
-   *          : An input {@code Communication} that passes
-   *          {@code PrereqValidator.verifyCommunication}.
-   * @return An annotated deep copy of the input {@code Communication}. The
-   *         input Communication will be unchanged.
-   * @throws IOException
-   * @throws ConcreteException
-   * @throws AnnotationException
-   */
   @Override
-  public Communication process(Communication comm) throws IOException,
-      ConcreteException, AnnotationException {
+  public Communication process(Communication comm) throws ConcreteException, AnnotationException {
 
     PerspectiveCommunication pc = new PerspectiveCommunication(comm,
         "PerspectiveCreator");
@@ -181,10 +168,8 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
    * perspective. In particular, rawTextSpans must be set.
    *
    * @throws AnnotationException
-   * @throws IOException
    */
-  private void annotateSects(Communication comm) throws AnnotationException,
-      IOException {
+  private void annotateSects(Communication comm) throws AnnotationException {
     // if called multiple times, reset the sentence count
     sentenceCount = 1;
     String commText = comm.getOriginalText();
@@ -239,7 +224,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
   private void dispatchSection(Section section, String sectionText,
       Annotation sectionAnnotation, Annotation documentAnnotation,
       int sectionStartCharOffset, List<Tokenization> tokenizations,
-      StringBuilder sb) throws AnnotationException, IOException {
+      StringBuilder sb) throws AnnotationException {
     logger.debug("Annotating Section: {}", section.getUuid());
     logger.debug("\ttext = " + sectionText);
     logger.debug("\tkind = " + section.getKind() + " in annotateNames: "
@@ -272,8 +257,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
    * @param sectionAnnotation
    * @param sectionText
    */
-  private void basicProcessingOnly(Section section,
-                                   Annotation sentenceSplitText, int sectionOffset, StringBuilder sb) throws AnnotationException, IOException {
+  private void basicProcessingOnly(Section section, Annotation sentenceSplitText, int sectionOffset, StringBuilder sb) throws AnnotationException {
     logger.debug("tokenize/sent-split ONLY section: from " + sectionOffset + " to ");
     if (sentenceSplitText == null) {
       logger.debug("" + sectionOffset);
@@ -588,12 +572,10 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
    * aggregating {@link Annotation} to use for later global processing.
    *
    * @throws AnnotationException
-   * @throws IOException
    */
-
   private void processSectionForNoCoref(Section section,
       Annotation sentenceSplitText, int sectionOffset, StringBuilder sb)
-      throws AnnotationException, IOException {
+      throws AnnotationException {
     sentencesToSection(section, sentenceSplitText);
 
     boolean successfulAnnotation = annotateLocalStages(sentenceSplitText);
@@ -618,11 +600,10 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
    * aggregating {@link Annotation} to use for later global processing.
    *
    * @throws AnnotationException
-   * @throws IOException
    */
   private void processSection(Section section, Annotation sentenceSplitText,
       Annotation docAnnotation, int sectionOffset, StringBuilder sb)
-      throws AnnotationException, IOException {
+      throws AnnotationException {
     aggregateTokenizedSentences(section, sentenceSplitText, docAnnotation);
     logDebugSentencesAnnotation(sentenceSplitText,
         "after sentencesToSection, before annotating");
@@ -654,7 +635,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
   }
 
   private void processCoref(Communication comm, Annotation docAnnotation,
-      List<Tokenization> tokenizations) throws AnnotationException, IOException {
+      List<Tokenization> tokenizations) throws AnnotationException {
     boolean successfulAnnotation = annotateCoref(docAnnotation);
     logger.debug("after annotating, annotation was successful? ({})",
         successfulAnnotation);
@@ -689,10 +670,10 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
       comm.addToEntitySetList(es);
   }
 
-  private ConcreteAnnotator getFreshConcreteAnnotator() throws IOException {
+  private ConcreteAnnotator getFreshConcreteAnnotator() {
     return new ConcreteAnnotator(this.language);
   }
-  private ConcreteAnnotator getFreshConcreteAnnotator(String[] annotators) throws IOException {
+  private ConcreteAnnotator getFreshConcreteAnnotator(String[] annotators) {
     return new ConcreteAnnotator(this.language, annotators);
   }
 
@@ -705,10 +686,9 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
    *
    * @param t
    * @return
-   * @throws IOException
    */
   @Deprecated
-  protected String getText(Tree t) throws IOException {
+  protected String getText(Tree t) {
     if (t == null)
       return null;
 

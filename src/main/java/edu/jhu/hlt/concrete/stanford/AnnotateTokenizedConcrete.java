@@ -108,20 +108,8 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
     }
   }
 
-  /**
-   *
-   * @param comm
-   *          : An input {@code Communication} that passes
-   *          {@code PrereqValidator.verifyCommunication}.
-   * @return An annotated deep copy of the input {@code Communication}. The
-   *         input Communication will be unchanged.
-   * @throws IOException
-   * @throws ConcreteException
-   * @throws AnnotationException
-   */
   @Override
-  public Communication process(Communication comm) throws IOException,
-      ConcreteException, AnnotationException {
+  public Communication process(Communication comm) throws ConcreteException, AnnotationException {
     Communication commCopy = comm.deepCopy();
     annotateWithStanfordNlp(commCopy);
     return commCopy;

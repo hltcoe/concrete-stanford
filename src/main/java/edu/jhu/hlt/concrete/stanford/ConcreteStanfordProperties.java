@@ -11,13 +11,14 @@ import java.util.Properties;
 public class ConcreteStanfordProperties {
   private final Properties props = new Properties();
 
-  public ConcreteStanfordProperties() throws IOException {
+  public ConcreteStanfordProperties() {
     try (InputStream is = ConcreteStanfordProperties.class.getClassLoader()
         .getResourceAsStream("concrete-stanford.properties");) {
       if (is == null)
-        throw new IOException(
-            "Error finding concrete-stanford.properties on the classpath. Ensure it exists.");
+        throw new RuntimeException("Error finding concrete-stanford.properties on the classpath. Ensure it exists.");
       this.props.load(is);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 

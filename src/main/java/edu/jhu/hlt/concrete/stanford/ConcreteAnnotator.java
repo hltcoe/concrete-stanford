@@ -4,7 +4,6 @@
  */
 package edu.jhu.hlt.concrete.stanford;
 
-import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,7 +81,7 @@ class ConcreteAnnotator {
 
   private final String[] annotatorList;
 
-  public ConcreteAnnotator(String language) throws IOException {
+  public ConcreteAnnotator(String language) {
     this.csProps = new ConcreteStanfordProperties();
     // this.allowEmptyMentions = this.csProps.getAllowEmptyMentions();
     this.language = language;
@@ -90,8 +89,7 @@ class ConcreteAnnotator {
     initHeadFinder();
   }
 
-  public ConcreteAnnotator(String language, String[] annotators)
-      throws IOException {
+  public ConcreteAnnotator(String language, String[] annotators) {
     this.csProps = new ConcreteStanfordProperties();
     // this.allowEmptyMentions = this.csProps.getAllowEmptyMentions();
     this.language = language;
@@ -215,7 +213,7 @@ class ConcreteAnnotator {
 
     /**
      * Create and add sentences to an existing Concrete {@code Section}.
-     * 
+     *
      * @param sectToAnnotate
      * @param coreNlpSection
      * @param charOffset
@@ -258,7 +256,7 @@ class ConcreteAnnotator {
      * offsets within the sentence itself if charOffset is negative. If those
      * are not set, then we will use the provided charOffset, as long as it is
      * non-negative. Otherwise, this will throw a runtime exception.
-     * 
+     *
      * @throws AnnotationException
      */
     public Tokenization makeTokenization(CoreMap sent, int charOffset)
@@ -599,7 +597,7 @@ class ConcreteAnnotator {
   }
 
   /**
-   * 
+   *
    * @return
    */
   static String[] getDefaultAnnotators() {
@@ -608,7 +606,7 @@ class ConcreteAnnotator {
   }
 
   /**
-   * 
+   *
    * @param section
    * @param coreNlpSection
    * @param procCharOffset
@@ -634,7 +632,7 @@ class ConcreteAnnotator {
   /**
    * Augment an existing {@link Tokenization} based on the given sentence. The
    * {@link Tokenization} must have a populated {@link TokenList}.
-   * 
+   *
    * @throws AnnotationException
    */
   public void augmentTokenization(Tokenization tokenization, CoreMap sent,
@@ -717,7 +715,7 @@ class ConcreteAnnotator {
 
   /**
    * Augment an existing Tokenization based on the given sentence.
-   * 
+   *
    * @throws AnnotationException
    */
   public void augmentTokenization(Tokenization tokenization, CoreMap sent,
@@ -732,7 +730,7 @@ class ConcreteAnnotator {
    * sentences may or may not have {@link Tokenization}s, but it must be
    * all-or-nothing: {@code concSect} cannot have some sentences with
    * Tokenizations and other sentences without Tokenizations.
-   * 
+   *
    * @param concSect
    * @param coreNlpSection
    * @param procCurrOffset
