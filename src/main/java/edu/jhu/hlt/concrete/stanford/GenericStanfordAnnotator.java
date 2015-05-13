@@ -2,6 +2,7 @@ package edu.jhu.hlt.concrete.stanford;
 
 import concrete.tools.AnnotationException;
 import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 
 public interface GenericStanfordAnnotator {
@@ -15,15 +16,15 @@ public interface GenericStanfordAnnotator {
    * @throws ConcreteException
    * @throws AnnotationException
    */
-  public Communication process(Communication comm) throws ConcreteException, AnnotationException;
+  public Communication process(Communication comm) throws AnalyticException;
 
-  default Communication processWithValidation(final Communication comm) throws ConcreteException {
+  default Communication processWithValidation(final Communication comm) throws AnalyticException {
     if (!this.ensurePreconditionsMet(comm))
-      throw new ConcreteException("Requirements were not met for this Communication.");
+      throw new AnalyticException("Requirements were not met for this Communication.");
     try {
       return this.process(comm);
     } catch (Exception e) {
-      throw new ConcreteException(e);
+      throw new AnalyticException(e);
     }
   };
 

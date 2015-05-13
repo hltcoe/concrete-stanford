@@ -19,11 +19,12 @@ import org.joda.time.Minutes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import concrete.tools.AnnotationException;
 import edu.jhu.hlt.acute.archivers.tar.TarArchiver;
 import edu.jhu.hlt.acute.iterators.tar.TarArchiveEntryByteIterator;
 import edu.jhu.hlt.acute.iterators.tar.TarGzArchiveEntryByteIterator;
 import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
+import edu.jhu.hlt.concrete.analytics.base.SectionedCommunicationAnalytic;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
@@ -109,9 +110,9 @@ public class ConcreteStanfordAnnotator {
         byte[] inputBytes = Files.readAllBytes(initPath);
 
         Communication c = ser.fromBytes(inputBytes);
-        GenericStanfordAnnotator pipe = StanfordAnnotatorFactory
+        SectionedCommunicationAnalytic pipe = StanfordAnnotatorFactory
             .getAppropriateAnnotator(c, defaultLanguage);
-        Communication annotated = pipe.process(c);
+        Communication annotated = pipe.annotate(c);
         String fileName = annotated.getId() + ".concrete";
         Path concreteOutPath = outPath.resolve(fileName);
         new SuperCommunication(annotated).writeToFile(concreteOutPath, true);
@@ -136,7 +137,7 @@ public class ConcreteStanfordAnnotator {
           else
             iter = new TarGzArchiveEntryByteIterator(bis);
 
-          GenericStanfordAnnotator pipe = null;
+          SectionedCommunicationAnalytic pipe = null;
           StopWatch sw = null;
           int docCtr = 0;
           if (iter.hasNext()) {
@@ -146,7 +147,7 @@ public class ConcreteStanfordAnnotator {
             LOGGER.info("Iterating over archive: {}", initPath.toString());
             sw = new StopWatch();
             sw.start();
-            Communication annot = pipe.process(comm);
+            Communication annot = pipe.annotate(comm);
             archiver.addEntry(new ArchivableCommunication(annot));
             docCtr++;
           } else {
@@ -158,7 +159,7 @@ public class ConcreteStanfordAnnotator {
           while (iter.hasNext()) {
             Communication n = ser.fromBytes(iter.next());
             LOGGER.info("Annotating communication: {}", n.getId());
-            Communication a = pipe.process(n);
+            Communication a = pipe.annotate(n);
             archiver.addEntry(new ArchivableCommunication(a));
             docCtr++;
           }
@@ -183,7 +184,7 @@ public class ConcreteStanfordAnnotator {
           }
         }
       }
-    } catch (IOException | ConcreteException | AnnotationException e) {
+    } catch (IOException | ConcreteException | AnalyticException e) {
       LOGGER.error(
           "Caught exception while running StanfordAgigaPipe over archive.", e);
     }

@@ -12,7 +12,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import concrete.tools.AnnotationException;
 import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.Constituent;
@@ -35,6 +34,7 @@ import edu.jhu.hlt.concrete.TokenTagging;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.TokenizationKind;
 import edu.jhu.hlt.concrete.UUID;
+import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
 import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 import edu.jhu.hlt.concrete.validation.ValidatableTextSpan;
 import edu.stanford.nlp.dcoref.CorefChain;
@@ -131,18 +131,18 @@ class ConcreteAnnotator {
   }
 
   public static String flattenText(CoreMap coreNlpSentence)
-      throws AnnotationException {
+      throws AnalyticException {
     StringBuilder sb = new StringBuilder();
     List<CoreLabel> tokens = coreNlpSentence
         .get(CoreAnnotations.TokensAnnotation.class);
     if (tokens == null) {
-      throw new AnnotationException(
+      throw new AnalyticException(
           "Cannot find tokens in the provided CoreMap");
     }
     for (CoreLabel token : tokens) {
       String word = token.get(CoreAnnotations.TextAnnotation.class);
       if (word == null) {
-        throw new AnnotationException("found a null word");
+        throw new AnalyticException("found a null word");
       }
       sb.append(word);
       sb.append(" ");
@@ -152,15 +152,15 @@ class ConcreteAnnotator {
 
   SimpleEntry<EntityMentionSet, EntitySet> convertCoref(Communication in,
       Annotation coreNlpDoc, List<Tokenization> tokenizations)
-      throws AnnotationException {
+      throws AnalyticException {
     List<CoreMap> coreSentences = coreNlpDoc
         .get(CoreAnnotations.SentencesAnnotation.class);
     if (coreSentences == null) {
-      throw new AnnotationException("Communication " + in.getId()
+      throw new AnalyticException("Communication " + in.getId()
           + " has a null list of CoreNLP sentences");
     }
     if (coreSentences.size() != tokenizations.size()) {
-      throw new AnnotationException("Communication " + in.getId()
+      throw new AnalyticException("Communication " + in.getId()
           + " knows of " + tokenizations.size()
           + " valid tokenizations, but CoreNLP reports having "
           + coreSentences.size() + " sentences. These values must agree.");
@@ -200,9 +200,9 @@ class ConcreteAnnotator {
   }
 
   private UUID getTokenizationUuidSafe(List<Tokenization> tokenizations, int idx)
-      throws AnnotationException {
+      throws AnalyticException {
     if (idx >= tokenizations.size()) {
-      throw new AnnotationException("the sentence number of the mention ("
+      throw new AnalyticException("the sentence number of the mention ("
           + idx + ") is out of range of the known sentences (of size "
           + tokenizations.size() + ")");
     }
@@ -218,14 +218,14 @@ class ConcreteAnnotator {
      * @param coreNlpSection
      * @param charOffset
      * @param sb
-     * @throws AnnotationException
+     * @throws AnalyticException
      */
     public void makeSentences(Section sectToAnnotate,
         Annotation coreNlpSection, int procCharOffset, StringBuilder sb)
-        throws AnnotationException {
+        throws AnalyticException {
       List<CoreMap> sentAnnos = coreNlpSection.get(SentencesAnnotation.class);
       if (sentAnnos == null) {
-        throw new AnnotationException("Section " + sectToAnnotate.getUuid()
+        throw new AnalyticException("Section " + sectToAnnotate.getUuid()
             + " has a null CoreNLP sentences annotation");
       }
       final int n = sentAnnos.size();
@@ -257,12 +257,12 @@ class ConcreteAnnotator {
      * are not set, then we will use the provided charOffset, as long as it is
      * non-negative. Otherwise, this will throw a runtime exception.
      *
-     * @throws AnnotationException
+     * @throws AnalyticException
      */
     public Tokenization makeTokenization(CoreMap sent, int charOffset)
-        throws AnnotationException {
+        throws AnalyticException {
       if (charOffset < 0) {
-        throw new AnnotationException(
+        throw new AnalyticException(
             "The provided character offset cannot be < 0");
       }
 
@@ -297,7 +297,7 @@ class ConcreteAnnotator {
     }
 
     private Token makeToken(CoreLabel token, int id, int processedOffset)
-        throws AnnotationException {
+        throws AnalyticException {
       String word = verifyNonNull(token
           .get(CoreAnnotations.TextAnnotation.class));
       Token ttok = new Token().setTokenIndex(id).setText(word);
@@ -327,14 +327,14 @@ class ConcreteAnnotator {
      * @param n
      *          is the number of tokens in the sentence
      *
-     * @throws AnnotationException
+     * @throws AnalyticException
      */
     public Parse makeConcreteCParse(Tree root, int n, UUID tokenizationUUID)
-        throws AnnotationException {
+        throws AnalyticException {
       int left = 0;
       int right = root.getLeaves().size();
       if (right != n)
-        throw new AnnotationException("number of leaves in the parse (" + right
+        throw new AnalyticException("number of leaves in the parse (" + right
             + ") is not equal to the number of tokens in the sentence (" + n
             + ")");
       int[] idCounter = new int[] { 0 };
@@ -368,13 +368,13 @@ class ConcreteAnnotator {
      * @param p
      * @param tokenizationUUID
      * @return The constituent ID
-     * @throws AnnotationException
+     * @throws AnalyticException
      */
     private int constructConstituent(Tree root, int[] idCounter, int left,
         int right, int n, Parse p, UUID tokenizationUUID)
-        throws AnnotationException {
+        throws AnalyticException {
       if (idCounter.length != 1)
-        throw new AnnotationException("ID counter must be one, but was: "
+        throw new AnalyticException("ID counter must be one, but was: "
             + idCounter.length);
 
       Constituent constituent = new Constituent();
@@ -421,7 +421,7 @@ class ConcreteAnnotator {
 
     private Sentence makeConcreteSentence(CoreMap sentAnno,
         int charsFromStartOfCommunication, String sentenceText)
-        throws AnnotationException {
+        throws AnalyticException {
       Tokenization tokenization = makeTokenization(sentAnno,
           charsFromStartOfCommunication);
       // TODO: replace this call to getConcreteUUID with a call to a utility
@@ -437,7 +437,7 @@ class ConcreteAnnotator {
       logger.debug("Setting sentence raw text span to : " + rawTS);
 
       if (charsFromStartOfCommunication < 0) {
-        throw new AnnotationException("bad character offset of "
+        throw new AnalyticException("bad character offset of "
             + charsFromStartOfCommunication + " for converting sent");
       }
       concSent.setTextSpan(new TextSpan().setStart(
@@ -449,7 +449,7 @@ class ConcreteAnnotator {
     }
 
     public List<DependencyParse> constructDependencyParses(CoreMap sentence,
-        UUID tokUuid) throws AnnotationException {
+        UUID tokUuid) throws AnalyticException {
       List<Class<? extends TypesafeMap.Key<SemanticGraph>>> whichDeps = new ArrayList<>();
       whichDeps
           .add(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
@@ -475,7 +475,7 @@ class ConcreteAnnotator {
     }
 
     private DependencyParse makeDepParse(SemanticGraph semGraph,
-        String depParseType, UUID tokenizationUUID) throws AnnotationException {
+        String depParseType, UUID tokenizationUUID) throws AnalyticException {
       DependencyParse depParse = new DependencyParse();
       depParse.setUuid(UUIDFactory.newUUID());
       TheoryDependencies td = new TheoryDependencies();
@@ -489,9 +489,9 @@ class ConcreteAnnotator {
     }
 
     private List<Dependency> makeDependencies(SemanticGraph graph)
-        throws AnnotationException {
+        throws AnalyticException {
       if (graph == null) {
-        throw new AnnotationException("Semantic graph is null");
+        throw new AnalyticException("Semantic graph is null");
       }
       List<Dependency> depList = new ArrayList<Dependency>();
       for (IndexedWord root : graph.getRoots()) {
@@ -521,7 +521,7 @@ class ConcreteAnnotator {
 
     private EntityMention makeEntityMention(
         CorefChain.CorefMention coreMention, UUID tokenizationUuid,
-        boolean representative) throws AnnotationException {
+        boolean representative) throws AnalyticException {
       EntityMention concEntityMention = new EntityMention().setUuid(UUIDFactory
           .newUUID());
       TokenRefSequence trs = extractTokenRefSequence(coreMention,
@@ -537,7 +537,7 @@ class ConcreteAnnotator {
     }
 
     private Entity makeEntity(CorefChain chain, EntityMentionSet ems,
-        List<Tokenization> tokenizations) throws AnnotationException {
+        List<Tokenization> tokenizations) throws AnalyticException {
       Entity concEntity = new Entity().setUuid(UUIDFactory.newUUID());
       CorefChain.CorefMention coreHeadMention = chain
           .getRepresentativeMention();
@@ -572,15 +572,15 @@ class ConcreteAnnotator {
    * points are equal, the token index list will be the empty list, and a
    * warning will be logged.
    *
-   * @throws AnnotationException
+   * @throws AnalyticException
    */
   public TokenRefSequence extractTokenRefSequence(CorefMention coreMention,
-      UUID tokUuid, boolean representative) throws AnnotationException {
+      UUID tokUuid, boolean representative) throws AnalyticException {
     int start = coreMention.startIndex;
     int end = coreMention.endIndex;
     int head = coreMention.headIndex;
     if (end - start < 0) {
-      throw new AnnotationException(
+      throw new AnalyticException(
           "Calling extractTokenRefSequence on mention " + coreMention
               + " with head = " + head + ", UUID = " + tokUuid);
     } else if (end == start) {
@@ -615,11 +615,11 @@ class ConcreteAnnotator {
    * @param sb
    *          An aggregator to store the document text.
    * @param annotationList
-   * @throws AnnotationException
+   * @throws AnalyticException
    */
   public void augmentSectionAnnotations(Section section,
       Annotation coreNlpSection, int procCharOffset, StringBuilder sb)
-      throws AnnotationException {
+      throws AnalyticException {
     if (section.isSetSentenceList()) {
       this.augmentSentences(section, coreNlpSection, procCharOffset, sb);
     } else {
@@ -633,12 +633,12 @@ class ConcreteAnnotator {
    * Augment an existing {@link Tokenization} based on the given sentence. The
    * {@link Tokenization} must have a populated {@link TokenList}.
    *
-   * @throws AnnotationException
+   * @throws AnalyticException
    */
   public void augmentTokenization(Tokenization tokenization, CoreMap sent,
-      ConcreteCreator cc, int charOffset) throws AnnotationException {
+      ConcreteCreator cc, int charOffset) throws AnalyticException {
     if (charOffset < 0) {
-      throw new AnnotationException(
+      throw new AnalyticException(
           "The provided character offset cannot be < 0");
     }
     UUID tUuid = tokenization.getUuid();
@@ -716,10 +716,10 @@ class ConcreteAnnotator {
   /**
    * Augment an existing Tokenization based on the given sentence.
    *
-   * @throws AnnotationException
+   * @throws AnalyticException
    */
   public void augmentTokenization(Tokenization tokenization, CoreMap sent,
-      int charOffset) throws AnnotationException {
+      int charOffset) throws AnalyticException {
     ConcreteCreator cc = this.new ConcreteCreator();
     this.augmentTokenization(tokenization, sent, cc, charOffset);
   }
@@ -738,22 +738,22 @@ class ConcreteAnnotator {
    *          are stored in the {@code Annotation} object.
    * @param sb
    *          An aggregator to store the document text.
-   * @throws AnnotationException
+   * @throws AnalyticException
    */
   public void augmentSentences(Section concSect, Annotation coreNlpSection,
-      int procCurrOffset, StringBuilder sb) throws AnnotationException {
+      int procCurrOffset, StringBuilder sb) throws AnalyticException {
     logger.debug("Section has : " + concSect.getSentenceList().size()
         + " sentences");
     logger.debug("convertSentences for " + concSect.getUuid());
 
     List<CoreMap> sentAnnos = coreNlpSection.get(SentencesAnnotation.class);
     if (sentAnnos == null) {
-      throw new AnnotationException("Section " + concSect.getUuid()
+      throw new AnalyticException("Section " + concSect.getUuid()
           + " has a null CoreNLP sentences annotation");
     }
     final int n = sentAnnos.size();
     if (n != concSect.getSentenceList().size()) {
-      throw new AnnotationException("Section " + concSect.getUuid() + " has "
+      throw new AnalyticException("Section " + concSect.getUuid() + " has "
           + concSect.getSentenceList().size() + " but corenlp has " + n);
     }
     logger.debug("Adding " + n + " sentences to section " + concSect.getUuid());
@@ -770,7 +770,7 @@ class ConcreteAnnotator {
         tokenization = concSent.getTokenization();
         if (tokenization == null || !tokenization.isSetTokenList()
             || tokenization.getTokenList() == null) {
-          throw new AnnotationException("Sentence " + concSent.getUuid()
+          throw new AnalyticException("Sentence " + concSent.getUuid()
               + " does not have a valid tokenization or iterable token list");
         }
         this.augmentTokenization(tokenization, coreSent, cc, procCurrOffset);
@@ -778,7 +778,7 @@ class ConcreteAnnotator {
         if (procCurrOffset != concSent.getTextSpan().getStart()
             && (procCurrOffset + sentText.length()) != concSent.getTextSpan()
                 .getEnding()) {
-          throw new AnnotationException(
+          throw new AnalyticException(
               "Sentence "
                   + concSent.getUuid()
                   + " already has tokens set, but its start/end values ( "
@@ -804,7 +804,7 @@ class ConcreteAnnotator {
         continue;
       } else {
         if (priorBranch != whichBranch) {
-          throw new AnnotationException(
+          throw new AnalyticException(
               "Section "
                   + concSect.getUuid()
                   + " has some sentences with Tokenizations set, and others without Tokenizations set");
@@ -812,7 +812,7 @@ class ConcreteAnnotator {
       }
 
       if (procCurrOffset < 0) {
-        throw new AnnotationException("bad character offset of "
+        throw new AnalyticException("bad character offset of "
             + procCurrOffset + " for converting sent " + concSent.getUuid());
       }
 
@@ -841,18 +841,18 @@ class ConcreteAnnotator {
     }
   }
 
-  public TextSpan makeSafeSpan(int start, int end) throws AnnotationException {
+  public TextSpan makeSafeSpan(int start, int end) throws AnalyticException {
     TextSpan span = new TextSpan(start, end);
     boolean isValidSentTS = new ValidatableTextSpan(span).isValid();
     if (!isValidSentTS)
-      throw new AnnotationException("TextSpan was not valid: "
+      throw new AnalyticException("TextSpan was not valid: "
           + span.toString());
     return span;
   }
 
-  private <T> T verifyNonNull(T obj) throws AnnotationException {
+  private <T> T verifyNonNull(T obj) throws AnalyticException {
     if (obj == null) {
-      throw new AnnotationException("attempting to use a null object");
+      throw new AnalyticException("attempting to use a null object");
     }
     return obj;
   }
@@ -913,12 +913,12 @@ class ConcreteAnnotator {
    *          The right endpoint (exclusive) of the token range. Note that
    *          {@code right} must be strictly greater than {@code left};
    *          otherwise, a runtime exception is called.
-   * @throws AnnotationException
+   * @throws AnalyticException
    */
   public static TokenRefSequence extractTokenRefSequence(int left, int right,
-      Integer head, UUID uuid) throws AnnotationException {
+      Integer head, UUID uuid) throws AnalyticException {
     if (right - left <= 0)
-      throw new AnnotationException(
+      throw new AnalyticException(
           "Calling extractTokenRefSequence with right <= left: left = " + left
               + ", right = " + right + ", head = " + head + ", UUID = " + uuid);
 

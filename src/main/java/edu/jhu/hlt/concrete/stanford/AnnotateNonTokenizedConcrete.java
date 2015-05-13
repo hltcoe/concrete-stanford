@@ -17,7 +17,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import concrete.tools.AnnotationException;
 import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.EntityMentionSet;
@@ -26,8 +25,14 @@ import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Tokenization;
+import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
+import edu.jhu.hlt.concrete.analytics.base.SectionedCommunicationAnalytic;
 import edu.jhu.hlt.concrete.communications.PerspectiveCommunication;
+import edu.jhu.hlt.concrete.miscommunication.MiscommunicationException;
+import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunication;
+import edu.jhu.hlt.concrete.miscommunication.sectioned.SectionedCommunication;
 import edu.jhu.hlt.concrete.util.ConcreteException;
+import edu.jhu.hlt.concrete.util.Timing;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentenceIndexAnnotation;
@@ -42,7 +47,7 @@ import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.util.CoreMap;
 
-public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
+public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnalytic {
 
   private static final Logger logger = LoggerFactory
       .getLogger(AnnotateNonTokenizedConcrete.class);
@@ -118,9 +123,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
     this.language = "en";
   }
 
-  @Override
-  public Communication process(Communication comm) throws ConcreteException, AnnotationException {
-
+  public Communication process(Communication comm) throws ConcreteException, AnalyticException {
     PerspectiveCommunication pc = new PerspectiveCommunication(comm,
         "PerspectiveCreator");
     Communication persp = pc.getPerspective();
@@ -167,9 +170,9 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
    * PrereqValidator.verifyCommunication and has been constructed via a new
    * perspective. In particular, rawTextSpans must be set.
    *
-   * @throws AnnotationException
+   * @throws AnalyticException
    */
-  private void annotateSects(Communication comm) throws AnnotationException {
+  private void annotateSects(Communication comm) throws AnalyticException {
     // if called multiple times, reset the sentence count
     sentenceCount = 1;
     String commText = comm.getOriginalText();
@@ -187,7 +190,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
     int previousSectionEnding = 0;
     for (Section section : sections) {
       if (!section.isSetRawTextSpan()) {
-        throw new AnnotationException("Cannot process section "
+        throw new AnalyticException("Cannot process section "
             + section.getUuid() + ", as it has no .rawTextSpan");
       }
       if (section.isSetSentenceList()) {
@@ -224,7 +227,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
   private void dispatchSection(Section section, String sectionText,
       Annotation sectionAnnotation, Annotation documentAnnotation,
       int sectionStartCharOffset, List<Tokenization> tokenizations,
-      StringBuilder sb) throws AnnotationException {
+      StringBuilder sb) throws AnalyticException {
     logger.debug("Annotating Section: {}", section.getUuid());
     logger.debug("\ttext = " + sectionText);
     logger.debug("\tkind = " + section.getKind() + " in annotateNames: "
@@ -257,7 +260,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
    * @param sectionAnnotation
    * @param sectionText
    */
-  private void basicProcessingOnly(Section section, Annotation sentenceSplitText, int sectionOffset, StringBuilder sb) throws AnnotationException {
+  private void basicProcessingOnly(Section section, Annotation sentenceSplitText, int sectionOffset, StringBuilder sb) throws AnalyticException {
     logger.debug("tokenize/sent-split ONLY section: from " + sectionOffset + " to ");
     if (sentenceSplitText == null) {
       logger.debug("" + sectionOffset);
@@ -302,24 +305,24 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
    * Note that corefence resolution is done only once all contentful sections
    * have been properly annotated.
    *
-   * @throws AnnotationException
+   * @throws AnalyticException
    *
    */
   private boolean annotateLocalStages(Annotation annotation)
-      throws AnnotationException {
+      throws AnalyticException {
     try {
       return pipeline.annotateLocalStages(annotation);
     } catch (IOException e) {
-      throw new AnnotationException(e);
+      throw new AnalyticException(e);
     }
   }
 
   private boolean annotateCoref(Annotation annotation)
-      throws AnnotationException {
+      throws AnalyticException {
     try {
       return pipeline.annotateCoref(annotation);
     } catch (IOException e) {
-      throw new AnnotationException(e);
+      throw new AnalyticException(e);
     }
   }
 
@@ -331,7 +334,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
    *
    */
   private void aggregateTokenizedSentences(Section concreteSection,
-      CoreMap sectAnno, Annotation document) throws AnnotationException {
+      CoreMap sectAnno, Annotation document) throws AnalyticException {
     if (sectAnno == null) {
       logger.warn("Encountered null annotated section. Skipping.");
       return;
@@ -355,7 +358,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
       concreteSentences = concreteSection.getSentenceList();
       numConcreteSentences = concreteSentences.size();
       if (numConcreteSentences != sentAnnos.size()) {
-        throw new AnnotationException("Section " + concreteSection.getUuid()
+        throw new AnalyticException("Section " + concreteSection.getUuid()
             + " has " + numConcreteSentences + " sentences already created,"
             + " but CoreNLP only found " + sentAnnos.size());
       }
@@ -416,7 +419,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
     document.set(SentencesAnnotation.class, docSents);
     Integer oldDocCharE = document.get(CharacterOffsetEndAnnotation.class);
     if (oldDocCharE != null && maxCharEnding < oldDocCharE)
-      throw new AnnotationException("The max char ending for this section ("
+      throw new AnalyticException("The max char ending for this section ("
           + maxCharEnding
           + ") is less than the current document char ending ( " + oldDocCharE
           + ")");
@@ -430,7 +433,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
    *
    */
   private void sentencesToSection(Section concreteSection, CoreMap sectAnno)
-      throws AnnotationException {
+      throws AnalyticException {
     if (sectAnno == null) {
       logger.warn("Encountered null annotated section. Skipping.");
       return;
@@ -452,7 +455,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
       concreteSentences = concreteSection.getSentenceList();
       numConcreteSentences = concreteSentences.size();
       if (concreteSection.getSentenceList().size() != sentAnnos.size()) {
-        throw new AnnotationException("Section " + concreteSection.getUuid()
+        throw new AnalyticException("Section " + concreteSection.getUuid()
             + " has " + concreteSection.getSentenceList().size()
             + " sentences already created," + " but CoreNLP only found "
             + sentAnnos.size());
@@ -571,11 +574,11 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
    * further locally process {@link Annotation}; add those new annotations to an
    * aggregating {@link Annotation} to use for later global processing.
    *
-   * @throws AnnotationException
+   * @throws AnalyticException
    */
   private void processSectionForNoCoref(Section section,
       Annotation sentenceSplitText, int sectionOffset, StringBuilder sb)
-      throws AnnotationException {
+      throws AnalyticException {
     sentencesToSection(section, sentenceSplitText);
 
     boolean successfulAnnotation = annotateLocalStages(sentenceSplitText);
@@ -599,11 +602,11 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
    * further locally process {@link Annotation}; add those new annotations to an
    * aggregating {@link Annotation} to use for later global processing.
    *
-   * @throws AnnotationException
+   * @throws AnalyticException
    */
   private void processSection(Section section, Annotation sentenceSplitText,
       Annotation docAnnotation, int sectionOffset, StringBuilder sb)
-      throws AnnotationException {
+      throws AnalyticException {
     aggregateTokenizedSentences(section, sentenceSplitText, docAnnotation);
     logDebugSentencesAnnotation(sentenceSplitText,
         "after sentencesToSection, before annotating");
@@ -619,11 +622,11 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
   }
 
   private static void setSectionTextSpan(Section section, int start, int end,
-      boolean compensate) throws AnnotationException {
+      boolean compensate) throws AnalyticException {
     if (!section.isSetTextSpan()) {
       int compE = compensate ? (end - 1) : end;
       if (compE <= start)
-        throw new AnnotationException(
+        throw new AnalyticException(
             "Cannot create compensated textspan for section "
                 + section.getUuid() + "; provided offsets = (" + start + ","
                 + end + "), compensated offsets = (" + start + "," + compE
@@ -635,7 +638,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
   }
 
   private void processCoref(Communication comm, Annotation docAnnotation,
-      List<Tokenization> tokenizations) throws AnnotationException {
+      List<Tokenization> tokenizations) throws AnalyticException {
     boolean successfulAnnotation = annotateCoref(docAnnotation);
     logger.debug("after annotating, annotation was successful? ({})",
         successfulAnnotation);
@@ -646,24 +649,24 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
     EntitySet es = tuple.getValue();
 
     if (ems == null || !ems.isSetMentionList())
-      throw new AnnotationException(
+      throw new AnalyticException(
           "Concrete-agiga produced a null EntityMentionSet, or a null mentionList.");
 
     if (ems.getMentionListSize() == 0
         && !this.allowEmptyEntitiesAndEntityMentions)
-      throw new AnnotationException(
+      throw new AnalyticException(
           "Empty entity mentions are disallowed and no entity mentions were produced for communication: "
               + comm.getId());
     else
       comm.addToEntityMentionSetList(ems);
 
     if (es == null || !es.isSetEntityList())
-      throw new AnnotationException(
+      throw new AnalyticException(
           "Concrete-agiga produced a null EntitySet, or a null entityList.");
 
     if (es.getEntityListSize() == 0
         && !this.allowEmptyEntitiesAndEntityMentions)
-      throw new AnnotationException(
+      throw new AnalyticException(
           "Empty entities are disallowed and no entities were produced for communication: "
               + comm.getId());
     else
@@ -701,10 +704,13 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
     return sb.toString().trim();
   }
 
-  @Override
-  public boolean ensurePreconditionsMet(Communication comm)  {
-    return PrereqValidator.verifyCommunication(comm);
-  }
+//  @Override
+//  public boolean ensurePreconditionsMet(Communication comm) {
+//    CommunicationValidator cv = new CommunicationValidator(comm);
+//    boolean initialValidity = cv.validate();
+//    return initialValidity;
+//    // return PrereqValidator.verifyCommunication(comm);
+//  }
 
   /**
    * A validator object to ensure that all prerequisites are met. The
@@ -719,10 +725,6 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
     /**
      *
      * @param comm
-     * @param useThrow
-     *          If true, throw an exception rather than returning {@code false}
-     *          if given a non-valid communication. Otherwise, return
-     *          true/false.
      * @return True iff {@code comm} satisfies the requirements of a
      *         communication to be annotated.
      *         <ul>
@@ -892,4 +894,74 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
     }
   }
 
+  /* (non-Javadoc)
+   * @see edu.jhu.hlt.concrete.analytics.base.Analytic#annotate(edu.jhu.hlt.concrete.Communication)
+   */
+  @Override
+  public Communication annotate(Communication arg0) throws AnalyticException {
+    try {
+      return this.annotate(new CachedSectionedCommunication(arg0));
+    } catch (MiscommunicationException e) {
+      throw new AnalyticException(e);
+    }
+  }
+
+  /* (non-Javadoc)
+   * @see edu.jhu.hlt.concrete.safe.metadata.SafeAnnotationMetadata#getTimestamp()
+   */
+  @Override
+  public long getTimestamp() {
+    return Timing.currentLocalTime();
+  }
+
+  /* (non-Javadoc)
+   * @see edu.jhu.hlt.concrete.metadata.tools.MetadataTool#getToolName()
+   */
+  @Override
+  public String getToolName() {
+    return AnnotateNonTokenizedConcrete.class.getSimpleName();
+  }
+
+  /* (non-Javadoc)
+   * @see edu.jhu.hlt.concrete.metadata.tools.MetadataTool#getToolVersion()
+   */
+  @Override
+  public String getToolVersion() {
+    return ProjectConstants.VERSION;
+  }
+
+  /* (non-Javadoc)
+   * @see edu.jhu.hlt.concrete.analytics.base.SectionedCommunicationAnalytic#annotate(edu.jhu.hlt.concrete.miscommunication.sectioned.SectionedCommunication)
+   */
+  @Override
+  public Communication annotate(SectionedCommunication arg0) throws AnalyticException {
+    try {
+      PerspectiveCommunication pc = new PerspectiveCommunication(arg0.getRoot(),
+          "PerspectiveCreator");
+      Communication persp = pc.getPerspective();
+
+      // hopefully MD is never null
+      // The Optional.ofNullable can be removed due to the validator object,
+      // but keeping it around won't hurt.
+      AnnotationMetadata md = Optional.ofNullable(persp.getMetadata()).orElse(
+          new AnnotationMetadata());
+      String csToolName = ProjectConstants.PROJECT_NAME + " "
+          + ProjectConstants.VERSION;
+      String newToolName = csToolName + " perspective";
+
+      String mdToolName = md.isSetTool() ? md.getTool() : "";
+      if (!mdToolName.isEmpty())
+        newToolName += " on old tool: " + mdToolName;
+
+      md.setTool(newToolName);
+      persp.setMetadata(md);
+      resetGlobals();
+      this.annotateSects(persp);
+      return persp;
+    } catch (ConcreteException e) {
+      throw new AnalyticException(e);
+    } catch (AnalyticException e) {
+      throw new AnalyticException(e);
+    }
+  }
 }

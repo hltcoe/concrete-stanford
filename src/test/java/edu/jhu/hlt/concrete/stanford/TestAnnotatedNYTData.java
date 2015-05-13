@@ -6,7 +6,6 @@
 package edu.jhu.hlt.concrete.stanford;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -75,9 +74,8 @@ public class TestAnnotatedNYTData {
 
   @Test
   public void testNYT() throws Exception{
-    GenericStanfordAnnotator pipe = new AnnotateNonTokenizedConcrete();
+    AnnotateNonTokenizedConcrete pipe = new AnnotateNonTokenizedConcrete();
     Communication c = this.extractNYTDoc();
-    assertTrue(pipe.ensurePreconditionsMet(c));
     Section first = c.getSectionListIterator().next();
 
     Communication fromStanford = pipe.process(c);

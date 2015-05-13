@@ -26,13 +26,13 @@ import java.util.zip.ZipFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import concrete.tools.AnnotationException;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
+import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
@@ -87,7 +87,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
    * @param comm
    *          The concrete communication.
    */
-  public void annotateWithStanfordNlp(Communication comm) throws AnnotationException {
+  public void annotateWithStanfordNlp(Communication comm) throws AnalyticException {
     StringBuilder sb = new StringBuilder();
     for (Section cSection : comm.getSectionList()) {
       if (cSection.isSetLabel()
@@ -102,14 +102,12 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
         ca.augmentSectionAnnotations(cSection, sSectionAnno, procCharOffset, sb);
       } catch (IOException e) {
         throw new RuntimeException(e);
-      } catch (AnnotationException e) {
-        throw new RuntimeException(e);
       }
     }
   }
 
   @Override
-  public Communication process(Communication comm) throws ConcreteException, AnnotationException {
+  public Communication process(Communication comm) throws AnalyticException {
     Communication commCopy = comm.deepCopy();
     annotateWithStanfordNlp(commCopy);
     return commCopy;
@@ -124,7 +122,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
    *          The communication from which to extract the source text.
    */
   public void annotateWithStanfordNlp(Sentence cSent, Communication comm)
-      throws AnnotationException {
+      throws AnalyticException {
     Annotation sSentAnno = getSentenceAsAnnotation(cSent, comm);
     try {
       pipeline.annotateLocalStages(sSentAnno);
@@ -133,7 +131,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
       int procCharOffset = cSent.getTextSpan().getStart();
       ca.augmentTokenization(cSent.getTokenization(), sSentAnno, procCharOffset);
     } catch (IOException e) {
-      throw new AnnotationException(e);
+      throw new AnalyticException(e);
     }
   }
 
@@ -147,7 +145,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
    * @return The annotation representing the section.
    */
   private Annotation getSectionAsAnnotation(Section cSection, Communication comm)
-      throws AnnotationException {
+      throws AnalyticException {
     List<Sentence> cSents = cSection.getSentenceList();
     return concreteSentListToAnnotation(cSents, comm);
   }
@@ -162,7 +160,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
    * @return The annotation representing the section.
    */
   private Annotation getSentenceAsAnnotation(Sentence cSent, Communication comm)
-      throws AnnotationException {
+      throws AnalyticException {
     List<Sentence> cSents = new ArrayList<>();
     cSents.add(cSent);
     return concreteSentListToAnnotation(cSents, comm);
@@ -179,7 +177,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
    * @return The annotation representing the list of sentences.
    */
   private Annotation concreteSentListToAnnotation(List<Sentence> cSents,
-      Communication comm) throws AnnotationException {
+      Communication comm) throws AnalyticException {
     Annotation sSectionAnno = new Annotation(comm.getText());
     // Done by constructor: sectionAnno.set(CoreAnnotations.TextAnnotation,
     // null);
@@ -251,12 +249,12 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
    * create a List<CoreMap>s from a List<List<CoreLabel>>.
    */
   private List<CoreMap> mimicWordsToSentsAnnotator(
-      List<List<CoreLabel>> sSents, String text) throws AnnotationException {
+      List<List<CoreLabel>> sSents, String text) throws AnalyticException {
     int tokenOffset = 0;
     List<CoreMap> sentences = new ArrayList<CoreMap>();
     for (List<CoreLabel> sentenceTokens : sSents) {
       if (sentenceTokens.isEmpty()) {
-        throw new AnnotationException("unexpected empty sentence: "
+        throw new AnalyticException("unexpected empty sentence: "
             + sentenceTokens);
       }
 
@@ -322,7 +320,7 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
    * the only other supported option is cn (Chinese).
    */
   public static void main(String[] args) throws IOException, ConcreteException,
-      AnnotationException {
+      AnalyticException {
     Path inPath = Paths.get(args[0]);
     Path outPath = Paths.get(args[1]);
     String lang = "en";

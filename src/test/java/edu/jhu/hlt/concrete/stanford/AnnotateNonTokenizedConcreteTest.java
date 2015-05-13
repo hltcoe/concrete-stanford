@@ -127,7 +127,7 @@ public class AnnotateNonTokenizedConcreteTest {
    * Test method for
    * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
-   * 
+   *
    * @throws TException
    * @throws AsphaltException
    * @throws InvalidInputException
@@ -136,8 +136,7 @@ public class AnnotateNonTokenizedConcreteTest {
    * @throws AnnotationException
    */
   @Test
-  public void processPassages() throws TException, IOException,
-      ConcreteException, AnnotationException {
+  public void processPassages() throws Exception {
     SuperCommunication sc = new SuperCommunication(this.randomTestComm);
     assertTrue(sc.hasSections());
 
@@ -152,7 +151,7 @@ public class AnnotateNonTokenizedConcreteTest {
    * Test method for
    * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
-   * 
+   *
    * @throws TException
    * @throws AsphaltException
    * @throws InvalidInputException
@@ -161,8 +160,7 @@ public class AnnotateNonTokenizedConcreteTest {
    * @throws AnnotationException
    */
   @Test
-  public void testNoMentions() throws TException, IOException,
-      ConcreteException, AnnotationException {
+  public void testNoMentions() throws Exception {
     Communication c = this.cf.communication().setText("gobljsfoewj");
     c.addToSectionList(new SuperCommunication(c).singleSection("Passage"));
     SuperCommunication sc = new SuperCommunication(c);
@@ -179,7 +177,7 @@ public class AnnotateNonTokenizedConcreteTest {
    * Test method for
    * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
-   * 
+   *
    * @throws TException
    * @throws AsphaltException
    * @throws InvalidInputException
@@ -188,8 +186,7 @@ public class AnnotateNonTokenizedConcreteTest {
    * @throws AnnotationException
    */
   @Test
-  public void processHandshakeCommunication() throws TException, IOException,
-      ConcreteException, AnnotationException {
+  public void processHandshakeCommunication() throws Exception {
     Communication shakeHandComm = this.cf.communication().setText(
         SHAKE_HAND_TEXT_STRING);
     AnnotationMetadata md = new AnnotationMetadata().setTool(
@@ -727,7 +724,7 @@ public class AnnotateNonTokenizedConcreteTest {
    * Test method for
    * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
-   * 
+   *
    * @throws TException
    * @throws AsphaltException
    * @throws InvalidInputException
@@ -736,8 +733,7 @@ public class AnnotateNonTokenizedConcreteTest {
    * @throws AnnotationException
    */
   @Test
-  public void processHandshakeCommunicationWithSentences() throws TException,
-      IOException, ConcreteException, AnnotationException {
+  public void processHandshakeCommunicationWithSentences() throws Exception {
     Communication shakeHandComm = this.cf.communication().setText(
         SHAKE_HAND_TEXT_STRING);
     AnnotationMetadata md = new AnnotationMetadata().setTool(
@@ -892,7 +888,7 @@ public class AnnotateNonTokenizedConcreteTest {
    * Test method for
    * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
-   * 
+   *
    * @throws TException
    * @throws AsphaltException
    * @throws InvalidInputException
@@ -901,8 +897,7 @@ public class AnnotateNonTokenizedConcreteTest {
    * @throws AnnotationException
    */
   @Test
-  public void processHandshakeCommunicationWithRepeatedSentences()
-      throws TException, IOException, ConcreteException, AnnotationException {
+  public void processHandshakeCommunicationWithRepeatedSentences() throws Exception {
     String SHAKE_HAND_TEXT_STRING_1 = "The boy ran to shake the U.S. \nPresident's hand. ";
     String SHAKE_HAND_TEXT_STRING_2 = "The dog ran to shake the U.S. \nPresident's hand.";
     final int eachSentenceLength = SHAKE_HAND_TEXT_STRING.length() - 1;
@@ -1088,7 +1083,7 @@ public class AnnotateNonTokenizedConcreteTest {
    * Test method for
    * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
-   * 
+   *
    * @throws TException
    * @throws AsphaltException
    * @throws InvalidInputException
@@ -1097,8 +1092,7 @@ public class AnnotateNonTokenizedConcreteTest {
    * @throws AnnotationException
    */
   @Test
-  public void processHandshakeCommunicationWithRepeatedSentencesAndTitleSection()
-      throws TException, IOException, ConcreteException, AnnotationException {
+  public void processHandshakeCommunicationWithRepeatedSentencesAndTitleSection() throws Exception{
     String SHAKE_HAND_TEXT_STRING_1 = "The boy ran to shake the U.S. \nPresident's hand. ";
     String SHAKE_HAND_TEXT_STRING_2 = "The dog ran to shake the U.S. \nPresident's hand.";
     final int eachSentenceLength = SHAKE_HAND_TEXT_STRING.length() - 1;
