@@ -722,7 +722,7 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
    */
   static class PrereqValidator {
 
-    /**
+    /*
      *
      * @param comm
      * @return True iff {@code comm} satisfies the requirements of a
@@ -740,54 +740,9 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
      *         field.</li>
      *         </ul>
      */
-    public static boolean verifyCommunication(Communication comm) {
-      StringBuilder sb = new StringBuilder();
-      boolean good = true;
-      if (comm == null) {
-        sb.append("Communication must not be null.\n");
-        return false;
-      }
-      // TODO: call a thrift-backed validator to make sure all required fields
-      // are set
-      if (!comm.isSetId() || comm.getId().equals("")) {
-        sb.append("Communication must have id set.\n");
-        good = false;
-      }
-      if (!comm.isSetText() || comm.getText().equals("")) {
-        sb.append("Expecting Communication Text, but was empty or none.\n");
-        good = false;
-      }
-      boolean sectNull = false;
-      if (!comm.isSetSectionList()) {
-        sb.append("Expecting Communication to have a section list set.\n");
-        sectNull = true;
-        good = false;
-      } else {
-        if (!sectNull && comm.getSectionList().isEmpty()) {
-          sb.append("Expecting Communication to have a non-empty section list.\n");
-          good = false;
-        }
-        for (Section section : comm.getSectionList()) {
-          good &= verifySection(section, sb);
-        }
-      }
-      if (!comm.isSetMetadata()) {
-        sb.append("Communication must have metadata set.\n");
-        good = false;
-      } else {
-        if (!comm.getMetadata().isSetTool()
-            || comm.getMetadata().getTool().length() == 0) {
-          sb.append("Communication metadata must have non-empty tool name set.\n");
-          good = false;
-        }
-      }
 
-      if (sb.length() > 0)
-        logger.warn("Communication was not valid for this analytic: {}", sb.toString());
-      return good;
-    }
 
-    /**
+    /*
      *
      * @param section
      * @param sb
@@ -801,33 +756,9 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
      *         as given by {@code verifySentence}.</li>
      *         </ul>
      */
-    public static boolean verifySection(Section section, StringBuilder sb) {
-      boolean good = true;
-      if (section == null) {
-        sb.append("Section cannot be null.\n");
-        return false;
-      }
-      if (!section.isSetTextSpan()) {
-        sb.append("Section " + section.getUuid().toString()
-            + " must have .textSpan set.\n");
-        good = false;
-      } else {
-        good &= verifyTextSpan(section.getTextSpan(), sb);
-      }
-      if (section.isSetSentenceList()) {
-        if (section.getSentenceList().isEmpty()) {
-          sb.append("No sections can have set (non-null) sentence lists.\n");
-          good = false;
-        } else {
-          for (Sentence sentence : section.getSentenceList()) {
-            good &= verifySentence(sentence, sb);
-          }
-        }
-      }
-      return good;
-    }
 
-    /**
+
+    /*
      *
      * @param sentence
      * @param sb
@@ -839,28 +770,9 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
      *         <li>It must not have a .tokenization field.</li>
      *         </ul>
      */
-    public static boolean verifySentence(Sentence sentence, StringBuilder sb) {
-      boolean good = true;
-      if (sentence == null) {
-        sb.append("Sentence cannot be null.\n");
-        return false;
-      }
-      if (!sentence.isSetTextSpan()) {
-        sb.append("Sentence " + sentence.getUuid().toString()
-            + " must have a .textSpan set.\n");
-        good = false;
-      } else {
-        good &= verifyTextSpan(sentence.getTextSpan(), sb);
-      }
-      if (sentence.isSetTokenization()) {
-        sb.append("Sentence " + sentence.getUuid().toString()
-            + " must not have a tokenization set (it will be overwritten!).\n");
-        good = false;
-      }
-      return good;
-    }
 
-    /**
+
+    /*
      *
      * @param textSpan
      * @param sb
@@ -872,26 +784,7 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
      *         <li>It must have non-zero length.</li>
      *         </ul>
      */
-    public static boolean verifyTextSpan(TextSpan textSpan, StringBuilder sb) {
-      boolean good = true;
-      if (textSpan == null) {
-        sb.append("TextSpan cannot be null.\n");
-        return false;
-      }
-      int start = textSpan.getStart();
-      int end = textSpan.getEnding();
-      if (start < 0 || end < 0) {
-        sb.append("TextSpan " + textSpan.toString()
-            + " cannot have negative endpoints.\n");
-        good = false;
-      }
-      if (end <= start) {
-        sb.append("TextSpan " + textSpan.toString()
-            + "cannot have end before (<=) start.\n");
-        good = false;
-      }
-      return good;
-    }
+
   }
 
   /* (non-Javadoc)
