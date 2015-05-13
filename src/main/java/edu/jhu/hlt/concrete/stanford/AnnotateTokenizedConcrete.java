@@ -88,9 +88,6 @@ public class AnnotateTokenizedConcrete implements GenericStanfordAnnotator {
    *          The concrete communication.
    */
   public void annotateWithStanfordNlp(Communication comm) throws AnnotationException {
-    if (!this.ensurePreconditionsMet(comm))
-      throw new AnnotationException("Analytic input was not valid.");
-
     StringBuilder sb = new StringBuilder();
     for (Section cSection : comm.getSectionList()) {
       if (cSection.isSetLabel()

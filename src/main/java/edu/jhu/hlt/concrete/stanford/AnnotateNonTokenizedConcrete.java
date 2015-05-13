@@ -133,7 +133,6 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
   @Override
   public Communication process(Communication comm) throws IOException,
       ConcreteException, AnnotationException {
-    this.ensurePreconditionsMet(comm);
 
     PerspectiveCommunication pc = new PerspectiveCommunication(comm,
         "PerspectiveCreator");
