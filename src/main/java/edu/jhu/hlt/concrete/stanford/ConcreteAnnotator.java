@@ -108,17 +108,6 @@ class ConcreteAnnotator {
     }
   }
 
-  @SuppressWarnings("unused")
-  private AnnotationMetadata getMetadataCurrentTime(String name) {
-    return new AnnotationMetadata().setTool(name).setTimestamp(
-        System.currentTimeMillis() / 1000);
-  }
-
-  @SuppressWarnings("unused")
-  private AnnotationMetadata getMetadata() {
-    return getMetadata(null);
-  }
-
   private AnnotationMetadata getMetadata(String addToToolName) {
     String fullToolName = toolName;
     if (addToToolName != null)
