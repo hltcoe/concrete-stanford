@@ -10,6 +10,7 @@ import static org.junit.Assert.assertEquals;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import org.junit.After;
 import org.junit.Before;
@@ -23,9 +24,14 @@ import com.nytlabs.corpus.NYTCorpusDocumentParser;
 import edu.jhu.hlt.annotatednyt.AnnotatedNYTDocument;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.Section;
+import edu.jhu.hlt.concrete.TextSpan;
+import edu.jhu.hlt.concrete.Token;
+import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.ingesters.annotatednyt.CommunicationizableAnnotatedNYTDocument;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunication;
+import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
 import edu.jhu.hlt.concrete.util.SuperTextSpan;
+import edu.jhu.hlt.utilt.sys.SystemErrDisabler;
 
 /**
  *
@@ -35,6 +41,7 @@ public class TestAnnotatedNYTData {
   private static final Logger logger = LoggerFactory.getLogger(TestAnnotatedNYTData.class);
 
   final NYTCorpusDocumentParser parser = new NYTCorpusDocumentParser();
+  final AnnotateNonTokenizedConcrete pipe = new AnnotateNonTokenizedConcrete();
 
   /**
    * @throws java.lang.Exception
@@ -50,8 +57,8 @@ public class TestAnnotatedNYTData {
   public void tearDown() throws Exception {
   }
 
-  private Communication extractNYTDoc() throws Exception {
-    Path p = Paths.get("src/test/resources/1012740.xml");
+  private Communication extractNYTDoc(Path p) throws Exception {
+
     byte[] ba = Files.readAllBytes(p);
     NYTCorpusDocument nytd = parser.fromByteArray(ba, false);
     AnnotatedNYTDocument ad = new AnnotatedNYTDocument(nytd);
@@ -73,9 +80,39 @@ public class TestAnnotatedNYTData {
   }
 
   @Test
+  public void testFirstNYTDoc() throws Exception {
+    SystemErrDisabler dis = new SystemErrDisabler();
+    dis.disable();
+    Path p = Paths.get("src/test/resources/0.xml");
+    Communication c = this.extractNYTDoc(p);
+    Communication fromStanford = pipe.process(c);
+    String rawOrigText = fromStanford.getOriginalText();
+
+    CachedTokenizationCommunication ctc = new CachedTokenizationCommunication(fromStanford);
+    int nTokens = 0;
+    int nTokensDiff = 0;
+    for (Tokenization tkz : ctc.getTokenizations()) {
+      List<Token> tkList = tkz.getTokenList().getTokenList();
+      for (Token t : tkList) {
+        TextSpan rawTS = t.getRawTextSpan();
+        String origTokenText = rawOrigText.substring(rawTS.getStart(), rawTS.getEnding());
+        String ttxt = t.getText();
+        if (!ttxt.equals(origTokenText)) {
+          logger.info("Got different tokenization texts: new {} vs. orig. {}", ttxt, origTokenText);
+          nTokensDiff++;
+        }
+
+        nTokens++;
+      }
+    }
+
+    logger.info("Total tokens checked: {} ; number of differences: {}", nTokens, nTokensDiff);
+  }
+
+  @Test
   public void testNYT() throws Exception{
-    AnnotateNonTokenizedConcrete pipe = new AnnotateNonTokenizedConcrete();
-    Communication c = this.extractNYTDoc();
+    Path p = Paths.get("src/test/resources/1012740.xml");
+    Communication c = this.extractNYTDoc(p);
     Section first = c.getSectionListIterator().next();
 
     Communication fromStanford = pipe.process(c);
