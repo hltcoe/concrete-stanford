@@ -68,11 +68,11 @@ public class ConcreteAgigaPipePreqeqValidatorTest extends PrereqValidator {
 
   @Test
   public void testVerifySection() {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     // nullity check
     assertFalse(verifySection(null, sb));
     assertEquals("Section cannot be null.", sb.toString().trim());
-    sb = new StringBuffer();
+    sb = new StringBuilder();
     // /////////////////////////////////
     UUID uuid = UUIDFactory.newUUID();
     Section section = new Section().setUuid(uuid);
@@ -81,21 +81,21 @@ public class ConcreteAgigaPipePreqeqValidatorTest extends PrereqValidator {
     assertFalse(verifySection(section, sb));
     assertEquals("Section " + uuid + " must have .textSpan set.", sb.toString()
         .trim());
-    sb = new StringBuffer();
+    sb = new StringBuilder();
     // ////////////////////////////////
     // section with invalid text span
     section.setTextSpan(new TextSpan().setStart(0).setEnding(0));
     assertFalse(verifySection(section, sb));
-    sb = new StringBuffer();
+    sb = new StringBuilder();
     // section with valid text span
     section.setTextSpan(new TextSpan().setStart(0).setEnding(5));
     assertTrue(verifySection(section, sb));
-    sb = new StringBuffer();
+    sb = new StringBuilder();
     // section with set, but empty sentences
     List<Sentence> sentences = new LinkedList<Sentence>();
     section.setSentenceList(sentences);
     assertFalse(verifySection(section, sb));
-    sb = new StringBuffer();
+    sb = new StringBuilder();
     // and now once we've added a valid sentence
     Sentence sentence = new Sentence().setUuid(UUIDFactory.newUUID());
     sentence.setTextSpan(new TextSpan().setStart(0).setEnding(5));
@@ -105,11 +105,11 @@ public class ConcreteAgigaPipePreqeqValidatorTest extends PrereqValidator {
 
   @Test
   public void testVerifySentence() {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     // nullity check
     assertFalse(verifySentence(null, sb));
     assertEquals("Sentence cannot be null.", sb.toString().trim());
-    sb = new StringBuffer();
+    sb = new StringBuilder();
     // /////////////////////////////////
     UUID uuid = UUIDFactory.newUUID();
     Sentence sentence = new Sentence().setUuid(uuid);
@@ -118,16 +118,16 @@ public class ConcreteAgigaPipePreqeqValidatorTest extends PrereqValidator {
     assertFalse(verifySentence(sentence, sb));
     assertEquals("Sentence " + uuid + " must have a .textSpan set.", sb
         .toString().trim());
-    sb = new StringBuffer();
+    sb = new StringBuilder();
     // ////////////////////////////////
     // sentence with invalid text span
     sentence.setTextSpan(new TextSpan().setStart(0).setEnding(0));
     assertFalse(verifySentence(sentence, sb));
-    sb = new StringBuffer();
+    sb = new StringBuilder();
     // sentence with valid text span
     sentence.setTextSpan(new TextSpan().setStart(0).setEnding(5));
     assertTrue(verifySentence(sentence, sb));
-    sb = new StringBuffer();
+    sb = new StringBuilder();
     // sentence with Tokenization set
     sentence.setTokenization(new Tokenization());
     assertFalse(verifySentence(sentence, sb));
@@ -138,7 +138,7 @@ public class ConcreteAgigaPipePreqeqValidatorTest extends PrereqValidator {
 
   @Test
   public void testVerifyTextSpan() {
-    assertFalse(verifyTextSpan(null, new StringBuffer()));
+    assertFalse(verifyTextSpan(null, new StringBuilder()));
     // This block is testing for failing verifications
     {
       // this tests: (-1, -1), (0, -1), (1, 0), (1, 1))
@@ -146,7 +146,7 @@ public class ConcreteAgigaPipePreqeqValidatorTest extends PrereqValidator {
       int[] ends = { -1, -1, 0, 1 };
       assertEquals(starts.length, ends.length);
       for (int i = 0; i < starts.length; ++i) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         TextSpan ts = new TextSpan();
         ts.setStart(starts[i]).setEnding(ends[i]);
         boolean res = verifyTextSpan(ts, sb);
@@ -160,7 +160,7 @@ public class ConcreteAgigaPipePreqeqValidatorTest extends PrereqValidator {
       int[] ends = { 1 };
       assertEquals(starts.length, ends.length);
       for (int i = 0; i < starts.length; ++i) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         TextSpan ts = new TextSpan();
         ts.setStart(starts[i]).setEnding(ends[i]);
         boolean res = verifyTextSpan(ts, sb);

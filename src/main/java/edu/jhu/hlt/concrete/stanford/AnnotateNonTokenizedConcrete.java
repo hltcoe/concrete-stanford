@@ -760,7 +760,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
      *         </ul>
      */
     public static boolean verifyCommunication(Communication comm) {
-      StringBuffer sb = new StringBuffer();
+      StringBuilder sb = new StringBuilder();
       boolean good = true;
       if (comm == null) {
         sb.append("Communication must not be null.\n");
@@ -820,7 +820,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
      *         as given by {@code verifySentence}.</li>
      *         </ul>
      */
-    public static boolean verifySection(Section section, StringBuffer sb) {
+    public static boolean verifySection(Section section, StringBuilder sb) {
       boolean good = true;
       if (section == null) {
         sb.append("Section cannot be null.\n");
@@ -858,7 +858,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
      *         <li>It must not have a .tokenization field.</li>
      *         </ul>
      */
-    public static boolean verifySentence(Sentence sentence, StringBuffer sb) {
+    public static boolean verifySentence(Sentence sentence, StringBuilder sb) {
       boolean good = true;
       if (sentence == null) {
         sb.append("Sentence cannot be null.\n");
@@ -891,7 +891,7 @@ public class AnnotateNonTokenizedConcrete implements GenericStanfordAnnotator {
      *         <li>It must have non-zero length.</li>
      *         </ul>
      */
-    public static boolean verifyTextSpan(TextSpan textSpan, StringBuffer sb) {
+    public static boolean verifyTextSpan(TextSpan textSpan, StringBuilder sb) {
       boolean good = true;
       if (textSpan == null) {
         sb.append("TextSpan cannot be null.\n");
