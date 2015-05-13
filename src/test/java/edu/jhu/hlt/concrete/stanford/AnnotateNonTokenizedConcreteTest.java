@@ -36,6 +36,7 @@ import edu.jhu.hlt.concrete.TokenTagging;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.communications.SuperCommunication;
 import edu.jhu.hlt.concrete.ingesters.gigaword.CommunicationizableGigawordDocument;
+import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
 import edu.jhu.hlt.concrete.random.RandomConcreteFactory;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
@@ -688,6 +689,23 @@ public class AnnotateNonTokenizedConcreteTest {
     this.verifyTokens(nytProcessedComm, true);
     // Verify tokens wrt PROCESSED
     this.verifyTokens(nytProcessedComm, false);
+
+    int nTokens = 0;
+    int nTokensDiff = 0;
+    CachedTokenizationCommunication ctc = new CachedTokenizationCommunication(nytProcessedComm);
+    for (Tokenization tkz : ctc.getTokenizations()) {
+      List<Token> tkList = tkz.getTokenList().getTokenList();
+      for (Token t : tkList) {
+        TextSpan rawTS = t.getRawTextSpan();
+        String origTokenText = processedRawText.substring(rawTS.getStart(), rawTS.getEnding());
+        if (!t.getText().equals(origTokenText))
+          nTokensDiff++;
+
+        nTokens++;
+      }
+    }
+
+    logger.info("Total tokens checked: {} ; number of differences: {}", nTokens, nTokensDiff);
 
     // Dependency parses
     // Verify non-empty dependency parses
