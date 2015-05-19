@@ -12,14 +12,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import concrete.tools.AnnotationException;
 import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.DependencyParse;
@@ -34,10 +34,12 @@ import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.TokenTagging;
 import edu.jhu.hlt.concrete.Tokenization;
-import edu.jhu.hlt.concrete.communications.SuperCommunication;
+import edu.jhu.hlt.concrete.communications.WritableCommunication;
 import edu.jhu.hlt.concrete.ingesters.gigaword.CommunicationizableGigawordDocument;
+import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
 import edu.jhu.hlt.concrete.random.RandomConcreteFactory;
+import edu.jhu.hlt.concrete.section.SingleSectionSegmenter;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.util.ConcreteException;
@@ -92,6 +94,9 @@ public class AnnotateNonTokenizedConcreteTest {
   AnnotateNonTokenizedConcrete pipe;
   Set<String> kindsToAnnotate;
 
+  @Rule
+  public TemporaryFolder tf = new TemporaryFolder();
+
   /**
    * @throws java.lang.Exception
    */
@@ -101,7 +106,7 @@ public class AnnotateNonTokenizedConcreteTest {
     this.kindsToAnnotate = this.pipe.getSectionTypesToAnnotate();
 
     Communication c = this.cf.communication();
-    c.addToSectionList(new SuperCommunication(c).singleSection("Passage"));
+    c.addToSectionList(SingleSectionSegmenter.createSingleSection(c, "Passage"));
 
     GigawordDocumentConverter conv = new GigawordDocumentConverter();
     GigawordDocument pdc = conv.fromPathString(this.pathToAFPComm);
@@ -129,23 +134,17 @@ public class AnnotateNonTokenizedConcreteTest {
    * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
    *
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
    * @throws ConcreteException
    * @throws IOException
-   * @throws AnnotationException
    */
   @Test
   public void processPassages() throws Exception {
-    SuperCommunication sc = new SuperCommunication(this.randomTestComm);
-    assertTrue(sc.hasSections());
+    new CachedSectionedCommunication(this.randomTestComm);
 
     Communication nc = this.pipe.process(this.randomTestComm);
     assertTrue(nc.isSetEntityMentionSetList());
     assertTrue(nc.isSetEntitySetList());
-    new SuperCommunication(nc).writeToFile(
-        "src/test/resources/post-stanford.concrete", true);
+    new WritableCommunication(nc).writeToFile(this.tf.getRoot().toPath().resolve("entities.concrete"), true);
   }
 
   /**
@@ -153,25 +152,19 @@ public class AnnotateNonTokenizedConcreteTest {
    * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
    *
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
    * @throws ConcreteException
    * @throws IOException
-   * @throws AnnotationException
    */
   @Test
   public void testNoMentions() throws Exception {
     Communication c = this.cf.communication().setText("gobljsfoewj");
-    c.addToSectionList(new SuperCommunication(c).singleSection("Passage"));
-    SuperCommunication sc = new SuperCommunication(c);
-    assertTrue(sc.hasSections());
+    c.addToSectionList(SingleSectionSegmenter.createSingleSection(c, "Passage"));
+    new CachedSectionedCommunication(c);
 
     Communication nc = this.pipe.process(c);
     assertTrue(nc.isSetEntityMentionSetList());
     assertTrue(nc.isSetEntitySetList());
-    new SuperCommunication(nc).writeToFile(
-        "target/post-stanford_garbage_processed.concrete", true);
+    new WritableCommunication(nc).writeToFile(this.tf.getRoot().toPath().resolve("post-stanford_garbage_processed.concrete"), true);
   }
 
   /**
@@ -179,12 +172,8 @@ public class AnnotateNonTokenizedConcreteTest {
    * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
    *
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
    * @throws ConcreteException
    * @throws IOException
-   * @throws AnnotationException
    */
   @Test
   public void processHandshakeCommunication() throws Exception {
@@ -630,7 +619,7 @@ public class AnnotateNonTokenizedConcreteTest {
 
     assertTrue("Error in serializing processed communication",
         cs.toBytes(afpProcessedComm) != null);
-    new SuperCommunication(afpProcessedComm).writeToFile(
+    new WritableCommunication(afpProcessedComm).writeToFile(
         "src/test/resources/AFP_ENG_20100318.0623_processed.compact.concrete",
         true);
   }
@@ -732,7 +721,7 @@ public class AnnotateNonTokenizedConcreteTest {
     assertEquals("Shouldn't be any non-anchor tokens.", 0, numWithout);
     assertTrue("Error in serializing processed communication",
         cs.toBytes(nytProcessedComm) != null);
-    new SuperCommunication(nytProcessedComm)
+    new WritableCommunication(nytProcessedComm)
         .writeToFile(
             "src/test/resources/post-stanford.NYT_ENG_19991220.0301.concrete",
             true);
@@ -743,12 +732,8 @@ public class AnnotateNonTokenizedConcreteTest {
    * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
    *
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
    * @throws ConcreteException
    * @throws IOException
-   * @throws AnnotationException
    */
   @Test
   public void processHandshakeCommunicationWithSentences() throws Exception {
@@ -907,12 +892,8 @@ public class AnnotateNonTokenizedConcreteTest {
    * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
    *
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
    * @throws ConcreteException
    * @throws IOException
-   * @throws AnnotationException
    */
   @Test
   public void processHandshakeCommunicationWithRepeatedSentences() throws Exception {
@@ -1091,7 +1072,7 @@ public class AnnotateNonTokenizedConcreteTest {
 
     // Verify metadata toolnames
     // this.verifyToolNames(processedShakeHandComm);
-    new SuperCommunication(processedShakeHandComm)
+    new WritableCommunication(processedShakeHandComm)
         .writeToFile(
             "src/test/resources/post-stanford.handshake_multiple_sections.concrete",
             true);
@@ -1102,12 +1083,8 @@ public class AnnotateNonTokenizedConcreteTest {
    * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
    * .
    *
-   * @throws TException
-   * @throws AsphaltException
-   * @throws InvalidInputException
    * @throws ConcreteException
    * @throws IOException
-   * @throws AnnotationException
    */
   @Test
   public void processHandshakeCommunicationWithRepeatedSentencesAndTitleSection() throws Exception{
@@ -1443,7 +1420,7 @@ public class AnnotateNonTokenizedConcreteTest {
   // public void testNYTMessage() throws Exception {
   // Communication processedNYT = this.pipe.process(this.wonkyNYT);
   // new
-  // SuperCommunication(processedNYT).writeToFile("target/test-nyt-out.concrete",
+  // WritableCommunication(processedNYT).writeToFile("target/test-nyt-out.concrete",
   // true);
   // }
 

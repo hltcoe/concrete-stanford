@@ -25,7 +25,7 @@ import edu.jhu.hlt.acute.iterators.tar.TarGzArchiveEntryByteIterator;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
 import edu.jhu.hlt.concrete.analytics.base.SectionedCommunicationAnalytic;
-import edu.jhu.hlt.concrete.communications.SuperCommunication;
+import edu.jhu.hlt.concrete.communications.WritableCommunication;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.archiver.ArchivableCommunication;
@@ -113,7 +113,7 @@ public class ConcreteStanfordAnnotator {
         Communication annotated = pipe.annotate(c);
         String fileName = annotated.getId() + ".concrete";
         Path concreteOutPath = outPath.resolve(fileName);
-        new SuperCommunication(annotated).writeToFile(concreteOutPath, true);
+        new WritableCommunication(annotated).writeToFile(concreteOutPath, true);
       } else {
         int nElementsInitPath = initPath.getNameCount();
         Path inputFileName = initPath.getName(nElementsInitPath - 1);

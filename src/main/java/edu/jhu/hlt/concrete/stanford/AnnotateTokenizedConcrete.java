@@ -34,7 +34,7 @@ import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
 import edu.jhu.hlt.concrete.analytics.base.TokenizationedCommunicationAnalytic;
-import edu.jhu.hlt.concrete.communications.SuperCommunication;
+import edu.jhu.hlt.concrete.communications.WritableCommunication;
 import edu.jhu.hlt.concrete.miscommunication.MiscommunicationException;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
@@ -339,7 +339,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
             final Communication comm = cs
                 .fromInputStream(zf.getInputStream(ze));
             annotator.annotateWithStanfordNlp(comm);
-            new SuperCommunication(comm).writeToFile(
+            new WritableCommunication(comm).writeToFile(
                 zipfs.getPath(ze.getName()), true);
           }
         }
@@ -349,7 +349,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
       log.info("Annotating communication: " + inPath.getFileName());
       final Communication comm = cs.fromPath(inPath);
       annotator.annotateWithStanfordNlp(comm);
-      new SuperCommunication(comm).writeToFile(outPath, true);
+      new WritableCommunication(comm).writeToFile(outPath, true);
     } else {
       // This assumes directory --> directory
       // Write out to a directory.
@@ -369,7 +369,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
           log.info("Annotating communication: " + inFile.getFileName());
           final Communication comm = cs.fromPath(inFile);
           annotator.annotateWithStanfordNlp(comm);
-          new SuperCommunication(comm).writeToFile(
+          new WritableCommunication(comm).writeToFile(
               outPath.resolve(inFile.getFileName()), true);
         }
       }

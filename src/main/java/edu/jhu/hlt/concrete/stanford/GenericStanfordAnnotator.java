@@ -1,6 +1,5 @@
 package edu.jhu.hlt.concrete.stanford;
 
-import concrete.tools.AnnotationException;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
 import edu.jhu.hlt.concrete.util.ConcreteException;
@@ -14,7 +13,6 @@ public interface GenericStanfordAnnotator {
    * @return An annotated deep copy of the input Communication. The
    *         input Communication will be unchanged.
    * @throws ConcreteException
-   * @throws AnnotationException
    */
   public Communication process(Communication comm) throws AnalyticException;
 
