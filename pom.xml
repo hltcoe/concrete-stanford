@@ -142,6 +142,15 @@
             <configuration>
               <additionalparam>-Xdoclint:none</additionalparam>
             </configuration>
+            <executions>
+              <execution>
+                <id>attach-javadoc</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
           </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
