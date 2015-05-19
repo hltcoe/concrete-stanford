@@ -10,10 +10,15 @@
 
   <groupId>edu.jhu.hlt.concrete</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.4.3</version>
+  <version>4.4.4</version>
   <packaging>jar</packaging>
 
   <name>Concrete Stanford</name>
+
+  <properties>
+    <concrete.version>4.4.11</concrete.version>
+  </properties>
+
 
   <build>
     <plugins>
@@ -77,35 +82,35 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-ingesters-gigaword</artifactId>
-      <version>4.4.10</version>
+      <version>${concrete.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-ingesters-annotated-nyt</artifactId>
-      <version>4.4.10</version>
+      <version>${concrete.version}</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>miscommunication</artifactId>
-      <version>4.4.10</version>
+      <version>${concrete.version}</version>
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-util</artifactId>
-      <version>4.4.10</version>
+      <version>${concrete.version}</version>
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-validation</artifactId>
-      <version>4.4.10</version>
+      <version>${concrete.version}</version>
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-analytics-base</artifactId>
-      <version>4.4.10</version>
+      <version>${concrete.version}</version>
     </dependency>
     <dependency>
       <groupId>edu.stanford.nlp</groupId>
