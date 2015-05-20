@@ -58,11 +58,7 @@ import edu.stanford.nlp.util.CoreMap;
  */
 public class InMemoryAnnoPipeline {
 
-  private static final Logger logger = LoggerFactory
-      .getLogger(InMemoryAnnoPipeline.class);
-  // private static final String basedir =
-  // System.getProperty("InMemoryAnnoPipeline", "data");
-
+  private static final Logger logger = LoggerFactory.getLogger(InMemoryAnnoPipeline.class);
   private static final boolean do_deps = true;
   // Document counter.
   private int docCounter;
@@ -256,11 +252,6 @@ public class InMemoryAnnoPipeline {
           token.get(CharacterOffsetEndAnnotation.class));
     }
     stanfordSentence.set(CoreAnnotations.TokensAnnotation.class, sentTokens);
-    // List<CoreLabel> sectionTokens =
-    // stanfordSection.get(CoreAnnotations.TokensAnnotation.class);
-    // sectionTokens.addAll(sentTokens);
-    // stanfordSection.set(CoreAnnotations.TokensAnnotation.class,
-    // sectionTokens);
     CoreLabel lastToken = sentTokens.get(sentTokens.size() - 1);
     // reset the stanfordSection endpoint
     stanfordSection.set(CharacterOffsetEndAnnotation.class,
@@ -291,21 +282,6 @@ public class InMemoryAnnoPipeline {
     Annotation sentence = new Annotation(text);
     ptbTokenizerUnofficial.annotate(sentence);
     words2SentencesAnnotator.annotate(sentence);
-    // List<CoreMap> sentAnnos = sentence.get(SentencesAnnotation.class);
-    // for (CoreMap sentAnno : sentAnnos) {
-    // List<CoreLabel> sentTokens = sentAnno.get(TokensAnnotation.class);
-    // System.out.println("SENTENCEINDEXANNO = " +
-    // sentAnno.get(SentenceIndexAnnotation.class));
-
-    // for (CoreLabel token : sentTokens) {
-    // // note that character offsets are global
-    // String tokenText = token.get(TextAnnotation.class);
-    // System.out.println("token:<<" + tokenText + ">>");
-    // System.out.println("\toriginal:[[" + token.originalText() + "]]");
-    // System.out.println("\tbefore:<<" + token.before() + ">>");
-    // System.out.println("\tafter:<<" + token.after() + ">>");
-    // }
-    // }
     return sentence;
   }
 
