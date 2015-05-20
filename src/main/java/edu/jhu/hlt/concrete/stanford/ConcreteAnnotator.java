@@ -103,7 +103,7 @@ class ConcreteAnnotator {
     else if (language.equals("en")) {
       this.HEAD_FINDER = new SemanticHeadFinder();
     } else {
-      logger.warn("Do not support language "+language);
+      logger.warn("Do not support language {}", language);
       throw new IllegalArgumentException("Do not support language "+language);
     }
   }
@@ -155,8 +155,7 @@ class ConcreteAnnotator {
           + coreSentences.size() + " sentences. These values must agree.");
     }
     if (tokenizations.size() == 0) {
-      logger.warn("Communication " + in.getId()
-          + " has no valid tokenizations.");
+      logger.warn("Communication {} has no valid tokenizations.", in.getId());
     }
     EntityMentionSet ems = new EntityMentionSet()
         .setUuid(UUIDFactory.newUUID());
@@ -218,10 +217,13 @@ class ConcreteAnnotator {
             + " has a null CoreNLP sentences annotation");
       }
       final int n = sentAnnos.size();
-      logger.debug("Adding " + n + " sentences to section "
-          + sectToAnnotate.getUuid());
+      logger.debug("Adding {} sentences to section {}", n,
+          sectToAnnotate.getUuid());
       int currOffset = procCharOffset;
-      assert n > 0 : "n=" + n;
+      if (n <= 0)
+        throw new IllegalArgumentException("The number of sentence annotations was <= 0.");
+
+      // assert n > 0 : "n=" + n;
       int i = 0;
       for (CoreMap sentAnno : sentAnnos) {
         String sentText = flattenText(sentAnno);
@@ -337,9 +339,7 @@ class ConcreteAnnotator {
       p.setMetadata(md);
       constructConstituent(root, idCounter, left, right, n, p, tokenizationUUID);
       if (!p.isSetConstituentList()) {
-        logger
-            .warn("Setting constituent list to compensate for the empty parse for tokenization id"
-                + tokenizationUUID + " and tree " + root);
+        logger.warn("Setting constituent list to compensate for the empty parse for tokenization id {} and tree {}", tokenizationUUID, root);
         p.setConstituentList(new ArrayList<Constituent>());
       }
       return p;
@@ -377,9 +377,7 @@ class ConcreteAnnotator {
         try {
           headTree = HEAD_FINDER.determineHead(root);
         } catch (java.lang.IllegalArgumentException iae) {
-          logger.warn(
-              "Failed to find head, falling back on rightmost constituent.",
-              iae);
+          logger.warn("Failed to find head, falling back on rightmost constituent.", iae);
           headTree = root.children()[root.numChildren() - 1];
         }
       }
@@ -424,7 +422,7 @@ class ConcreteAnnotator {
       TextSpan rawTS = makeSafeSpan(firstToken.getRawTextSpan().getStart(),
           lastToken.getRawTextSpan().getEnding());
       concSent.setRawTextSpan(rawTS);
-      logger.debug("Setting sentence raw text span to : " + rawTS);
+      logger.debug("Setting sentence raw text span to : {}" , rawTS);
 
       if (charsFromStartOfCommunication < 0) {
         throw new AnalyticException("bad character offset of "
@@ -579,8 +577,7 @@ class ConcreteAnnotator {
       if (representative) {
         tb.setAnchorTokenIndex(head);
       }
-      logger.warn("Creating an EMPTY mention for mention " + coreMention
-          + " with UUID = " + tokUuid);
+      logger.warn("Creating an EMPTY mention for mention {}, UUID {}", coreMention, tokUuid);
       return tb;
     }
     return extractTokenRefSequence(start, end, head, tokUuid);
@@ -694,10 +691,10 @@ class ConcreteAnnotator {
     for (int i = 0; i < numTaggings; ++i) {
       tokenization.addToTokenTaggingList(tokenTaggingLists.get(i));
       if (tokenTaggingLists.get(i).getTaggedTokenListSize() != tokId) {
-        logger.warn("In Tokenization " + tokenization.getUuid()
-            + ", TokenTagging " + tokenTaggingLists.get(i).getTaggingType()
-            + " has " + tokenTaggingLists.get(i).getTaggedTokenListSize()
-            + " tagged tokens, but there are " + tokId + " recorded tokens.");
+        logger.warn("In Tokenization {}, TokenTagging {} has {} tagged tokens, but there are {} recorded tokens.", tokenization.getUuid(),
+            tokenTaggingLists.get(i).getTaggingType(),
+            tokenTaggingLists.get(i).getTaggedTokenListSize(),
+            tokId);
       }
     }
 
@@ -732,9 +729,8 @@ class ConcreteAnnotator {
    */
   public void augmentSentences(Section concSect, Annotation coreNlpSection,
       int procCurrOffset, StringBuilder sb) throws AnalyticException {
-    logger.debug("Section has : " + concSect.getSentenceList().size()
-        + " sentences");
-    logger.debug("convertSentences for " + concSect.getUuid());
+    logger.debug("Section has : {} sentences", concSect.getSentenceList().size());
+    logger.debug("convertSentences for {}", concSect.getUuid());
 
     List<CoreMap> sentAnnos = coreNlpSection.get(SentencesAnnotation.class);
     if (sentAnnos == null) {
@@ -746,8 +742,10 @@ class ConcreteAnnotator {
       throw new AnalyticException("Section " + concSect.getUuid() + " has "
           + concSect.getSentenceList().size() + " but corenlp has " + n);
     }
-    logger.debug("Adding " + n + " sentences to section " + concSect.getUuid());
-    assert n > 0 : "n=" + n;
+    logger.debug("Adding {} sentences to section {}", n, concSect.getUuid());
+    if (n <= 0)
+      throw new IllegalArgumentException("The number of sentences was <= 0.");
+    // assert n > 0 : "n=" + n;
     List<Sentence> concreteSentences = concSect.getSentenceList();
     ConcreteCreator cc = new ConcreteCreator();
     int whichBranch = 0, priorBranch = 0;
@@ -810,15 +808,13 @@ class ConcreteAnnotator {
       int numTokens = tokenList.size();
       if (!concSent.isSetRawTextSpan()) {
         logger
-            .warn("Concrete sentence "
-                + concSent.getUuid()
-                + " does not have raw text spans set. We can compute these on the fly, but something might be wrong.");
+            .warn("Concrete sentence {} does not have raw text spans set. We can compute these on the fly, but something might be wrong.", concSent.getUuid());
         Token firstToken = tokenList.get(0);
         Token lastToken = tokenList.get(numTokens - 1);
         TextSpan rawTS = makeSafeSpan(firstToken.getRawTextSpan().getStart(),
             lastToken.getRawTextSpan().getEnding());
         concSent.setRawTextSpan(rawTS);
-        logger.debug("Setting sentence raw text span to : " + rawTS);
+        logger.debug("Setting sentence raw text span to : {}", rawTS);
       }
       // and finally, add the sentence text to the string builder
       sb.append(sentText);

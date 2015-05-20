@@ -38,8 +38,7 @@ import edu.jhu.hlt.utilt.sys.SystemErrDisabler;
  */
 public class ConcreteStanfordAnnotator {
 
-  private static final Logger LOGGER = LoggerFactory
-      .getLogger(ConcreteStanfordAnnotator.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ConcreteStanfordAnnotator.class);
 
   private ConcreteStanfordAnnotator() {
   }
@@ -55,17 +54,14 @@ public class ConcreteStanfordAnnotator {
           .info("The second argument is a path to the output file, matching the input file "
               + "(if arg 1 == .concrete file, then output == .concrete file, etc.)");
       LOGGER.info("Example usage: ");
-      LOGGER.info(ConcreteStanfordAnnotator.class.getName() + " "
-          + "/path/to/.concrete/file /path/to/output/file");
+      LOGGER.info("{} /path/to/.concrete/file /path/to/output/file", ConcreteStanfordAnnotator.class.getName());
       System.exit(1);
     }
 
     String initPathStr = args[0];
     Path initPath = Paths.get(initPathStr);
     if (!Files.exists(initPath)) {
-      LOGGER.error(
-          "Path {} does not exist. Ensure it exists and re-run this program.",
-          initPathStr);
+      LOGGER.error("Path {} does not exist. Ensure it exists and re-run this program.", initPathStr);
       System.exit(1);
     }
 
@@ -76,8 +72,7 @@ public class ConcreteStanfordAnnotator {
         LOGGER.debug("Attempting to create output directory.");
         Files.createDirectories(outPath);
       } catch (IOException ioe) {
-        LOGGER
-            .error("Caught IOException while creating output directory.", ioe);
+        LOGGER.error("Caught IOException while creating output directory.", ioe);
         System.exit(1);
       }
     }
@@ -99,13 +94,11 @@ public class ConcreteStanfordAnnotator {
 
       // If no extention matches, exit.
       if (!isTarExt && !isTarGzExt && !isConcreteExt) {
-        LOGGER
-            .error("Input file extension was not '.concrete', '.tar', or '.tar.gz'; exiting.");
+        LOGGER.error("Input file extension was not '.concrete', '.tar', or '.tar.gz'; exiting.");
         System.exit(1);
       } else if (isConcreteExt) {
         // IF .concrete, run single communication.
-        LOGGER.info("Annotating single .concrete file at: {}",
-            initPath.toString());
+        LOGGER.info("Annotating single .concrete file at: {}", initPath.toString());
         byte[] inputBytes = Files.readAllBytes(initPath);
 
         Communication c = ser.fromBytes(inputBytes);
@@ -182,8 +175,7 @@ public class ConcreteStanfordAnnotator {
         }
       }
     } catch (IOException | ConcreteException | AnalyticException e) {
-      LOGGER.error(
-          "Caught exception while running StanfordAgigaPipe over archive.", e);
+      LOGGER.error("Caught exception while running StanfordAgigaPipe over archive.", e);
     }
   }
 }

@@ -194,7 +194,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
 
     List<CoreMap> sentences = mimicWordsToSentsAnnotator(sSents, comm.getText());
 
-    log.info("The tokenlist = " + sToks);
+    log.info("The tokenlist = {}", sToks);
     // log.info("The sentencelist = " + sentences);
     sSectionAnno.set(CoreAnnotations.TokensAnnotation.class, sToks);
     sSectionAnno.set(CoreAnnotations.SentencesAnnotation.class, sentences);
@@ -237,7 +237,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
         sb.append(sTok.word());
         sb.append(" ");
       }
-      log.debug("Converted sentence: " + sb.toString());
+      log.debug("Converted sentence: {}", sb.toString());
     }
     return sSent;
   }
@@ -276,7 +276,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
         }
         sentenceText = sb.toString();
       } else {
-        log.error("Do not support language " + language);
+        log.error("Do not support language {}", language);
         throw new IllegalArgumentException("Do not support language "
             + language);
       }
@@ -366,7 +366,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
 
       try (DirectoryStream<Path> stream = Files.newDirectoryStream(inPath)) {
         for (Path inFile : stream) {
-          log.info("Annotating communication: " + inFile.getFileName());
+          log.info("Annotating communication: {}", inFile.getFileName());
           final Communication comm = cs.fromPath(inFile);
           annotator.annotateWithStanfordNlp(comm);
           new WritableCommunication(comm).writeToFile(

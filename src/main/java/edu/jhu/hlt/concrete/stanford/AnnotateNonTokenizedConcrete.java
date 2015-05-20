@@ -178,13 +178,12 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
     String commText = comm.getOriginalText();
     StringBuilder sb = new StringBuilder();
     logger.debug("Annotating communication: {}", comm.getId());
-    logger.debug("\tuuid = " + comm.getUuid());
-    logger.debug("\ttype = " + comm.getType());
-    logger.debug("\tfull = " + commText);
+    logger.debug("\tuuid = {}", comm.getUuid());
+    logger.debug("\ttype = {}", comm.getType());
+    logger.debug("\tfull = {}", commText);
 
     List<Tokenization> tokenizations = new ArrayList<>();
     List<Section> sections = comm.getSectionList();
-    // List<Integer> numberOfSentences = new ArrayList<Integer>();
     Annotation documentAnnotation = getSeededDocumentAnnotation();
 
     int previousSectionEnding = 0;
@@ -199,7 +198,7 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
       charOffset += interSectionWhitespaceDifference;
 
       int sectionStartCharOffset = processedCharOffset;
-      logger.debug("new section, processed offset = " + sectionStartCharOffset);
+      logger.debug("new section, processed offset = {}", sectionStartCharOffset);
       TextSpan sts = section.getRawTextSpan();
       // 1) First *perform* the tokenization & sentence splits
       // Note we do this first, even before checking the content-type
@@ -229,9 +228,8 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
       int sectionStartCharOffset, List<Tokenization> tokenizations,
       StringBuilder sb) throws AnalyticException {
     logger.debug("Annotating Section: {}", section.getUuid());
-    logger.debug("\ttext = " + sectionText);
-    logger.debug("\tkind = " + section.getKind() + " in annotateNames: "
-        + this.kindsToProcessSet);
+    logger.debug("\ttext = {}", sectionText);
+    logger.debug("\tkind = {} in annotateNames: {}", section.getKind(), this.kindsToProcessSet);
     boolean allButCoref = kindsForNoCoref.contains(section.getKind());
     boolean allWithCoref = kindsToProcessSet.contains(section.getKind());
     if (!allWithCoref && !allButCoref) {
@@ -240,13 +238,13 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
       // Only tokenize & sentence split
       logger.debug("Special handling for section type {} section: {}",
           section.getKind(), section.getUuid());
-      logger.debug(">> SectionText=[" + sectionText + "]");
+      logger.debug(">> SectionText={}", sectionText);
       processSectionForNoCoref(section, sectionAnnotation,
           sectionStartCharOffset, sb);
     } else {
       // 2) Second, perform the other localized processing
       logger.debug("Additional processing on section: {}", section.getUuid());
-      logger.debug(">> SectionText=[" + sectionText + "]");
+      logger.debug(">> SectionText={}", sectionText);
       processSection(section, sectionAnnotation, documentAnnotation,
           sectionStartCharOffset, sb);
       addTokenizations(section, tokenizations);
@@ -261,9 +259,9 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
    * @param sectionText
    */
   private void basicProcessingOnly(Section section, Annotation sentenceSplitText, int sectionOffset, StringBuilder sb) throws AnalyticException {
-    logger.debug("tokenize/sent-split ONLY section: from " + sectionOffset + " to ");
+    logger.debug("tokenize/sent-split ONLY section: from {} ", sectionOffset);
     if (sentenceSplitText == null) {
-      logger.debug("" + sectionOffset);
+      logger.debug("{}", sectionOffset);
       return;
     }
 
@@ -273,19 +271,13 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
     addToConcrete.augmentSectionAnnotations(section, sentenceSplitText,
         sectionOffset, sb);
     setSectionTextSpan(section, sectionOffset, processedCharOffset, true);
-    // List<CoreLabel> sentTokens = sectionAnnotation.get(TokensAnnotation.class);
-    // for (CoreLabel badToken : sentTokens) {
-    //   updateCharOffsetSetToken(badToken, false, false);
-    // }
-
-    logger.debug("" + charOffset);
-    //logger.debug("\t" + sectionText);
+    logger.debug("{}", charOffset);
   }
 
   private void addTokenizations(Section section,
       List<Tokenization> tokenizations) {
     if (!section.isSetSentenceList()) {
-      logger.warn("Section " + section.getUuid() + " has no sentence list set");
+      logger.warn("Section {} has no sentence list set");
       return;
     }
     for (Sentence sentence : section.getSentenceList()) {
@@ -342,9 +334,7 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
 
     List<CoreMap> docSents = document.get(SentencesAnnotation.class);
     List<CoreLabel> docTokens = document.get(TokensAnnotation.class);
-    logger
-        .debug("converting list of CoreMap sentences to Annotations, starting at token offset "
-            + globalTokenOffset);
+    logger.debug("converting list of CoreMap sentences to Annotations, starting at token offset: {}", globalTokenOffset);
 
     List<CoreMap> sentAnnos = sectAnno.get(SentencesAnnotation.class);
     int maxCharEnding = -1;
@@ -369,22 +359,20 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
       sentAnno.set(TokenBeginAnnotation.class, globalTokenOffset);
       sentAnno.set(TokenEndAnnotation.class, tokenEnd);
       sentAnno.set(SentenceIndexAnnotation.class, sentenceCount++);
-      logger.debug("SENTENCEINDEXANNO = "
-          + sentAnno.get(SentenceIndexAnnotation.class));
+      logger.debug("SENTENCEINDEXANNO = {}", sentAnno.get(SentenceIndexAnnotation.class));
       globalTokenOffset = tokenEnd;
 
       for (CoreLabel token : sentTokens) {
         // note that character offsets are global
         updateCharOffsetSetToken(token, isFirst, true);
-        logger.debug("this token goes from "
-            + token.get(CharacterOffsetBeginAnnotation.class) + " to "
-            + token.get(CharacterOffsetEndAnnotation.class));
-        logger.debug("\toriginal:[[" + token.originalText() + "]]");
-        logger.debug("\tbefore:<<" + token.before() + ">>");
-        logger.debug("\tafter:<<" + token.after() + ">>");
-        if (isFirst) {
+        logger.debug("this token goes from {} to {}", token.get(CharacterOffsetBeginAnnotation.class),
+            token.get(CharacterOffsetEndAnnotation.class));
+        logger.debug("\toriginal:[[{}]]" , token.originalText());
+        logger.debug("\tbefore:<<{}>>", token.before());
+        logger.debug("\tafter:<<{}>>", token.after());
+        if (isFirst)
           isFirst = false;
-        }
+
       }
       // if there are > 1 sentence, then we need to account for any space in
       // between the Concrete sentences
@@ -405,12 +393,11 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
           CharacterOffsetEndAnnotation.class);
       sentAnno.set(CharacterOffsetEndAnnotation.class, endingSentCOff);
 
-      logger.debug("docTokens.size before = " + docTokens.size());
+      logger.debug("docTokens.size before = {}", docTokens.size());
       docTokens.addAll(sentTokens);
-      logger.debug("\t after = " + docTokens.size());
+      logger.debug("\t after = {}", docTokens.size());
       document.set(TokensAnnotation.class, docTokens);
-      logger.debug("\t retrieved = "
-          + document.get(TokensAnnotation.class).size());
+      logger.debug("\t retrieved = {}", document.get(TokensAnnotation.class).size());
       docSents.add(sentAnno);
       if (sentAnno.get(CharacterOffsetEndAnnotation.class) > maxCharEnding)
         maxCharEnding = sentAnno.get(CharacterOffsetEndAnnotation.class);
@@ -439,9 +426,7 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
       return;
     }
 
-    logger
-        .debug("converting list of CoreMap sentences to Annotations, starting at token offset "
-            + globalTokenOffset);
+    logger.debug("converting list of CoreMap sentences to Annotations, starting at token offset {}", globalTokenOffset);
 
     List<CoreMap> sentAnnos = sectAnno.get(SentencesAnnotation.class);
     int maxCharEnding = -1;
@@ -467,23 +452,22 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
       sentAnno.set(TokenBeginAnnotation.class, globalTokenOffset);
       sentAnno.set(TokenEndAnnotation.class, tokenEnd);
       // sentAnno.set(SentenceIndexAnnotation.class, sentenceCount++);
-      logger.debug("SENTENCEINDEXANNO = "
-          + sentAnno.get(SentenceIndexAnnotation.class));
+      logger.debug("SENTENCEINDEXANNO = {}", sentAnno.get(SentenceIndexAnnotation.class));
       globalTokenOffset = tokenEnd;
 
       for (CoreLabel token : sentTokens) {
         // note that character offsets are global
         // String tokenText = token.get(TextAnnotation.class);
         updateCharOffsetSetToken(token, isFirst, true);
-        logger.debug("this token goes from "
-            + token.get(CharacterOffsetBeginAnnotation.class) + " to "
+        logger.debug("this token goes from {} to {}",
+            token.get(CharacterOffsetBeginAnnotation.class),
             + token.get(CharacterOffsetEndAnnotation.class));
-        logger.debug("\toriginal:[[" + token.originalText() + "]]");
-        logger.debug("\tbefore:<<" + token.before() + ">>");
-        logger.debug("\tafter:<<" + token.after() + ">>");
-        if (isFirst) {
+        logger.debug("\toriginal:[[{}]]", token.originalText());
+        logger.debug("\tbefore:<<{}>>", token.before());
+        logger.debug("\tafter:<<{}>>" + token.after());
+        if (isFirst)
           isFirst = false;
-        }
+
       }
       // if there are > 1 sentence, then we need to account for any space in
       // between the Concrete sentences
@@ -527,10 +511,11 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
       int beforeLength = token.before().length();
       charOffset += beforeLength;
     }
-    logger.debug("[" + token.before() + ", " + token.before().length() + "] "
-        + "[" + token.originalText() + "]" + " [" + token.after() + ", "
-        + token.after().length() + "] :: " + charOffset + " --> "
-        + (charOffset + token.originalText().length()));
+
+    final String before = token.before();
+    final String after = token.after();
+    logger.debug("[{}, {}] [{}] [{}, {}] :: {} --> {}", before, before.length(), token.originalText(),
+        after, after.length(), charOffset, charOffset + token.originalText().length());
     token.set(CharacterOffsetBeginAnnotation.class, charOffset);
     charOffset += token.originalText().length();
     token.set(CharacterOffsetEndAnnotation.class, charOffset);
@@ -553,17 +538,15 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
     logger.debug("\t******Document sents*********");
     for (CoreMap sectSent : sectionSents) {
       int idx = sectSent.get(SentenceIndexAnnotation.class) - 1;
-      logger.debug("My index is " + idx + " ("
-          + sectSent.get(SentenceIndexAnnotation.class)
-          + "), and can access up to " + documentSents.size()
-          + " sentences globally");
+      logger.debug("My index is {} ({}), and can access up to {} sentences globally", idx,
+          sectSent.get(SentenceIndexAnnotation.class), documentSents.size());
       if (sectSent.containsKey(TreeAnnotation.class)) {
         CoreMap dSent = documentSents.get(idx);
         dSent.set(TreeAnnotation.class, sectSent.get(TreeAnnotation.class));
         logger.debug(dSent.get(TreeAnnotation.class).toString());
         logger.debug(dSent.get(TreeAnnotation.class).getLeaves().toString());
         logger.debug(sectSent.get(TokensAnnotation.class).toString());
-        logger.debug(idx + " --> " + dSent.get(TokensAnnotation.class));
+        logger.debug("{} --> {}", idx, dSent.get(TokensAnnotation.class));
       }
     }
   }

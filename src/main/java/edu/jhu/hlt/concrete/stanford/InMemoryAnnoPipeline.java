@@ -48,10 +48,10 @@ import edu.stanford.nlp.util.CoreMap;
 /**
  * An in-memory version of the Annotated Gigaword pipeline, using only the
  * Stanford CORE NLP tools.
- * 
+ *
  * This class allows AgigaDocument objects to be created entirely in-memory from
  * an (unannotated) input represented as a Stanford Annotation object.
- * 
+ *
  * @author mgormley
  * @author fferraro
  * @author npeng
@@ -139,7 +139,7 @@ public class InMemoryAnnoPipeline {
       pipeline = makeChinesePipeline();
       documentLevelStages = new String[] { "pos", "lemma", "parse" };
     } else {
-      logger.error("Do not support language: " + lang);
+      logger.error("Do not support language: {}", lang);
       throw new IllegalArgumentException("Do not support language: " + lang);
     }
     logger.debug("Done.");
@@ -164,9 +164,7 @@ public class InMemoryAnnoPipeline {
     props.setProperty("ssplit.boundaryTokenRegex", "[.]|[!?]+|[。]|[！？]+");
     logger.debug("Loading segmentation models and resources.");
 
-    props
-        .setProperty("pos.model",
-            "edu/stanford/nlp/models/pos-tagger/chinese-distsim/chinese-distsim.tagger");
+    props.setProperty("pos.model", "edu/stanford/nlp/models/pos-tagger/chinese-distsim/chinese-distsim.tagger");
     logger.debug("Loading pos models and resources.");
 
     props.setProperty("parse.model",
@@ -184,7 +182,7 @@ public class InMemoryAnnoPipeline {
   /**
    * This only performs tokenization and sentence-splitting on a block of text.
    * Part-of-speech tagging is handled elsewhere.
-   * 
+   *
    * @param text
    *          A block of text; perhaps multiple sentences.
    * @return An annotation object containing the tokenized and sentence-split
@@ -198,7 +196,7 @@ public class InMemoryAnnoPipeline {
       words2SentencesAnnotator.annotate(stanfordSection);
     } else {
       int sectionOffset = concSection.getRawTextSpan().getStart();
-      logger.debug("Text is :: [" + text + "]");
+      logger.debug("Text is :: [{}]",  text);
       stanfordSection.set(CharacterOffsetEndAnnotation.class, sectionOffset);
       stanfordSection.set(CoreAnnotations.TokensAnnotation.class,
           new ArrayList<CoreLabel>());
@@ -223,7 +221,7 @@ public class InMemoryAnnoPipeline {
   /**
    * This only performs tokenization and sentence-splitting on a block of text.
    * Part-of-speech tagging is handled elsewhere.
-   * 
+   *
    * @param text
    *          A block of text; perhaps multiple sentences.
    * @return An annotation object containing the tokenized and sentence-split
@@ -251,8 +249,7 @@ public class InMemoryAnnoPipeline {
     List<CoreLabel> sentTokens = stanfordSentence
         .get(CoreAnnotations.TokensAnnotation.class);
     for (CoreLabel token : sentTokens) {
-      logger.debug("" + token.get(CharacterOffsetBeginAnnotation.class)
-          + " ===> " + (token.get(CharacterOffsetBeginAnnotation.class)));
+      logger.debug("{} ===> {}", token.get(CharacterOffsetBeginAnnotation.class), (token.get(CharacterOffsetBeginAnnotation.class)));
       token.set(CharacterOffsetBeginAnnotation.class,
           token.get(CharacterOffsetBeginAnnotation.class));
       token.set(CharacterOffsetEndAnnotation.class,
@@ -268,8 +265,7 @@ public class InMemoryAnnoPipeline {
     // reset the stanfordSection endpoint
     stanfordSection.set(CharacterOffsetEndAnnotation.class,
         lastToken.get(CharacterOffsetEndAnnotation.class));
-    logger.debug("Setting section end = "
-        + lastToken.get(CharacterOffsetEndAnnotation.class));
+    logger.debug("Setting section end = {}", lastToken.get(CharacterOffsetEndAnnotation.class));
     // reset the stanfordSection token endpoints
     if (stanfordSection.get(CoreAnnotations.TokenEndAnnotation.class) == null) {
       stanfordSection.set(CoreAnnotations.TokenEndAnnotation.class, 0);
@@ -285,7 +281,7 @@ public class InMemoryAnnoPipeline {
   /**
    * Get as non-destructive a PTB tokenization and sentence splitting as
    * possible.
-   * 
+   *
    * @param text
    *          A block of text; perhaps multiple sentences.
    * @return An annotation object containing the tokenized and sentence-split
@@ -334,9 +330,8 @@ public class InMemoryAnnoPipeline {
     }
     logger.debug("Local processing annotation keys :: {}", annotation.keySet()
         .toString());
-    logger.debug("annotation has "
-        + annotation.get(SentencesAnnotation.class).size());
-    logger.debug("annotation has " + annotation.get(SentencesAnnotation.class));
+    logger.debug("annotation has {}", annotation.get(SentencesAnnotation.class).size());
+    logger.debug("annotation has {}", annotation.get(SentencesAnnotation.class));
     return exceptionThrown;
   }
 
@@ -347,7 +342,7 @@ public class InMemoryAnnoPipeline {
   private boolean annotateCoref(StanfordCoreNLP pipeline, Annotation annotation)
       throws IOException {
     String stage = "dcoref";
-    logger.debug("DEBUG: annotation stage = " + stage);
+    logger.debug("DEBUG: annotation stage = {}", stage);
     fixNullDependencyGraphs(annotation);
     boolean exceptionThrown = false;
     try {
@@ -361,19 +356,16 @@ public class InMemoryAnnoPipeline {
     // does not include root annotation, and format is different from
     // AnnotatedGigaword)
     for (CoreMap sentence : annotation.get(SentencesAnnotation.class)) {
-        try {
-            if (sentence.containsKey(TreeAnnotation.class)) {
-                fillInParseAnnotations(false, sentence,
-                                       sentence.get(TreeAnnotation.class));
-            }
-        } catch (Exception e) {
-            logger
-                .warn("In stanfordToXML. Error filling in parse annotation for sentence "
-                      + sentence);
+      try {
+        if (sentence.containsKey(TreeAnnotation.class)) {
+          fillInParseAnnotations(false, sentence, sentence.get(TreeAnnotation.class));
         }
+      } catch (Exception e) {
+        logger.warn("In stanfordToXML. Error filling in parse annotation for sentence {}", sentence);
+      }
 
     }
-    logger.debug("annotation keys :: " + annotation.keySet().toString());
+    logger.debug("annotation keys :: {}", annotation.keySet().toString());
     return exceptionThrown;
   }
 
@@ -414,10 +406,10 @@ public class InMemoryAnnoPipeline {
   /**
    * NOTICE: Copied and modified version from
    * edu.jhu.annotation.GigawordAnnotator.
-   * 
+   *
    * Create the XML document, using the base StanfordCoreNLP default and adding
    * custom dependency representations (to include root elements)
-   * 
+   *
    * @param anno
    *          Document to be output as XML
    * @throws IOException
@@ -464,13 +456,10 @@ public class InMemoryAnnoPipeline {
       for (CoreMap sentence : anno.get(SentencesAnnotation.class)) {
         try {
           if (sentence.containsKey(TreeAnnotation.class)) {
-            fillInParseAnnotations(false, sentence,
-                sentence.get(TreeAnnotation.class));
+            fillInParseAnnotations(false, sentence, sentence.get(TreeAnnotation.class));
           }
         } catch (Exception e) {
-          logger
-              .warn("In stanfordToXML. Error filling in parse annotation for sentence "
-                  + sentence);
+          logger.warn("In stanfordToXML. Error filling in parse annotation for sentence {}", sentence);
         }
 
       }
@@ -494,12 +483,10 @@ public class InMemoryAnnoPipeline {
               SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class)
               | sentences
                   .get(i)
-                  .containsKey(
-                      SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation.class)
+                  .containsKey(SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation.class)
               | sentences
                   .get(i)
-                  .containsKey(
-                      SemanticGraphCoreAnnotations.CollapsedCCProcessedDependenciesAnnotation.class);
+                  .containsKey(SemanticGraphCoreAnnotations.CollapsedCCProcessedDependenciesAnnotation.class);
           if (atLeastOne) {
             depElem.removeChildren();
             depElem.setLocalName(type);
@@ -507,18 +494,15 @@ public class InMemoryAnnoPipeline {
             if (type.equals("basic-dependencies"))
               semGraph = sentences
                   .get(i)
-                  .get(
-                      SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
+                  .get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
             else if (type.equals("collapsed-dependencies"))
               semGraph = sentences
                   .get(i)
-                  .get(
-                      SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation.class);
+                  .get(SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation.class);
             else if (type.equals("collapsed-ccprocessed-dependencies"))
               semGraph = sentences
                   .get(i)
-                  .get(
-                      SemanticGraphCoreAnnotations.CollapsedCCProcessedDependenciesAnnotation.class);
+                  .get(SemanticGraphCoreAnnotations.CollapsedCCProcessedDependenciesAnnotation.class);
             else
               throw new RuntimeException("unknown dependency type " + type);
             addDependencyToXML(semGraph, depElem);
@@ -533,10 +517,10 @@ public class InMemoryAnnoPipeline {
   /**
    * NOTICE: Copied and modified version from
    * edu.jhu.annotation.GigawordAnnotator.
-   * 
+   *
    * Create the XML document, using the base StanfordCoreNLP default and adding
    * custom dependency representations (to include root elements)
-   * 
+   *
    * @param anno
    *          Document to be output as XML
    * @throws IOException
@@ -575,12 +559,9 @@ public class InMemoryAnnoPipeline {
 
     for (CoreMap sentence : anno.get(SentencesAnnotation.class)) {
       try {
-        fillInParseAnnotations(false, sentence,
-            sentence.get(TreeAnnotation.class));
+        fillInParseAnnotations(false, sentence, sentence.get(TreeAnnotation.class));
       } catch (Exception e) {
-        logger
-            .warn("In corefToXML. Error filling in parse annotation for sentence "
-                + sentence);
+        logger.warn("In corefToXML. Error filling in parse annotation for sentence {}", sentence);
       }
     }
 
@@ -589,10 +570,10 @@ public class InMemoryAnnoPipeline {
 
   /**
    * NOTICE: Copied from edu.jhu.annotation.GigawordAnnotator.
-   * 
+   *
    * add dependency relations to the XML. adapted from StanfordCoreNLP to add
    * root dependency and change format
-   * 
+   *
    * @param semGraph
    *          the dependency graph
    * @param parentElem
