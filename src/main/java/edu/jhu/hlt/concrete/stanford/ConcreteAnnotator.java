@@ -697,7 +697,6 @@ class ConcreteAnnotator {
             tokId);
       }
     }
-
   }
 
   /**

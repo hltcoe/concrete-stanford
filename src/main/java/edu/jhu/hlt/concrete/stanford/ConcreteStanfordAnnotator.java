@@ -102,11 +102,12 @@ public class ConcreteStanfordAnnotator {
         byte[] inputBytes = Files.readAllBytes(initPath);
 
         Communication c = ser.fromBytes(inputBytes);
-        SectionedCommunicationAnalytic pipe = new AnnotateNonTokenizedConcrete();
-        Communication annotated = pipe.annotate(c);
-        String fileName = annotated.getId() + ".concrete";
+        SectionedCommunicationAnalytic<StanfordPostNERCommunication> pipe = new AnnotateNonTokenizedConcrete();
+        StanfordPostNERCommunication annotated = pipe.annotate(c);
+        Communication ar = annotated.getRoot();
+        String fileName = ar.getId() + ".concrete";
         Path concreteOutPath = outPath.resolve(fileName);
-        new WritableCommunication(annotated).writeToFile(concreteOutPath, true);
+        new WritableCommunication(ar).writeToFile(concreteOutPath, true);
       } else {
         int nElementsInitPath = initPath.getNameCount();
         Path inputFileName = initPath.getName(nElementsInitPath - 1);
@@ -128,7 +129,7 @@ public class ConcreteStanfordAnnotator {
           else
             iter = new TarGzArchiveEntryByteIterator(bis);
 
-          SectionedCommunicationAnalytic pipe = null;
+          SectionedCommunicationAnalytic<StanfordPostNERCommunication> pipe = null;
           StopWatch sw = null;
           int docCtr = 0;
           if (iter.hasNext()) {
@@ -137,8 +138,8 @@ public class ConcreteStanfordAnnotator {
             LOGGER.info("Iterating over archive: {}", initPath.toString());
             sw = new StopWatch();
             sw.start();
-            Communication annot = pipe.annotate(comm);
-            archiver.addEntry(new ArchivableCommunication(annot));
+            StanfordPostNERCommunication annot = pipe.annotate(comm);
+            archiver.addEntry(new ArchivableCommunication(annot.getRoot()));
             docCtr++;
           } else {
             LOGGER.info("Iterating over archive: {}", initPath.toString());
@@ -149,8 +150,8 @@ public class ConcreteStanfordAnnotator {
           while (iter.hasNext()) {
             Communication n = ser.fromBytes(iter.next());
             LOGGER.info("Annotating communication: {}", n.getId());
-            Communication a = pipe.annotate(n);
-            archiver.addEntry(new ArchivableCommunication(a));
+            StanfordPostNERCommunication a = pipe.annotate(n);
+            archiver.addEntry(new ArchivableCommunication(a.getRoot()));
             docCtr++;
           }
 

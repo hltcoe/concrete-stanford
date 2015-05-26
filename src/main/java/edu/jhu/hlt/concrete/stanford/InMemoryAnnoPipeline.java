@@ -300,7 +300,7 @@ public class InMemoryAnnoPipeline {
           fixNullDependencyGraphs(annotation);
         }
       } catch (Exception e) {
-        logger.warn("Error annotating stage: {}" + stage);
+        logger.warn("Error annotating stage: {}", stage);
         exceptionThrown = true;
       }
     }

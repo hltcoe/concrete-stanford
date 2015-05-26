@@ -64,7 +64,7 @@ import edu.stanford.nlp.util.CoreMap;
  * @author mgormley
  * @author npeng
  */
-public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAnalytic {
+public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAnalytic<StanfordPreNERCommunication> {
 
   private static final Logger log = LoggerFactory
       .getLogger(AnnotateTokenizedConcrete.class);
@@ -106,7 +106,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
         int procCharOffset = cSection.getTextSpan().getStart();
         ca.augmentSectionAnnotations(cSection, sSectionAnno, procCharOffset, sb);
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        throw new AnalyticException(e);
       }
     }
   }
@@ -477,7 +477,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
    * @see edu.jhu.hlt.concrete.analytics.base.Analytic#annotate(edu.jhu.hlt.concrete.Communication)
    */
   @Override
-  public Communication annotate(Communication arg0) throws AnalyticException {
+  public StanfordPreNERCommunication annotate(Communication arg0) throws AnalyticException {
     try {
       return this.annotate(new CachedTokenizationCommunication(arg0));
     } catch (MiscommunicationException e) {
@@ -513,9 +513,13 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
    * @see edu.jhu.hlt.concrete.analytics.base.TokenizationedCommunicationAnalytic#annotate(edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication)
    */
   @Override
-  public Communication annotate(TokenizedCommunication arg0) throws AnalyticException {
+  public StanfordPreNERCommunication annotate(TokenizedCommunication arg0) throws AnalyticException {
     Communication cpy = new Communication(arg0.getRoot());
     annotateWithStanfordNlp(cpy);
-    return cpy;
+    try {
+      return new StanfordPreNERCommunication(cpy);
+    } catch (MiscommunicationException e) {
+      throw new AnalyticException(e);
+    }
   }
 }

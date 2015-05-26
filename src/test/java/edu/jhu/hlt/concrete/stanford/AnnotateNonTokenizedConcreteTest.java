@@ -141,7 +141,7 @@ public class AnnotateNonTokenizedConcreteTest {
   public void processPassages() throws Exception {
     new CachedSectionedCommunication(this.randomTestComm);
 
-    Communication nc = this.pipe.process(this.randomTestComm);
+    Communication nc = this.pipe.annotate(this.randomTestComm).getRoot();
     assertTrue(nc.isSetEntityMentionSetList());
     assertTrue(nc.isSetEntitySetList());
     new WritableCommunication(nc).writeToFile(this.tf.getRoot().toPath().resolve("entities.concrete"), true);
@@ -161,10 +161,11 @@ public class AnnotateNonTokenizedConcreteTest {
     c.addToSectionList(SingleSectionSegmenter.createSingleSection(c, "Passage"));
     new CachedSectionedCommunication(c);
 
-    Communication nc = this.pipe.process(c);
-    assertTrue(nc.isSetEntityMentionSetList());
-    assertTrue(nc.isSetEntitySetList());
-    new WritableCommunication(nc).writeToFile(this.tf.getRoot().toPath().resolve("post-stanford_garbage_processed.concrete"), true);
+    StanfordPostNERCommunication nc = this.pipe.annotate(c);
+    Communication root = nc.getRoot();
+    assertTrue(root.isSetEntityMentionSetList());
+    assertTrue(root.isSetEntitySetList());
+    new WritableCommunication(root).writeToFile(this.tf.getRoot().toPath().resolve("post-stanford_garbage_processed.concrete"), true);
   }
 
   /**
@@ -193,7 +194,7 @@ public class AnnotateNonTokenizedConcreteTest {
     assertTrue("Error in creating original communication",
         cs.toBytes(shakeHandComm) != null);
 
-    Communication processedShakeHandComm = pipe.process(shakeHandComm);
+    Communication processedShakeHandComm = pipe.annotate(shakeHandComm).getRoot();
     assertTrue("Error in serializing processed communication",
         cs.toBytes(processedShakeHandComm) != null);
     final String docText = processedShakeHandComm.getOriginalText();
@@ -506,7 +507,7 @@ public class AnnotateNonTokenizedConcreteTest {
 
   @Test
   public void processAFPComm() throws Exception {
-    Communication afpProcessedComm = this.pipe.process(this.mapped);
+    Communication afpProcessedComm = this.pipe.annotate(this.mapped).getRoot();
     final String processedText = afpProcessedComm.getText();
     final String processedRawText = afpProcessedComm.getOriginalText();
 
@@ -647,7 +648,7 @@ public class AnnotateNonTokenizedConcreteTest {
    */
   @Test
   public void process1999NYTComm() throws Exception {
-    Communication nytProcessedComm = this.pipe.process(this.nyt1999);
+    Communication nytProcessedComm = this.pipe.annotate(this.nyt1999).getRoot();
     final String processedText = nytProcessedComm.getText();
     final String processedRawText = nytProcessedComm.getOriginalText();
 
@@ -758,7 +759,7 @@ public class AnnotateNonTokenizedConcreteTest {
     assertTrue("Error in creating original communication",
         cs.toBytes(shakeHandComm) != null);
 
-    Communication processedShakeHandComm = pipe.process(shakeHandComm);
+    Communication processedShakeHandComm = pipe.annotate(shakeHandComm).getRoot();
     assertTrue("Error in serializing processed communication",
         cs.toBytes(processedShakeHandComm) != null);
     final String docText = processedShakeHandComm.getOriginalText();
@@ -938,7 +939,7 @@ public class AnnotateNonTokenizedConcreteTest {
     assertTrue("Error in creating original communication",
         cs.toBytes(shakeHandComm) != null);
 
-    Communication processedShakeHandComm = pipe.process(shakeHandComm);
+    Communication processedShakeHandComm = pipe.annotate(shakeHandComm).getRoot();
     assertTrue("Error in serializing processed communication",
         cs.toBytes(processedShakeHandComm) != null);
     final String docText = processedShakeHandComm.getOriginalText();
@@ -1129,7 +1130,7 @@ public class AnnotateNonTokenizedConcreteTest {
     assertTrue("Error in creating original communication",
         cs.toBytes(shakeHandComm) != null);
 
-    Communication processedShakeHandComm = pipe.process(shakeHandComm);
+    Communication processedShakeHandComm = pipe.annotate(shakeHandComm).getRoot();
     assertTrue("Error in serializing processed communication",
         cs.toBytes(processedShakeHandComm) != null);
     final String docText = processedShakeHandComm.getOriginalText();

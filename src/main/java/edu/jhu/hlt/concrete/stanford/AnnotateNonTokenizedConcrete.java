@@ -30,6 +30,7 @@ import edu.jhu.hlt.concrete.analytics.base.SectionedCommunicationAnalytic;
 import edu.jhu.hlt.concrete.communications.PerspectiveCommunication;
 import edu.jhu.hlt.concrete.miscommunication.MiscommunicationException;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunication;
+import edu.jhu.hlt.concrete.miscommunication.sectioned.NonSentencedSectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.SectionedCommunication;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.Timing;
@@ -47,7 +48,7 @@ import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.util.CoreMap;
 
-public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnalytic {
+public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnalytic<StanfordPostNERCommunication> {
 
   private static final Logger logger = LoggerFactory
       .getLogger(AnnotateNonTokenizedConcrete.class);
@@ -121,31 +122,6 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
     this.pipeline = new InMemoryAnnoPipeline();
     this.allowEmptyEntitiesAndEntityMentions = allowEmptyMentions;
     this.language = "en";
-  }
-
-  public Communication process(Communication comm) throws ConcreteException, AnalyticException {
-    PerspectiveCommunication pc = new PerspectiveCommunication(comm,
-        "PerspectiveCreator");
-    Communication persp = pc.getPerspective();
-
-    // hopefully MD is never null
-    // The Optional.ofNullable can be removed due to the validator object,
-    // but keeping it around won't hurt.
-    AnnotationMetadata md = Optional.ofNullable(persp.getMetadata()).orElse(
-        new AnnotationMetadata());
-    String csToolName = ProjectConstants.PROJECT_NAME + " "
-        + ProjectConstants.VERSION;
-    String newToolName = csToolName + " perspective";
-
-    String mdToolName = md.isSetTool() ? md.getTool() : "";
-    if (!mdToolName.isEmpty())
-      newToolName += " on old tool: " + mdToolName;
-
-    md.setTool(newToolName);
-    persp.setMetadata(md);
-    resetGlobals();
-    this.annotateSects(persp);
-    return persp;
   }
 
   /**
@@ -294,7 +270,7 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
    * <li>constituency and dependency parsing, and</li>
    * <li>named entity recognition.</li>
    * </ul>
-   * Note that corefence resolution is done only once all contentful sections
+   * Note that coreference resolution is done only once all contentful sections
    * have been properly annotated.
    *
    * @throws AnalyticException
@@ -773,7 +749,7 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
    * @see edu.jhu.hlt.concrete.analytics.base.Analytic#annotate(edu.jhu.hlt.concrete.Communication)
    */
   @Override
-  public Communication annotate(Communication arg0) throws AnalyticException {
+  public StanfordPostNERCommunication annotate(Communication arg0) throws AnalyticException {
     try {
       return this.annotate(new CachedSectionedCommunication(arg0));
     } catch (MiscommunicationException e) {
@@ -805,11 +781,22 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
     return ProjectConstants.VERSION;
   }
 
+  /**
+   * @param comm
+   *          a {@link Communication} with {@link Section}s, but whose sections do not contain {@link Sentence}s
+   * @return a {@link Communication} with stanford annotations
+   * @throws AnalyticException
+   *           on analytic error
+   */
+  public StanfordPostNERCommunication annotate(NonSentencedSectionedCommunication comm) throws AnalyticException {
+    return this.annotate(comm);
+  }
+
   /* (non-Javadoc)
    * @see edu.jhu.hlt.concrete.analytics.base.SectionedCommunicationAnalytic#annotate(edu.jhu.hlt.concrete.miscommunication.sectioned.SectionedCommunication)
    */
   @Override
-  public Communication annotate(SectionedCommunication arg0) throws AnalyticException {
+  public StanfordPostNERCommunication annotate(SectionedCommunication arg0) throws AnalyticException {
     try {
       PerspectiveCommunication pc = new PerspectiveCommunication(arg0.getRoot(),
           "PerspectiveCreator");
@@ -832,10 +819,8 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
       persp.setMetadata(md);
       resetGlobals();
       this.annotateSects(persp);
-      return persp;
-    } catch (ConcreteException e) {
-      throw new AnalyticException(e);
-    } catch (AnalyticException e) {
+      return new StanfordPostNERCommunication(persp);
+    } catch (ConcreteException | MiscommunicationException e) {
       throw new AnalyticException(e);
     }
   }
