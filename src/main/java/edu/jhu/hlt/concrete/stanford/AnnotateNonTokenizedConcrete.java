@@ -126,7 +126,7 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
 
     this.pipeline = new InMemoryAnnoPipeline();
     this.allowEmptyEntitiesAndEntityMentions = allowEmptyMentions;
-    this.language = Languages.EN;
+    this.language = Languages.ENGLISH;
   }
 
   /**

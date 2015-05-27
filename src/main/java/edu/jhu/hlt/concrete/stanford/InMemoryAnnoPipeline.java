@@ -98,7 +98,7 @@ public class InMemoryAnnoPipeline {
       "strictTreebank3=false"; // default
 
   public enum Languages {
-    EN ("en") {
+    ENGLISH ("en") {
       @Override
       public String[] getDocumentLevelStages() {
         return new String[] { "pos", "lemma", "parse", "ner" };
@@ -125,7 +125,7 @@ public class InMemoryAnnoPipeline {
         return new SemanticHeadFinder();
       }
     },
-    CN ("cn") {
+    CHINESE ("cn") {
       @Override
       public String[] getDocumentLevelStages() {
         return new String[] { "pos", "lemma", "parse", "ner" };

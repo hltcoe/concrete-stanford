@@ -71,7 +71,7 @@ public class NonPTBTextTest {
 
     assertTrue(new CommunicationValidator(chineseComm).validate());
 
-    AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete(Languages.CN);
+    AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete(Languages.CHINESE);
     atc.annotateWithStanfordNlp(chineseComm);
     assertTrue(tokenization.isSetParseList());
     assertEquals(1, tokenization.getParseListSize());
@@ -112,7 +112,7 @@ public class NonPTBTextTest {
     tokenization.setTokenTaggingList(new ArrayList<>());
     sentence.setTokenization(tokenization);
     assertTrue(new CommunicationValidator(englishComm).validate());
-    AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete(Languages.EN);
+    AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete(Languages.ENGLISH);
     atc.annotateWithStanfordNlp(englishComm);
     String[] expectedTokens = englishText1.split(" +");
     assertEquals(expectedTokens.length, tokenList.getTokenListSize());

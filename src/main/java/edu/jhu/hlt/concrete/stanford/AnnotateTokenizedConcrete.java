@@ -6,18 +6,14 @@ package edu.jhu.hlt.concrete.stanford;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -257,10 +253,10 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
           .get(CharacterOffsetEndAnnotation.class);
       String sentenceText = "";
       switch (this.lang) {
-      case EN:
+      case ENGLISH:
         sentenceText = text.substring(begin, end);
         break;
-      case CN:
+      case CHINESE:
         StringBuilder sb = new StringBuilder();
         int cnt = 0;
         for (CoreLabel token : sentenceTokens) {
@@ -314,23 +310,24 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
     CommunicationSerializer cs = new CompactCommunicationSerializer();
     AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete(language);
 
-    if (args[0].endsWith(".zip") && args[1].endsWith(".zip")) {
-      // Write out to a zip file.
-      try (FileSystem zipfs = getNewZipFileSystem(outPath)) {
-        try (ZipFile zf = new ZipFile(inPath.toFile())) {
-          Enumeration<? extends ZipEntry> e = zf.entries();
-          while (e.hasMoreElements()) {
-            ZipEntry ze = e.nextElement();
-            log.info("Annotating communication: " + ze.getName());
-            final Communication comm = cs
-                .fromInputStream(zf.getInputStream(ze));
-            annotator.annotateWithStanfordNlp(comm);
-            new WritableCommunication(comm).writeToFile(
-                zipfs.getPath(ze.getName()), true);
-          }
-        }
-      }
-    } else if (args[0].endsWith(".comm") && args[1].endsWith(".comm")) {
+//    if (args[0].endsWith(".zip") && args[1].endsWith(".zip")) {
+//      // Write out to a zip file.
+//      try (FileSystem zipfs = getNewZipFileSystem(outPath)) {
+//        try (ZipFile zf = new ZipFile(inPath.toFile())) {
+//          Enumeration<? extends ZipEntry> e = zf.entries();
+//          while (e.hasMoreElements()) {
+//            ZipEntry ze = e.nextElement();
+//            log.info("Annotating communication: " + ze.getName());
+//            final Communication comm = cs
+//                .fromInputStream(zf.getInputStream(ze));
+//            annotator.annotateWithStanfordNlp(comm);
+//            new WritableCommunication(comm).writeToFile(
+//                zipfs.getPath(ze.getName()), true);
+//          }
+//        }
+//      }
+//    } else
+      if (args[0].endsWith(".comm") && args[1].endsWith(".comm")) {
       // Write out to a file.
       log.info("Annotating communication: " + inPath.getFileName());
       final Communication comm = cs.fromPath(inPath);
