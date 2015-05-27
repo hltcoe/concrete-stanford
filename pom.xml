@@ -10,13 +10,13 @@
 
   <groupId>edu.jhu.hlt.concrete</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.5.0-SNAPSHOT</version>
+  <version>4.5.0</version>
   <packaging>jar</packaging>
 
   <name>Concrete Stanford</name>
 
   <properties>
-    <concrete.version>4.5.2-SNAPSHOT</concrete.version>
+    <concrete.version>4.5.2</concrete.version>
   </properties>
 
 
