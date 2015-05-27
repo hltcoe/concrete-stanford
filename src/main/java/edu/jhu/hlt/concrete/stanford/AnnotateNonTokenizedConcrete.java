@@ -62,14 +62,14 @@ public class AnnotateNonTokenizedConcrete implements NonSentencedSectionedCommun
       + "       --annotate-sections <comma-separated-list of type names> (default: PASSAGE)\n"
       + "       --debug\n\t\tto print debugging messages (default: false)\n";
 
-  private static final String[] defaultKindsToFullyProcess = new String[] { "Passage" };
   private static final String[] defaultKindsNoCoref = new String[] { "Title",
       "Dateline" };
+  private static final String[] defaultKindsToNotProcess = new String[] { };
 
   private int sentenceCount = 1; // for flat files, no document structure
 
   private final InMemoryAnnoPipeline pipeline;
-  private final Set<String> kindsToProcessSet;
+  private final Set<String> kindsToSkipSet;
   private final Set<String> kindsForNoCoref;
 
   private PipelineLanguage language;
@@ -106,24 +106,24 @@ public class AnnotateNonTokenizedConcrete implements NonSentencedSectionedCommun
   }
 
   public AnnotateNonTokenizedConcrete() {
-    this(PipelineLanguage.ENGLISH, Arrays.asList(defaultKindsToFullyProcess), Arrays
+    this(PipelineLanguage.ENGLISH, Arrays.asList(defaultKindsToNotProcess), Arrays
         .asList(defaultKindsNoCoref), true);
   }
 
   public AnnotateNonTokenizedConcrete(PipelineLanguage lang) {
-    this(lang, Arrays.asList(defaultKindsToFullyProcess), Arrays
+    this(lang, Arrays.asList(defaultKindsToNotProcess), Arrays
         .asList(defaultKindsNoCoref), true);
   }
 
-  public AnnotateNonTokenizedConcrete(PipelineLanguage lang, Collection<String> typesToAnnotate,
+  public AnnotateNonTokenizedConcrete(PipelineLanguage lang, Collection<String> typesToSkip,
       Collection<String> typesToTokenizeOnly, boolean allowEmptyMentions) {
-    this.kindsToProcessSet = new HashSet<>();
-    this.kindsToProcessSet.addAll(typesToAnnotate);
+    this.kindsToSkipSet = new HashSet<>();
+    this.kindsToSkipSet.addAll(typesToSkip);
 
     this.kindsForNoCoref = new HashSet<>();
     this.kindsForNoCoref.addAll(typesToTokenizeOnly);
 
-    this.language = PipelineLanguage.ENGLISH;
+    this.language = lang;
     this.pipeline = new InMemoryAnnoPipeline(this.language);
     this.allowEmptyEntitiesAndEntityMentions = allowEmptyMentions;
   }
@@ -209,10 +209,10 @@ public class AnnotateNonTokenizedConcrete implements NonSentencedSectionedCommun
       StringBuilder sb) throws AnalyticException {
     logger.debug("Annotating Section: {}", section.getUuid());
     logger.debug("\ttext = {}", sectionText);
-    logger.debug("\tkind = {} in annotateNames: {}", section.getKind(), this.kindsToProcessSet);
+    logger.debug("\tkind = {} in annotateNames: {}", section.getKind(), this.kindsToSkipSet);
     boolean allButCoref = kindsForNoCoref.contains(section.getKind());
-    boolean allWithCoref = kindsToProcessSet.contains(section.getKind());
-    if (!allWithCoref && !allButCoref) {
+    boolean basicProcessing = kindsToSkipSet.contains(section.getKind());
+    if (basicProcessing) {
       basicProcessingOnly(section, sectionAnnotation, sectionStartCharOffset, sb);
     } else if (allButCoref) {
       // Only tokenize & sentence split
@@ -653,7 +653,7 @@ public class AnnotateNonTokenizedConcrete implements NonSentencedSectionedCommun
   }
 
   public Set<String> getSectionTypesToAnnotate() {
-    return new HashSet<>(this.kindsToProcessSet);
+    return new HashSet<>(this.kindsToSkipSet);
   }
 
   /**
