@@ -32,7 +32,6 @@ import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommuni
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
-import edu.jhu.hlt.concrete.stanford.InMemoryAnnoPipeline.Languages;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.Timing;
 import edu.stanford.nlp.ling.CoreAnnotations;
@@ -64,14 +63,14 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
 
   private final InMemoryAnnoPipeline pipeline;
   // private final String language;
-  private final Languages lang;
+  private final PipelineLanguage lang;
 
   private final static String[] ChineseSectionName = new String[] { "</TURN>",
       "</HEADLINE>", "</TEXT>", "</POST>", "</post>", "</quote>" };
   private static Set<String> ChineseSectionNameSet = new HashSet<String>(
       Arrays.asList(ChineseSectionName));
 
-  public AnnotateTokenizedConcrete(Languages lang) {
+  public AnnotateTokenizedConcrete(PipelineLanguage lang) {
     log.info("Loading models for Stanford tools");
     this.lang = lang;
     this.pipeline = new InMemoryAnnoPipeline(lang);
@@ -306,7 +305,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
     if (args.length >= 3) {
       lang = args[2];
     }
-    Languages language = Languages.getEnumeration(lang);
+    PipelineLanguage language = PipelineLanguage.getEnumeration(lang);
     CommunicationSerializer cs = new CompactCommunicationSerializer();
     AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete(language);
 

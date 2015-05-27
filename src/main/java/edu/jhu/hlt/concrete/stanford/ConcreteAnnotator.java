@@ -35,7 +35,6 @@ import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.TokenizationKind;
 import edu.jhu.hlt.concrete.UUID;
 import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
-import edu.jhu.hlt.concrete.stanford.InMemoryAnnoPipeline.Languages;
 import edu.jhu.hlt.concrete.util.Timing;
 import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 import edu.jhu.hlt.concrete.validation.ValidatableTextSpan;
@@ -79,11 +78,11 @@ class ConcreteAnnotator {
 
   private final String[] annotatorList;
 
-  public ConcreteAnnotator(Languages language) {
+  public ConcreteAnnotator(PipelineLanguage language) {
     this(language, ConcreteAnnotator.getDefaultAnnotators());
   }
 
-  public ConcreteAnnotator(Languages language, String[] annotators) {
+  public ConcreteAnnotator(PipelineLanguage language, String[] annotators) {
     this.csProps = new ConcreteStanfordProperties();
     // this.allowEmptyMentions = this.csProps.getAllowEmptyMentions();
     this.annotatorList = annotators;

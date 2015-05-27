@@ -21,7 +21,6 @@ import edu.jhu.hlt.concrete.TokenList;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.TokenizationKind;
 import edu.jhu.hlt.concrete.random.RandomConcreteFactory;
-import edu.jhu.hlt.concrete.stanford.InMemoryAnnoPipeline.Languages;
 import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 
 public class NonPTBTextTest {
@@ -71,7 +70,7 @@ public class NonPTBTextTest {
 
     assertTrue(new CommunicationValidator(chineseComm).validate());
 
-    AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete(Languages.CHINESE);
+    AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete(PipelineLanguage.CHINESE);
     atc.annotateWithStanfordNlp(chineseComm);
     assertTrue(tokenization.isSetParseList());
     assertEquals(1, tokenization.getParseListSize());
@@ -112,7 +111,7 @@ public class NonPTBTextTest {
     tokenization.setTokenTaggingList(new ArrayList<>());
     sentence.setTokenization(tokenization);
     assertTrue(new CommunicationValidator(englishComm).validate());
-    AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete(Languages.ENGLISH);
+    AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete(PipelineLanguage.ENGLISH);
     atc.annotateWithStanfordNlp(englishComm);
     String[] expectedTokens = englishText1.split(" +");
     assertEquals(expectedTokens.length, tokenList.getTokenListSize());

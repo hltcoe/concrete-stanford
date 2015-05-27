@@ -35,7 +35,6 @@ import edu.jhu.hlt.concrete.miscommunication.MiscommunicationException;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.NonSentencedSectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.SectionedCommunication;
-import edu.jhu.hlt.concrete.stanford.InMemoryAnnoPipeline.Languages;
 import edu.jhu.hlt.concrete.tokenization.TokenizationFactory;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.Timing;
@@ -73,7 +72,7 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
   private final Set<String> kindsToProcessSet;
   private final Set<String> kindsForNoCoref;
 
-  private Languages language;
+  private PipelineLanguage language;
 
   /**
    * The global character offset. The exact meaning is determined by
@@ -107,16 +106,16 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
   }
 
   public AnnotateNonTokenizedConcrete() {
-    this(Languages.ENGLISH, Arrays.asList(defaultKindsToFullyProcess), Arrays
+    this(PipelineLanguage.ENGLISH, Arrays.asList(defaultKindsToFullyProcess), Arrays
         .asList(defaultKindsNoCoref), true);
   }
 
-  public AnnotateNonTokenizedConcrete(Languages lang) {
+  public AnnotateNonTokenizedConcrete(PipelineLanguage lang) {
     this(lang, Arrays.asList(defaultKindsToFullyProcess), Arrays
         .asList(defaultKindsNoCoref), true);
   }
 
-  public AnnotateNonTokenizedConcrete(Languages lang, Collection<String> typesToAnnotate,
+  public AnnotateNonTokenizedConcrete(PipelineLanguage lang, Collection<String> typesToAnnotate,
       Collection<String> typesToTokenizeOnly, boolean allowEmptyMentions) {
     this.kindsToProcessSet = new HashSet<>();
     this.kindsToProcessSet.addAll(typesToAnnotate);
@@ -124,7 +123,7 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
     this.kindsForNoCoref = new HashSet<>();
     this.kindsForNoCoref.addAll(typesToTokenizeOnly);
 
-    this.language = Languages.ENGLISH;
+    this.language = PipelineLanguage.ENGLISH;
     this.pipeline = new InMemoryAnnoPipeline(this.language);
     this.allowEmptyEntitiesAndEntityMentions = allowEmptyMentions;
   }
