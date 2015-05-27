@@ -5,18 +5,18 @@
   <parent>
     <groupId>edu.jhu.hlt</groupId>
     <artifactId>concrete-parent</artifactId>
-    <version>4.4</version>
+    <version>4.5</version>
   </parent>
 
   <groupId>edu.jhu.hlt.concrete</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.4.6-SNAPSHOT</version>
+  <version>4.5.0</version>
   <packaging>jar</packaging>
 
   <name>Concrete Stanford</name>
 
   <properties>
-    <concrete.version>4.4.12</concrete.version>
+    <concrete.version>4.5.2</concrete.version>
   </properties>
 
 

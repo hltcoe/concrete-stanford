@@ -72,7 +72,7 @@ public class TestAnnotatedNYTData {
     dis.disable();
     Path p = Paths.get("src/test/resources/0.xml");
     Communication c = this.extractNYTDoc(p);
-    Communication fromStanford = pipe.process(c);
+    Communication fromStanford = pipe.annotate(c).getRoot();
     String rawOrigText = fromStanford.getOriginalText();
     assertEquals(c.getText(), rawOrigText);
     CachedTokenizationCommunication ctc = new CachedTokenizationCommunication(fromStanford);
@@ -105,7 +105,7 @@ public class TestAnnotatedNYTData {
     Path p = Paths.get("src/test/resources/1000052.xml");
     Communication c = this.extractNYTDoc(p);
     logger.info("Got text: {}", c.getText());
-    Communication fromStanford = pipe.process(c);
+    Communication fromStanford = pipe.annotate(c).getRoot();
     String rawOrigText = fromStanford.getOriginalText();
     assertEquals(c.getText(), rawOrigText);
     logger.info("New text: {}", fromStanford.getText());
@@ -117,7 +117,7 @@ public class TestAnnotatedNYTData {
     Communication c = this.extractNYTDoc(p);
     Section first = c.getSectionListIterator().next();
 
-    Communication fromStanford = pipe.process(c);
+    Communication fromStanford = pipe.annotate(c).getRoot();
     CachedSectionedCommunication cscPost = new CachedSectionedCommunication(fromStanford);
     Communication sRoot = cscPost.getRoot();
     logger.info("New text: {}", sRoot.getText());

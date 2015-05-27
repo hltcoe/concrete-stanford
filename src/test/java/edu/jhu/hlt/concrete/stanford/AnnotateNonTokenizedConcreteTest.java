@@ -141,7 +141,7 @@ public class AnnotateNonTokenizedConcreteTest {
   public void processPassages() throws Exception {
     new CachedSectionedCommunication(this.randomTestComm);
 
-    Communication nc = this.pipe.process(this.randomTestComm);
+    Communication nc = this.pipe.annotate(this.randomTestComm).getRoot();
     assertTrue(nc.isSetEntityMentionSetList());
     assertTrue(nc.isSetEntitySetList());
     new WritableCommunication(nc).writeToFile(this.tf.getRoot().toPath().resolve("entities.concrete"), true);
@@ -161,10 +161,11 @@ public class AnnotateNonTokenizedConcreteTest {
     c.addToSectionList(SingleSectionSegmenter.createSingleSection(c, "Passage"));
     new CachedSectionedCommunication(c);
 
-    Communication nc = this.pipe.process(c);
-    assertTrue(nc.isSetEntityMentionSetList());
-    assertTrue(nc.isSetEntitySetList());
-    new WritableCommunication(nc).writeToFile(this.tf.getRoot().toPath().resolve("post-stanford_garbage_processed.concrete"), true);
+    StanfordPostNERCommunication nc = this.pipe.annotate(c);
+    Communication root = nc.getRoot();
+    assertTrue(root.isSetEntityMentionSetList());
+    assertTrue(root.isSetEntitySetList());
+    new WritableCommunication(root).writeToFile(this.tf.getRoot().toPath().resolve("post-stanford_garbage_processed.concrete"), true);
   }
 
   /**
@@ -193,7 +194,7 @@ public class AnnotateNonTokenizedConcreteTest {
     assertTrue("Error in creating original communication",
         cs.toBytes(shakeHandComm) != null);
 
-    Communication processedShakeHandComm = pipe.process(shakeHandComm);
+    Communication processedShakeHandComm = pipe.annotate(shakeHandComm).getRoot();
     assertTrue("Error in serializing processed communication",
         cs.toBytes(processedShakeHandComm) != null);
     final String docText = processedShakeHandComm.getOriginalText();
@@ -506,7 +507,7 @@ public class AnnotateNonTokenizedConcreteTest {
 
   @Test
   public void processAFPComm() throws Exception {
-    Communication afpProcessedComm = this.pipe.process(this.mapped);
+    Communication afpProcessedComm = this.pipe.annotate(this.mapped).getRoot();
     final String processedText = afpProcessedComm.getText();
     final String processedRawText = afpProcessedComm.getOriginalText();
 
@@ -647,7 +648,7 @@ public class AnnotateNonTokenizedConcreteTest {
    */
   @Test
   public void process1999NYTComm() throws Exception {
-    Communication nytProcessedComm = this.pipe.process(this.nyt1999);
+    Communication nytProcessedComm = this.pipe.annotate(this.nyt1999).getRoot();
     final String processedText = nytProcessedComm.getText();
     final String processedRawText = nytProcessedComm.getOriginalText();
 
@@ -727,6 +728,357 @@ public class AnnotateNonTokenizedConcreteTest {
             true);
   }
 
+//  /**
+//   * Test method for
+//   * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
+//   * .
+//   *
+//   * @throws ConcreteException
+//   * @throws IOException
+//   */
+//  @Test
+//  public void processHandshakeCommunicationWithSentences() throws Exception {
+//    Communication shakeHandComm = this.cf.communication().setText(
+//        SHAKE_HAND_TEXT_STRING);
+//    AnnotationMetadata md = new AnnotationMetadata().setTool(
+//        "concrete-stanford:test").setTimestamp(
+//        System.currentTimeMillis() / 1000);
+//    shakeHandComm.setMetadata(md);
+//    Section section = new Section()
+//        .setUuid(UUIDFactory.newUUID())
+//        .setTextSpan(
+//            new TextSpan().setStart(0).setEnding(
+//                SHAKE_HAND_TEXT_STRING.length())).setKind("Passage");
+//    shakeHandComm.addToSectionList(section);
+//    Sentence sentence = new Sentence().setUuid(UUIDFactory.newUUID())
+//        .setTextSpan(
+//            new TextSpan().setStart(0).setEnding(
+//                SHAKE_HAND_TEXT_STRING.length()));
+//    section.addToSentenceList(sentence);
+//
+//    assertTrue("Error in creating original communication",
+//        cs.toBytes(shakeHandComm) != null);
+//
+//    Communication processedShakeHandComm = pipe.annotate(shakeHandComm).getRoot();
+//    assertTrue("Error in serializing processed communication",
+//        cs.toBytes(processedShakeHandComm) != null);
+//    final String docText = processedShakeHandComm.getOriginalText();
+//    final String[] stokens = { "The", "man", "ran", "to", "shake", "the",
+//        "U.S.", "President", "'s", "hand", "." };
+//
+//    assertTrue(docText.equals(AnnotateNonTokenizedConcreteTest.SHAKE_HAND_TEXT_STRING));
+//
+//    // Sections
+//    verifyNumSections(shakeHandComm, processedShakeHandComm);
+//
+//    final Section firstSection = processedShakeHandComm.getSectionList().get(0);
+//    final List<Sentence> firstSentList = firstSection.getSentenceList();
+//    final Sentence firstSent = firstSentList.get(0);
+//    final Tokenization firstTokenization = firstSent.getTokenization();
+//    assertTrue(firstSentList.size() == 1);
+//
+//    // Test spans
+//    assertTrue(firstSentList.size() == 1);
+//    assertTrue("firstSent.rawTextSpan should be set",
+//        firstSent.isSetRawTextSpan());
+//    assertEquals("Beginning char should be 0.", 0, firstSent.getRawTextSpan()
+//        .getStart());
+//    assertEquals("SHAKE_HAND_TEXT_STRING has a different length.", 49,
+//        SHAKE_HAND_TEXT_STRING.length());
+//    assertEquals("Ending char should be 49.", 49, firstSent.getRawTextSpan()
+//        .getEnding());
+//
+//    TextSpan tts = firstSent.getRawTextSpan();
+//    String pulledText = docText.substring(tts.getStart(), tts.getEnding());
+//    assertEquals(pulledText.trim(), SHAKE_HAND_TEXT_STRING.trim());
+//
+//    // Test # Tokens
+//    StringBuilder actualTokensSB = new StringBuilder();
+//    for (Token tok : firstTokenization.getTokenList().getTokenList()) {
+//      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex()
+//          + ") ");
+//    }
+//    assertTrue("Expected tokens length = " + stokens.length + ";"
+//        + "Actual   tokens length = "
+//        + firstTokenization.getTokenList().getTokenList().size() + "; "
+//        + "Actual tokens = " + actualTokensSB.toString(), firstTokenization
+//        .getTokenList().getTokenList().size() == stokens.length);
+//
+//    // Verify tokens
+//    int tokIdx = 0;
+//    for (Token token : firstTokenization.getTokenList().getTokenList()) {
+//      assertTrue(
+//          "tokIdx = " + tokIdx + "; token.getTokenIndex() = "
+//              + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
+//      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = ["
+//          + token.getText() + "]", token.getText().equals(stokens[tokIdx]));
+//      tokIdx++;
+//    }
+//
+//    // Verify tokens to full
+//    for (Token token : firstTokenization.getTokenList().getTokenList()) {
+//      tts = token.getRawTextSpan();
+//      String substr = docText.substring(tts.getStart(), tts.getEnding());
+//      assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts
+//          + ") = [" + substr + "]", token.getText().equals(substr));
+//    }
+//
+//    // Verify tokens to full seeded
+//    tokIdx = 0;
+//    for (Token token : firstTokenization.getTokenList().getTokenList()) {
+//      tts = token.getRawTextSpan();
+//      String substr = docText.substring(tts.getStart(), tts.getEnding());
+//      assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts
+//          + ") = [" + substr + "]", stokens[tokIdx].equals(substr));
+//      tokIdx++;
+//    }
+//
+//    // Verify token spans
+//    int[] start = { 0, 4, 8, 12, 15, 21, 25, 31, 40, 43, 47 };
+//    int[] end = { 3, 7, 11, 14, 20, 24, 29, 40, 42, 47, 48 };
+//    tokIdx = 0;
+//    for (Token token : firstTokenization.getTokenList().getTokenList()) {
+//      tts = token.getRawTextSpan();
+//      assertTrue(
+//          token.getText() + "(" + tokIdx + ") starts at " + tts.getStart()
+//              + "; it should start at " + start[tokIdx],
+//          tts.getStart() == start[tokIdx]);
+//      assertTrue(
+//          token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding()
+//              + "; it should start at " + end[tokIdx],
+//          tts.getEnding() == end[tokIdx]);
+//      tokIdx++;
+//    }
+//
+//    // Verify # entities
+//    assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
+//    assertEquals("Should be three entities.", 3, processedShakeHandComm
+//        .getEntitySetList().get(0).getEntityList().size());
+//
+//    // Verify # Singleton entities
+//    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+//        .getEntityList()) {
+//      assertEquals(entity.getCanonicalName() + " is not singleton", 1, entity
+//          .getMentionIdList().size());
+//    }
+//
+//    // Verify entity names
+//    Set<String> expEnts = new HashSet<String>();
+//    expEnts.add("The man");
+//    expEnts.add("the U.S. President 's hand");
+//    expEnts.add("the U.S. President 's");
+//    Set<String> seenEnts = new HashSet<String>();
+//    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+//        .getEntityList()) {
+//      seenEnts.add(entity.getCanonicalName());
+//    }
+//    assertTrue(seenEnts.equals(expEnts));
+//
+//    // Verify some canonical entity names
+//    assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
+//    boolean atLeastOne = false;
+//    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+//        .getEntityList()) {
+//      atLeastOne |= (entity.getCanonicalName() != null && entity
+//          .getCanonicalName().length() > 0);
+//    }
+//    assertTrue(atLeastOne);
+//
+//    // Verify metadata toolnames
+//    // this.verifyToolNames(processedShakeHandComm);
+//  }
+
+//  /**
+//   * Test method for
+//   * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
+//   * .
+//   *
+//   * @throws ConcreteException
+//   * @throws IOException
+//   */
+//  @Test
+//  public void processHandshakeCommunicationWithRepeatedSentences() throws Exception {
+//    String SHAKE_HAND_TEXT_STRING_1 = "The boy ran to shake the U.S. \nPresident's hand. ";
+//    String SHAKE_HAND_TEXT_STRING_2 = "The dog ran to shake the U.S. \nPresident's hand.";
+//    final int eachSentenceLength = SHAKE_HAND_TEXT_STRING.length() - 1;
+//    assertEquals(48, eachSentenceLength);
+//    final String origCommText = SHAKE_HAND_TEXT_STRING
+//        + SHAKE_HAND_TEXT_STRING_1 + SHAKE_HAND_TEXT_STRING_2;
+//    Communication shakeHandComm = this.cf.communication().setText(origCommText);
+//    AnnotationMetadata md = new AnnotationMetadata().setTool(
+//        "concrete-stanford:test").setTimestamp(
+//        System.currentTimeMillis() / 1000);
+//    shakeHandComm.setMetadata(md);
+//    Section section1 = new Section()
+//        .setUuid(UUIDFactory.newUUID())
+//        .setTextSpan(
+//            new TextSpan().setStart(0).setEnding(2 * eachSentenceLength + 1))
+//        .setKind("Passage");
+//    section1.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
+//        .setTextSpan(new TextSpan().setStart(0).setEnding(eachSentenceLength)));
+//    section1.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
+//        .setTextSpan(
+//            new TextSpan().setStart(eachSentenceLength + 1).setEnding(
+//                1 + 2 * eachSentenceLength)));
+//    shakeHandComm.addToSectionList(section1);
+//    // Section 2
+//    int section2Start = 2 * eachSentenceLength + 2;
+//    assertEquals(98, section2Start);
+//    int section2End = 3 * eachSentenceLength + 2;
+//    assertEquals(146, section2End);
+//    Section section2 = new Section()
+//        .setUuid(UUIDFactory.newUUID())
+//        .setTextSpan(
+//            new TextSpan().setStart(section2Start).setEnding(section2End))
+//        .setKind("Passage");
+//    section2.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
+//        .setTextSpan(
+//            new TextSpan().setStart(section2Start).setEnding(section2End)));
+//    shakeHandComm.addToSectionList(section2);
+//
+//    assertTrue("Error in creating original communication",
+//        cs.toBytes(shakeHandComm) != null);
+//
+//    Communication processedShakeHandComm = pipe.annotate(shakeHandComm).getRoot();
+//    assertTrue("Error in serializing processed communication",
+//        cs.toBytes(processedShakeHandComm) != null);
+//    final String docText = processedShakeHandComm.getOriginalText();
+//    // final String[] stokens = { "The", "man", "ran", "to", "shake", "the",
+//    // "U.S.", "President", "'s", "hand", ".", "The", "boy", "ran", "to",
+//    // "shake", "the", "U.S.", "President", "'s", "hand", ".", "The", "dog",
+//    // "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
+//    final String[] stokens = { "The", "dog", "ran", "to", "shake", "the",
+//        "U.S.", "President", "'s", "hand", "." };
+//
+//    assertTrue(docText.equals(origCommText));
+//
+//    // Sections
+//    assertEquals("Processed communication should have 2 sections; it has "
+//        + processedShakeHandComm.getSectionList().size(), 2,
+//        processedShakeHandComm.getSectionList().size());
+//    verifyNumSections(shakeHandComm, processedShakeHandComm);
+//
+//    assertTrue(processedShakeHandComm.getSectionList().get(0).getSentenceList()
+//        .size() == 2);
+//    final Section secondSection = processedShakeHandComm.getSectionList()
+//        .get(1);
+//    final List<Sentence> firstSentList = secondSection.getSentenceList();
+//    assertTrue(firstSentList.size() == 1);
+//    final Sentence firstSent = firstSentList.get(0);
+//    final Tokenization firstTokenization = firstSent.getTokenization();
+//
+//    // Test spans
+//    assertTrue(firstSentList.size() == 1);
+//    assertTrue("firstSent.rawTextSpan should be set",
+//        firstSent.isSetRawTextSpan());
+//    assertEquals("Beginning char should be 98.", section2Start, firstSent
+//        .getRawTextSpan().getStart());
+//    assertEquals("Ending char should be 146.", section2End, firstSent
+//        .getRawTextSpan().getEnding());
+//
+//    TextSpan tts = firstSent.getRawTextSpan();
+//    String pulledText = docText.substring(tts.getStart(), tts.getEnding());
+//    assertTrue("Received " + pulledText + ", should have gotten "
+//        + SHAKE_HAND_TEXT_STRING_2,
+//        pulledText.equals(SHAKE_HAND_TEXT_STRING_2.trim()));
+//
+//    // Test # Tokens
+//    StringBuilder actualTokensSB = new StringBuilder();
+//    for (Token tok : firstTokenization.getTokenList().getTokenList()) {
+//      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex()
+//          + ") ");
+//    }
+//    assertTrue("Expected tokens length = " + stokens.length + ";"
+//        + "Actual   tokens length = "
+//        + firstTokenization.getTokenList().getTokenList().size() + "; "
+//        + "Actual tokens = " + actualTokensSB.toString(), firstTokenization
+//        .getTokenList().getTokenList().size() == stokens.length);
+//
+//    // Verify tokens
+//    int tokIdx = 0;
+//    for (Token token : firstTokenization.getTokenList().getTokenList()) {
+//      assertTrue(
+//          "tokIdx = " + tokIdx + "; token.getTokenIndex() = "
+//              + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
+//      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = ["
+//          + token.getText() + "]", token.getText().equals(stokens[tokIdx]));
+//      tokIdx++;
+//    }
+//
+//    // Verify tokens to full
+//    for (Token token : firstTokenization.getTokenList().getTokenList()) {
+//      tts = token.getRawTextSpan();
+//      String substr = docText.substring(tts.getStart(), tts.getEnding());
+//      assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts
+//          + ") = [" + substr + "]", token.getText().equals(substr));
+//    }
+//
+//    // Verify tokens to full seeded
+//    tokIdx = 0;
+//    for (Token token : firstTokenization.getTokenList().getTokenList()) {
+//      tts = token.getRawTextSpan();
+//      String substr = docText.substring(tts.getStart(), tts.getEnding());
+//      assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts
+//          + ") = [" + substr + "]", stokens[tokIdx].equals(substr));
+//      tokIdx++;
+//    }
+//
+//    // Verify token spans
+//    int[] start = { 0, 4, 8, 12, 15, 21, 25, 31, 40, 43, 47 };
+//    int[] end = { 3, 7, 11, 14, 20, 24, 29, 40, 42, 47, 48 };
+//    // record the original offset
+//    int oOffset = 98;
+//    tokIdx = 0;
+//    for (Token token : firstTokenization.getTokenList().getTokenList()) {
+//      tts = token.getRawTextSpan();
+//      assertTrue(
+//          token.getText() + "(" + tokIdx + ") starts at " + tts.getStart()
+//              + "; it should start at " + start[tokIdx] + oOffset,
+//          tts.getStart() == start[tokIdx] + oOffset);
+//      assertTrue(
+//          token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding()
+//              + "; it should start at " + end[tokIdx] + oOffset,
+//          tts.getEnding() == end[tokIdx] + oOffset);
+//      tokIdx++;
+//    }
+//
+//    // Verify # entities
+//    assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
+//    assertEquals("Should be 5 entities.", 5, processedShakeHandComm
+//        .getEntitySetList().get(0).getEntityList().size());
+//
+//    // Verify entity names
+//    Set<String> expEnts = new HashSet<String>();
+//    expEnts.add("The boy");
+//    expEnts.add("The dog");
+//    expEnts.add("The man");
+//    expEnts.add("the U.S. President 's hand");
+//    expEnts.add("the U.S. President 's");
+//    Set<String> seenEnts = new HashSet<String>();
+//    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+//        .getEntityList()) {
+//      seenEnts.add(entity.getCanonicalName());
+//    }
+//    assertTrue(seenEnts.equals(expEnts));
+//
+//    // Verify some canonical entity names
+//    assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
+//    boolean atLeastOne = false;
+//    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+//        .getEntityList()) {
+//      atLeastOne |= (entity.getCanonicalName() != null && entity
+//          .getCanonicalName().length() > 0);
+//    }
+//    assertTrue(atLeastOne);
+//
+//    // Verify metadata toolnames
+//    // this.verifyToolNames(processedShakeHandComm);
+//    new WritableCommunication(processedShakeHandComm)
+//        .writeToFile(
+//            "src/test/resources/post-stanford.handshake_multiple_sections.concrete",
+//            true);
+//  }
+
   /**
    * Test method for
    * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
@@ -735,533 +1087,182 @@ public class AnnotateNonTokenizedConcreteTest {
    * @throws ConcreteException
    * @throws IOException
    */
-  @Test
-  public void processHandshakeCommunicationWithSentences() throws Exception {
-    Communication shakeHandComm = this.cf.communication().setText(
-        SHAKE_HAND_TEXT_STRING);
-    AnnotationMetadata md = new AnnotationMetadata().setTool(
-        "concrete-stanford:test").setTimestamp(
-        System.currentTimeMillis() / 1000);
-    shakeHandComm.setMetadata(md);
-    Section section = new Section()
-        .setUuid(UUIDFactory.newUUID())
-        .setTextSpan(
-            new TextSpan().setStart(0).setEnding(
-                SHAKE_HAND_TEXT_STRING.length())).setKind("Passage");
-    shakeHandComm.addToSectionList(section);
-    Sentence sentence = new Sentence().setUuid(UUIDFactory.newUUID())
-        .setTextSpan(
-            new TextSpan().setStart(0).setEnding(
-                SHAKE_HAND_TEXT_STRING.length()));
-    section.addToSentenceList(sentence);
-
-    assertTrue("Error in creating original communication",
-        cs.toBytes(shakeHandComm) != null);
-
-    Communication processedShakeHandComm = pipe.process(shakeHandComm);
-    assertTrue("Error in serializing processed communication",
-        cs.toBytes(processedShakeHandComm) != null);
-    final String docText = processedShakeHandComm.getOriginalText();
-    final String[] stokens = { "The", "man", "ran", "to", "shake", "the",
-        "U.S.", "President", "'s", "hand", "." };
-
-    assertTrue(docText.equals(AnnotateNonTokenizedConcreteTest.SHAKE_HAND_TEXT_STRING));
-
-    // Sections
-    verifyNumSections(shakeHandComm, processedShakeHandComm);
-
-    final Section firstSection = processedShakeHandComm.getSectionList().get(0);
-    final List<Sentence> firstSentList = firstSection.getSentenceList();
-    final Sentence firstSent = firstSentList.get(0);
-    final Tokenization firstTokenization = firstSent.getTokenization();
-    assertTrue(firstSentList.size() == 1);
-
-    // Test spans
-    assertTrue(firstSentList.size() == 1);
-    assertTrue("firstSent.rawTextSpan should be set",
-        firstSent.isSetRawTextSpan());
-    assertEquals("Beginning char should be 0.", 0, firstSent.getRawTextSpan()
-        .getStart());
-    assertEquals("SHAKE_HAND_TEXT_STRING has a different length.", 49,
-        SHAKE_HAND_TEXT_STRING.length());
-    assertEquals("Ending char should be 49.", 49, firstSent.getRawTextSpan()
-        .getEnding());
-
-    TextSpan tts = firstSent.getRawTextSpan();
-    String pulledText = docText.substring(tts.getStart(), tts.getEnding());
-    assertEquals(pulledText.trim(), SHAKE_HAND_TEXT_STRING.trim());
-
-    // Test # Tokens
-    StringBuilder actualTokensSB = new StringBuilder();
-    for (Token tok : firstTokenization.getTokenList().getTokenList()) {
-      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex()
-          + ") ");
-    }
-    assertTrue("Expected tokens length = " + stokens.length + ";"
-        + "Actual   tokens length = "
-        + firstTokenization.getTokenList().getTokenList().size() + "; "
-        + "Actual tokens = " + actualTokensSB.toString(), firstTokenization
-        .getTokenList().getTokenList().size() == stokens.length);
-
-    // Verify tokens
-    int tokIdx = 0;
-    for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      assertTrue(
-          "tokIdx = " + tokIdx + "; token.getTokenIndex() = "
-              + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
-      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = ["
-          + token.getText() + "]", token.getText().equals(stokens[tokIdx]));
-      tokIdx++;
-    }
-
-    // Verify tokens to full
-    for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      tts = token.getRawTextSpan();
-      String substr = docText.substring(tts.getStart(), tts.getEnding());
-      assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts
-          + ") = [" + substr + "]", token.getText().equals(substr));
-    }
-
-    // Verify tokens to full seeded
-    tokIdx = 0;
-    for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      tts = token.getRawTextSpan();
-      String substr = docText.substring(tts.getStart(), tts.getEnding());
-      assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts
-          + ") = [" + substr + "]", stokens[tokIdx].equals(substr));
-      tokIdx++;
-    }
-
-    // Verify token spans
-    int[] start = { 0, 4, 8, 12, 15, 21, 25, 31, 40, 43, 47 };
-    int[] end = { 3, 7, 11, 14, 20, 24, 29, 40, 42, 47, 48 };
-    tokIdx = 0;
-    for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      tts = token.getRawTextSpan();
-      assertTrue(
-          token.getText() + "(" + tokIdx + ") starts at " + tts.getStart()
-              + "; it should start at " + start[tokIdx],
-          tts.getStart() == start[tokIdx]);
-      assertTrue(
-          token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding()
-              + "; it should start at " + end[tokIdx],
-          tts.getEnding() == end[tokIdx]);
-      tokIdx++;
-    }
-
-    // Verify # entities
-    assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
-    assertEquals("Should be three entities.", 3, processedShakeHandComm
-        .getEntitySetList().get(0).getEntityList().size());
-
-    // Verify # Singleton entities
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
-        .getEntityList()) {
-      assertEquals(entity.getCanonicalName() + " is not singleton", 1, entity
-          .getMentionIdList().size());
-    }
-
-    // Verify entity names
-    Set<String> expEnts = new HashSet<String>();
-    expEnts.add("The man");
-    expEnts.add("the U.S. President 's hand");
-    expEnts.add("the U.S. President 's");
-    Set<String> seenEnts = new HashSet<String>();
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
-        .getEntityList()) {
-      seenEnts.add(entity.getCanonicalName());
-    }
-    assertTrue(seenEnts.equals(expEnts));
-
-    // Verify some canonical entity names
-    assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
-    boolean atLeastOne = false;
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
-        .getEntityList()) {
-      atLeastOne |= (entity.getCanonicalName() != null && entity
-          .getCanonicalName().length() > 0);
-    }
-    assertTrue(atLeastOne);
-
-    // Verify metadata toolnames
-    // this.verifyToolNames(processedShakeHandComm);
-  }
-
-  /**
-   * Test method for
-   * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
-   * .
-   *
-   * @throws ConcreteException
-   * @throws IOException
-   */
-  @Test
-  public void processHandshakeCommunicationWithRepeatedSentences() throws Exception {
-    String SHAKE_HAND_TEXT_STRING_1 = "The boy ran to shake the U.S. \nPresident's hand. ";
-    String SHAKE_HAND_TEXT_STRING_2 = "The dog ran to shake the U.S. \nPresident's hand.";
-    final int eachSentenceLength = SHAKE_HAND_TEXT_STRING.length() - 1;
-    assertEquals(48, eachSentenceLength);
-    final String origCommText = SHAKE_HAND_TEXT_STRING
-        + SHAKE_HAND_TEXT_STRING_1 + SHAKE_HAND_TEXT_STRING_2;
-    Communication shakeHandComm = this.cf.communication().setText(origCommText);
-    AnnotationMetadata md = new AnnotationMetadata().setTool(
-        "concrete-stanford:test").setTimestamp(
-        System.currentTimeMillis() / 1000);
-    shakeHandComm.setMetadata(md);
-    Section section1 = new Section()
-        .setUuid(UUIDFactory.newUUID())
-        .setTextSpan(
-            new TextSpan().setStart(0).setEnding(2 * eachSentenceLength + 1))
-        .setKind("Passage");
-    section1.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
-        .setTextSpan(new TextSpan().setStart(0).setEnding(eachSentenceLength)));
-    section1.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
-        .setTextSpan(
-            new TextSpan().setStart(eachSentenceLength + 1).setEnding(
-                1 + 2 * eachSentenceLength)));
-    shakeHandComm.addToSectionList(section1);
-    // Section 2
-    int section2Start = 2 * eachSentenceLength + 2;
-    assertEquals(98, section2Start);
-    int section2End = 3 * eachSentenceLength + 2;
-    assertEquals(146, section2End);
-    Section section2 = new Section()
-        .setUuid(UUIDFactory.newUUID())
-        .setTextSpan(
-            new TextSpan().setStart(section2Start).setEnding(section2End))
-        .setKind("Passage");
-    section2.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
-        .setTextSpan(
-            new TextSpan().setStart(section2Start).setEnding(section2End)));
-    shakeHandComm.addToSectionList(section2);
-
-    assertTrue("Error in creating original communication",
-        cs.toBytes(shakeHandComm) != null);
-
-    Communication processedShakeHandComm = pipe.process(shakeHandComm);
-    assertTrue("Error in serializing processed communication",
-        cs.toBytes(processedShakeHandComm) != null);
-    final String docText = processedShakeHandComm.getOriginalText();
-    // final String[] stokens = { "The", "man", "ran", "to", "shake", "the",
-    // "U.S.", "President", "'s", "hand", ".", "The", "boy", "ran", "to",
-    // "shake", "the", "U.S.", "President", "'s", "hand", ".", "The", "dog",
-    // "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
-    final String[] stokens = { "The", "dog", "ran", "to", "shake", "the",
-        "U.S.", "President", "'s", "hand", "." };
-
-    assertTrue(docText.equals(origCommText));
-
-    // Sections
-    assertEquals("Processed communication should have 2 sections; it has "
-        + processedShakeHandComm.getSectionList().size(), 2,
-        processedShakeHandComm.getSectionList().size());
-    verifyNumSections(shakeHandComm, processedShakeHandComm);
-
-    assertTrue(processedShakeHandComm.getSectionList().get(0).getSentenceList()
-        .size() == 2);
-    final Section secondSection = processedShakeHandComm.getSectionList()
-        .get(1);
-    final List<Sentence> firstSentList = secondSection.getSentenceList();
-    assertTrue(firstSentList.size() == 1);
-    final Sentence firstSent = firstSentList.get(0);
-    final Tokenization firstTokenization = firstSent.getTokenization();
-
-    // Test spans
-    assertTrue(firstSentList.size() == 1);
-    assertTrue("firstSent.rawTextSpan should be set",
-        firstSent.isSetRawTextSpan());
-    assertEquals("Beginning char should be 98.", section2Start, firstSent
-        .getRawTextSpan().getStart());
-    assertEquals("Ending char should be 146.", section2End, firstSent
-        .getRawTextSpan().getEnding());
-
-    TextSpan tts = firstSent.getRawTextSpan();
-    String pulledText = docText.substring(tts.getStart(), tts.getEnding());
-    assertTrue("Received " + pulledText + ", should have gotten "
-        + SHAKE_HAND_TEXT_STRING_2,
-        pulledText.equals(SHAKE_HAND_TEXT_STRING_2.trim()));
-
-    // Test # Tokens
-    StringBuilder actualTokensSB = new StringBuilder();
-    for (Token tok : firstTokenization.getTokenList().getTokenList()) {
-      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex()
-          + ") ");
-    }
-    assertTrue("Expected tokens length = " + stokens.length + ";"
-        + "Actual   tokens length = "
-        + firstTokenization.getTokenList().getTokenList().size() + "; "
-        + "Actual tokens = " + actualTokensSB.toString(), firstTokenization
-        .getTokenList().getTokenList().size() == stokens.length);
-
-    // Verify tokens
-    int tokIdx = 0;
-    for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      assertTrue(
-          "tokIdx = " + tokIdx + "; token.getTokenIndex() = "
-              + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
-      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = ["
-          + token.getText() + "]", token.getText().equals(stokens[tokIdx]));
-      tokIdx++;
-    }
-
-    // Verify tokens to full
-    for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      tts = token.getRawTextSpan();
-      String substr = docText.substring(tts.getStart(), tts.getEnding());
-      assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts
-          + ") = [" + substr + "]", token.getText().equals(substr));
-    }
-
-    // Verify tokens to full seeded
-    tokIdx = 0;
-    for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      tts = token.getRawTextSpan();
-      String substr = docText.substring(tts.getStart(), tts.getEnding());
-      assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts
-          + ") = [" + substr + "]", stokens[tokIdx].equals(substr));
-      tokIdx++;
-    }
-
-    // Verify token spans
-    int[] start = { 0, 4, 8, 12, 15, 21, 25, 31, 40, 43, 47 };
-    int[] end = { 3, 7, 11, 14, 20, 24, 29, 40, 42, 47, 48 };
-    // record the original offset
-    int oOffset = 98;
-    tokIdx = 0;
-    for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      tts = token.getRawTextSpan();
-      assertTrue(
-          token.getText() + "(" + tokIdx + ") starts at " + tts.getStart()
-              + "; it should start at " + start[tokIdx] + oOffset,
-          tts.getStart() == start[tokIdx] + oOffset);
-      assertTrue(
-          token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding()
-              + "; it should start at " + end[tokIdx] + oOffset,
-          tts.getEnding() == end[tokIdx] + oOffset);
-      tokIdx++;
-    }
-
-    // Verify # entities
-    assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
-    assertEquals("Should be 5 entities.", 5, processedShakeHandComm
-        .getEntitySetList().get(0).getEntityList().size());
-
-    // Verify entity names
-    Set<String> expEnts = new HashSet<String>();
-    expEnts.add("The boy");
-    expEnts.add("The dog");
-    expEnts.add("The man");
-    expEnts.add("the U.S. President 's hand");
-    expEnts.add("the U.S. President 's");
-    Set<String> seenEnts = new HashSet<String>();
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
-        .getEntityList()) {
-      seenEnts.add(entity.getCanonicalName());
-    }
-    assertTrue(seenEnts.equals(expEnts));
-
-    // Verify some canonical entity names
-    assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
-    boolean atLeastOne = false;
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
-        .getEntityList()) {
-      atLeastOne |= (entity.getCanonicalName() != null && entity
-          .getCanonicalName().length() > 0);
-    }
-    assertTrue(atLeastOne);
-
-    // Verify metadata toolnames
-    // this.verifyToolNames(processedShakeHandComm);
-    new WritableCommunication(processedShakeHandComm)
-        .writeToFile(
-            "src/test/resources/post-stanford.handshake_multiple_sections.concrete",
-            true);
-  }
-
-  /**
-   * Test method for
-   * {@link edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete#process(edu.jhu.hlt.concrete.Communication)}
-   * .
-   *
-   * @throws ConcreteException
-   * @throws IOException
-   */
-  @Test
-  public void processHandshakeCommunicationWithRepeatedSentencesAndTitleSection() throws Exception{
-    String SHAKE_HAND_TEXT_STRING_1 = "The boy ran to shake the U.S. \nPresident's hand. ";
-    String SHAKE_HAND_TEXT_STRING_2 = "The dog ran to shake the U.S. \nPresident's hand.";
-    final int eachSentenceLength = SHAKE_HAND_TEXT_STRING.length() - 1;
-    assertEquals(48, eachSentenceLength);
-    final String origCommText = SHAKE_HAND_TEXT_STRING
-        + SHAKE_HAND_TEXT_STRING_1 + SHAKE_HAND_TEXT_STRING_2;
-    Communication shakeHandComm = this.cf.communication().setText(origCommText);
-    AnnotationMetadata md = new AnnotationMetadata().setTool(
-        "concrete-stanford:test").setTimestamp(
-        System.currentTimeMillis() / 1000);
-    shakeHandComm.setMetadata(md);
-    Section section1 = new Section()
-        .setUuid(UUIDFactory.newUUID())
-        .setTextSpan(
-            new TextSpan().setStart(0).setEnding(2 * eachSentenceLength + 1))
-        .setKind("Title");
-    section1.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
-        .setTextSpan(new TextSpan().setStart(0).setEnding(eachSentenceLength)));
-    section1.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
-        .setTextSpan(
-            new TextSpan().setStart(eachSentenceLength + 1).setEnding(
-                1 + 2 * eachSentenceLength)));
-    shakeHandComm.addToSectionList(section1);
-    // Section 2
-    int section2Start = 2 * eachSentenceLength + 2;
-    assertEquals(98, section2Start);
-    int section2End = 3 * eachSentenceLength + 2;
-    assertEquals(146, section2End);
-    Section section2 = new Section()
-        .setUuid(UUIDFactory.newUUID())
-        .setTextSpan(
-            new TextSpan().setStart(section2Start).setEnding(section2End))
-        .setKind("Passage");
-    section2.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
-        .setTextSpan(
-            new TextSpan().setStart(section2Start).setEnding(section2End)));
-    shakeHandComm.addToSectionList(section2);
-
-    assertTrue("Error in creating original communication",
-        cs.toBytes(shakeHandComm) != null);
-
-    Communication processedShakeHandComm = pipe.process(shakeHandComm);
-    assertTrue("Error in serializing processed communication",
-        cs.toBytes(processedShakeHandComm) != null);
-    final String docText = processedShakeHandComm.getOriginalText();
-    // final String[] stokens = { "The", "man", "ran", "to", "shake", "the",
-    // "U.S.", "President", "'s", "hand", ".", "The", "boy", "ran", "to",
-    // "shake", "the", "U.S.", "President", "'s", "hand", ".", "The", "dog",
-    // "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
-    final String[] stokens = { "The", "dog", "ran", "to", "shake", "the",
-        "U.S.", "President", "'s", "hand", "." };
-
-    assertTrue(docText.equals(origCommText));
-
-    // Sections
-    assertEquals("Processed communication should have 2 sections; it has "
-        + processedShakeHandComm.getSectionList().size(), 2,
-        processedShakeHandComm.getSectionList().size());
-    verifyNumSections(shakeHandComm, processedShakeHandComm);
-
-    assertTrue(processedShakeHandComm.getSectionList().get(0).getSentenceList()
-        .size() == 2);
-    final Section secondSection = processedShakeHandComm.getSectionList()
-        .get(1);
-    final List<Sentence> firstSentList = secondSection.getSentenceList();
-    assertTrue(firstSentList.size() == 1);
-    final Sentence firstSent = firstSentList.get(0);
-    final Tokenization firstTokenization = firstSent.getTokenization();
-
-    // Test spans
-    assertTrue(firstSentList.size() == 1);
-    assertTrue("firstSent.rawTextSpan should be set",
-        firstSent.isSetRawTextSpan());
-    assertEquals("Beginning char should be 98.", section2Start, firstSent
-        .getRawTextSpan().getStart());
-    assertEquals("Ending char should be 146.", section2End, firstSent
-        .getRawTextSpan().getEnding());
-
-    TextSpan tts = firstSent.getRawTextSpan();
-    String pulledText = docText.substring(tts.getStart(), tts.getEnding());
-    assertTrue("Received " + pulledText + ", should have gotten "
-        + SHAKE_HAND_TEXT_STRING_2,
-        pulledText.equals(SHAKE_HAND_TEXT_STRING_2.trim()));
-
-    // Test # Tokens
-    StringBuilder actualTokensSB = new StringBuilder();
-    for (Token tok : firstTokenization.getTokenList().getTokenList()) {
-      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex()
-          + ") ");
-    }
-    assertTrue("Expected tokens length = " + stokens.length + ";"
-        + "Actual   tokens length = "
-        + firstTokenization.getTokenList().getTokenList().size() + "; "
-        + "Actual tokens = " + actualTokensSB.toString(), firstTokenization
-        .getTokenList().getTokenList().size() == stokens.length);
-
-    // Verify tokens
-    int tokIdx = 0;
-    for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      assertTrue(
-          "tokIdx = " + tokIdx + "; token.getTokenIndex() = "
-              + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
-      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = ["
-          + token.getText() + "]", token.getText().equals(stokens[tokIdx]));
-      tokIdx++;
-    }
-
-    // Verify tokens to full
-    for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      tts = token.getRawTextSpan();
-      String substr = docText.substring(tts.getStart(), tts.getEnding());
-      assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts
-          + ") = [" + substr + "]", token.getText().equals(substr));
-    }
-
-    // Verify tokens to full seeded
-    tokIdx = 0;
-    for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      tts = token.getRawTextSpan();
-      String substr = docText.substring(tts.getStart(), tts.getEnding());
-      assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts
-          + ") = [" + substr + "]", stokens[tokIdx].equals(substr));
-      tokIdx++;
-    }
-
-    // Verify token spans
-    int[] start = { 0, 4, 8, 12, 15, 21, 25, 31, 40, 43, 47 };
-    int[] end = { 3, 7, 11, 14, 20, 24, 29, 40, 42, 47, 48 };
-    // record the original offset
-    int oOffset = 98;
-    tokIdx = 0;
-    for (Token token : firstTokenization.getTokenList().getTokenList()) {
-      tts = token.getRawTextSpan();
-      assertTrue(
-          token.getText() + "(" + tokIdx + ") starts at " + tts.getStart()
-              + "; it should start at " + start[tokIdx] + oOffset,
-          tts.getStart() == start[tokIdx] + oOffset);
-      assertTrue(
-          token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding()
-              + "; it should start at " + end[tokIdx] + oOffset,
-          tts.getEnding() == end[tokIdx] + oOffset);
-      tokIdx++;
-    }
-
-    // Verify # entities
-    assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
-    assertEquals("Should be 3 entities.", 3, processedShakeHandComm
-        .getEntitySetList().get(0).getEntityList().size());
-
-    // Verify entity names
-    Set<String> expEnts = new HashSet<String>();
-    expEnts.add("The dog");
-    expEnts.add("the U.S. President 's hand");
-    expEnts.add("the U.S. President 's");
-    Set<String> seenEnts = new HashSet<String>();
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
-        .getEntityList()) {
-      seenEnts.add(entity.getCanonicalName());
-    }
-    assertTrue(seenEnts.equals(expEnts));
-
-    // Verify some canonical entity names
-    assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
-    boolean atLeastOne = false;
-    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
-        .getEntityList()) {
-      atLeastOne |= (entity.getCanonicalName() != null && entity
-          .getCanonicalName().length() > 0);
-    }
-    assertTrue(atLeastOne);
-
-    // Verify metadata toolnames
-    // this.verifyToolNames(processedShakeHandComm);
-  }
+//  @Test
+//  public void processHandshakeCommunicationWithRepeatedSentencesAndTitleSection() throws Exception{
+//    String SHAKE_HAND_TEXT_STRING_1 = "The boy ran to shake the U.S. \nPresident's hand. ";
+//    String SHAKE_HAND_TEXT_STRING_2 = "The dog ran to shake the U.S. \nPresident's hand.";
+//    final int eachSentenceLength = SHAKE_HAND_TEXT_STRING.length() - 1;
+//    assertEquals(48, eachSentenceLength);
+//    final String origCommText = SHAKE_HAND_TEXT_STRING
+//        + SHAKE_HAND_TEXT_STRING_1 + SHAKE_HAND_TEXT_STRING_2;
+//    Communication shakeHandComm = this.cf.communication().setText(origCommText);
+//    AnnotationMetadata md = new AnnotationMetadata().setTool(
+//        "concrete-stanford:test").setTimestamp(
+//        System.currentTimeMillis() / 1000);
+//    shakeHandComm.setMetadata(md);
+//    Section section1 = new Section()
+//        .setUuid(UUIDFactory.newUUID())
+//        .setTextSpan(
+//            new TextSpan().setStart(0).setEnding(2 * eachSentenceLength + 1))
+//        .setKind("Title");
+//    section1.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
+//        .setTextSpan(new TextSpan().setStart(0).setEnding(eachSentenceLength)));
+//    section1.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
+//        .setTextSpan(
+//            new TextSpan().setStart(eachSentenceLength + 1).setEnding(
+//                1 + 2 * eachSentenceLength)));
+//    shakeHandComm.addToSectionList(section1);
+//    // Section 2
+//    int section2Start = 2 * eachSentenceLength + 2;
+//    assertEquals(98, section2Start);
+//    int section2End = 3 * eachSentenceLength + 2;
+//    assertEquals(146, section2End);
+//    Section section2 = new Section()
+//        .setUuid(UUIDFactory.newUUID())
+//        .setTextSpan(
+//            new TextSpan().setStart(section2Start).setEnding(section2End))
+//        .setKind("Passage");
+//    section2.addToSentenceList(new Sentence().setUuid(UUIDFactory.newUUID())
+//        .setTextSpan(
+//            new TextSpan().setStart(section2Start).setEnding(section2End)));
+//    shakeHandComm.addToSectionList(section2);
+//
+//    assertTrue("Error in creating original communication",
+//        cs.toBytes(shakeHandComm) != null);
+//
+//    Communication processedShakeHandComm = pipe.annotate(shakeHandComm).getRoot();
+//    assertTrue("Error in serializing processed communication",
+//        cs.toBytes(processedShakeHandComm) != null);
+//    final String docText = processedShakeHandComm.getOriginalText();
+//    // final String[] stokens = { "The", "man", "ran", "to", "shake", "the",
+//    // "U.S.", "President", "'s", "hand", ".", "The", "boy", "ran", "to",
+//    // "shake", "the", "U.S.", "President", "'s", "hand", ".", "The", "dog",
+//    // "ran", "to", "shake", "the", "U.S.", "President", "'s", "hand", "." };
+//    final String[] stokens = { "The", "dog", "ran", "to", "shake", "the",
+//        "U.S.", "President", "'s", "hand", "." };
+//
+//    assertTrue(docText.equals(origCommText));
+//
+//    // Sections
+//    assertEquals("Processed communication should have 2 sections; it has "
+//        + processedShakeHandComm.getSectionList().size(), 2,
+//        processedShakeHandComm.getSectionList().size());
+//    verifyNumSections(shakeHandComm, processedShakeHandComm);
+//
+//    assertTrue(processedShakeHandComm.getSectionList().get(0).getSentenceList()
+//        .size() == 2);
+//    final Section secondSection = processedShakeHandComm.getSectionList()
+//        .get(1);
+//    final List<Sentence> firstSentList = secondSection.getSentenceList();
+//    assertTrue(firstSentList.size() == 1);
+//    final Sentence firstSent = firstSentList.get(0);
+//    final Tokenization firstTokenization = firstSent.getTokenization();
+//
+//    // Test spans
+//    assertTrue(firstSentList.size() == 1);
+//    assertTrue("firstSent.rawTextSpan should be set",
+//        firstSent.isSetRawTextSpan());
+//    assertEquals("Beginning char should be 98.", section2Start, firstSent
+//        .getRawTextSpan().getStart());
+//    assertEquals("Ending char should be 146.", section2End, firstSent
+//        .getRawTextSpan().getEnding());
+//
+//    TextSpan tts = firstSent.getRawTextSpan();
+//    String pulledText = docText.substring(tts.getStart(), tts.getEnding());
+//    assertTrue("Received " + pulledText + ", should have gotten "
+//        + SHAKE_HAND_TEXT_STRING_2,
+//        pulledText.equals(SHAKE_HAND_TEXT_STRING_2.trim()));
+//
+//    // Test # Tokens
+//    StringBuilder actualTokensSB = new StringBuilder();
+//    for (Token tok : firstTokenization.getTokenList().getTokenList()) {
+//      actualTokensSB.append("(" + tok.getText() + ", " + tok.getTokenIndex()
+//          + ") ");
+//    }
+//    assertTrue("Expected tokens length = " + stokens.length + ";"
+//        + "Actual   tokens length = "
+//        + firstTokenization.getTokenList().getTokenList().size() + "; "
+//        + "Actual tokens = " + actualTokensSB.toString(), firstTokenization
+//        .getTokenList().getTokenList().size() == stokens.length);
+//
+//    // Verify tokens
+//    int tokIdx = 0;
+//    for (Token token : firstTokenization.getTokenList().getTokenList()) {
+//      assertTrue(
+//          "tokIdx = " + tokIdx + "; token.getTokenIndex() = "
+//              + token.getTokenIndex(), token.getTokenIndex() == tokIdx);
+//      assertTrue("expected = [" + stokens[tokIdx] + "]; token.getText() = ["
+//          + token.getText() + "]", token.getText().equals(stokens[tokIdx]));
+//      tokIdx++;
+//    }
+//
+//    // Verify tokens to full
+//    for (Token token : firstTokenization.getTokenList().getTokenList()) {
+//      tts = token.getRawTextSpan();
+//      String substr = docText.substring(tts.getStart(), tts.getEnding());
+//      assertTrue("expected = [" + token.getText() + "];" + "docText(" + tts
+//          + ") = [" + substr + "]", token.getText().equals(substr));
+//    }
+//
+//    // Verify tokens to full seeded
+//    tokIdx = 0;
+//    for (Token token : firstTokenization.getTokenList().getTokenList()) {
+//      tts = token.getRawTextSpan();
+//      String substr = docText.substring(tts.getStart(), tts.getEnding());
+//      assertTrue("expected = [" + stokens[tokIdx] + "];" + "docText(" + tts
+//          + ") = [" + substr + "]", stokens[tokIdx].equals(substr));
+//      tokIdx++;
+//    }
+//
+//    // Verify token spans
+//    int[] start = { 0, 4, 8, 12, 15, 21, 25, 31, 40, 43, 47 };
+//    int[] end = { 3, 7, 11, 14, 20, 24, 29, 40, 42, 47, 48 };
+//    // record the original offset
+//    int oOffset = 98;
+//    tokIdx = 0;
+//    for (Token token : firstTokenization.getTokenList().getTokenList()) {
+//      tts = token.getRawTextSpan();
+//      assertTrue(
+//          token.getText() + "(" + tokIdx + ") starts at " + tts.getStart()
+//              + "; it should start at " + start[tokIdx] + oOffset,
+//          tts.getStart() == start[tokIdx] + oOffset);
+//      assertTrue(
+//          token.getText() + "(" + tokIdx + ") starts at " + tts.getEnding()
+//              + "; it should start at " + end[tokIdx] + oOffset,
+//          tts.getEnding() == end[tokIdx] + oOffset);
+//      tokIdx++;
+//    }
+//
+//    // Verify # entities
+//    assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
+//    assertEquals("Should be 3 entities.", 3, processedShakeHandComm
+//        .getEntitySetList().get(0).getEntityList().size());
+//
+//    // Verify entity names
+//    Set<String> expEnts = new HashSet<String>();
+//    expEnts.add("The dog");
+//    expEnts.add("the U.S. President 's hand");
+//    expEnts.add("the U.S. President 's");
+//    Set<String> seenEnts = new HashSet<String>();
+//    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+//        .getEntityList()) {
+//      seenEnts.add(entity.getCanonicalName());
+//    }
+//    assertTrue(seenEnts.equals(expEnts));
+//
+//    // Verify some canonical entity names
+//    assertTrue(processedShakeHandComm.getEntitySetList().size() > 0);
+//    boolean atLeastOne = false;
+//    for (Entity entity : processedShakeHandComm.getEntitySetList().get(0)
+//        .getEntityList()) {
+//      atLeastOne |= (entity.getCanonicalName() != null && entity
+//          .getCanonicalName().length() > 0);
+//    }
+//    assertTrue(atLeastOne);
+//
+//    // Verify metadata toolnames
+//    // this.verifyToolNames(processedShakeHandComm);
+//  }
 
   // @Test
   // public void processWonkyNYTComm() throws Exception {
@@ -1422,21 +1423,5 @@ public class AnnotateNonTokenizedConcreteTest {
   // new
   // WritableCommunication(processedNYT).writeToFile("target/test-nyt-out.concrete",
   // true);
-  // }
-
-  // @Test
-  // public void processBadMessage() throws Exception {
-  // Communication c = new Communication();
-  // c.id = "10505_corpus_x";
-  // c.uuid = UUID.randomUUID().toString();
-  // c.type = CommunicationType.BLOG;
-  // c.text = "Hello world! Testing this out.";
-  // SectionSegmentation ss = new SingleSectionSegmenter().annotateDiff(c);
-  // c.addToSectionSegmentations(ss);
-  //
-  // Communication nc = this.pipe.process(c);
-  // Serialization.toBytes(nc);
-  // assertTrue(nc.isSetEntityMentionSets());
-  // assertTrue(nc.isSetEntitySets());
   // }
 }

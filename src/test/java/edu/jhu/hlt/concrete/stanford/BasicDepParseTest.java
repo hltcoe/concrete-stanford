@@ -27,13 +27,13 @@ import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 /**
  * Using the example from the online demo at
  * http://nlp.stanford.edu:8080/parser/index.jsp
- * 
+ *
  * NOTE: It actually fails this example, but the version online appears to be
  * an older version of the parser than we are using. I'm using another simple
  * sentence, which it gets right.
- * 
+ *
  * sentence: "My dog also likes eating sausage."
- * 
+ *
  * basic dependencies:
  *   poss(dog-2, My-1)
  *   nsubj(likes-4, dog-2)
@@ -132,7 +132,7 @@ public class BasicDepParseTest {
   public void test() throws Exception {
     Communication c = getTestCommunication();
     AnnotateNonTokenizedConcrete pipe = new AnnotateNonTokenizedConcrete();
-    c = pipe.process(c);
+    c = pipe.annotate(c).getRoot();
     Set<String> gold = getExpectedBasicDependencies();
     Set<String> hyp = getObservedBasicDependencies(c);
     System.out.println("gold = " + gold);

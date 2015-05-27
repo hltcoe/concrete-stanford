@@ -11,8 +11,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
+import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.joda.time.Duration;
 import org.joda.time.Minutes;
@@ -23,9 +23,10 @@ import edu.jhu.hlt.acute.archivers.tar.TarArchiver;
 import edu.jhu.hlt.acute.iterators.tar.TarArchiveEntryByteIterator;
 import edu.jhu.hlt.acute.iterators.tar.TarGzArchiveEntryByteIterator;
 import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.concrete.analytics.base.Analytic;
 import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
-import edu.jhu.hlt.concrete.analytics.base.SectionedCommunicationAnalytic;
 import edu.jhu.hlt.concrete.communications.WritableCommunication;
+import edu.jhu.hlt.concrete.miscommunication.WrappedCommunication;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.archiver.ArchivableCommunication;
@@ -34,53 +35,33 @@ import edu.jhu.hlt.utilt.AutoCloseableIterator;
 import edu.jhu.hlt.utilt.sys.SystemErrDisabler;
 
 /**
- *
+ * Utility class to help with running Concrete Stanford analytics.
  */
-public class ConcreteStanfordAnnotator {
+public class ConcreteStanfordRunner {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ConcreteStanfordAnnotator.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(ConcreteStanfordRunner.class);
 
-  private ConcreteStanfordAnnotator() {
+  private final CommunicationSerializer ser = new CompactCommunicationSerializer();
+  private final SystemErrDisabler sed = new SystemErrDisabler();
+
+  /**
+   *
+   */
+  public ConcreteStanfordRunner() {
+
   }
 
-  public static void main(String[] args) {
-    if (args.length != 2) {
-      LOGGER.info("This program takes 2 arguments.");
-      LOGGER
-          .info("The first is a path to a .concrete file, .tar file containing .concrete files, or "
-              + "a .tar.gz with .concrete files.");
-      LOGGER.info("Each .concrete file must contain section segmentations.");
-      LOGGER
-          .info("The second argument is a path to the output file, matching the input file "
-              + "(if arg 1 == .concrete file, then output == .concrete file, etc.)");
-      LOGGER.info("Example usage: ");
-      LOGGER.info("{} /path/to/.concrete/file /path/to/output/file", ConcreteStanfordAnnotator.class.getName());
-      System.exit(1);
-    }
-
-    String initPathStr = args[0];
-    Path initPath = Paths.get(initPathStr);
-    if (!Files.exists(initPath)) {
-      LOGGER.error("Path {} does not exist. Ensure it exists and re-run this program.", initPathStr);
-      System.exit(1);
-    }
-
-    String outPathStr = args[1];
-    Path outPath = Paths.get(outPathStr);
-    if (!Files.exists(outPath)) {
-      try {
-        LOGGER.debug("Attempting to create output directory.");
-        Files.createDirectories(outPath);
-      } catch (IOException ioe) {
-        LOGGER.error("Caught IOException while creating output directory.", ioe);
-        System.exit(1);
-      }
-    }
-
-    String lowerOutPathStr = initPathStr.toLowerCase();
-    CommunicationSerializer ser = new CompactCommunicationSerializer();
+  public void run(Path inPath, Path outPath, Analytic<? extends WrappedCommunication> analytic) {
+    LOGGER.debug("Checking input and output directories.");
     try {
-      SystemErrDisabler sed = new SystemErrDisabler();
+      prepareInputOutput(inPath, outPath);
+    } catch (IOException e) {
+      LOGGER.error("Caught IOException when checking input and output directories.", e);
+      System.exit(1);
+    }
+
+    String lowerOutPathStr = inPath.toString().toLowerCase();
+    try {
       sed.disable();
 
       // Outcomes of outPathStr ending:
@@ -98,28 +79,30 @@ public class ConcreteStanfordAnnotator {
         System.exit(1);
       } else if (isConcreteExt) {
         // IF .concrete, run single communication.
-        LOGGER.info("Annotating single .concrete file at: {}", initPath.toString());
-        byte[] inputBytes = Files.readAllBytes(initPath);
-
-        Communication c = ser.fromBytes(inputBytes);
-        SectionedCommunicationAnalytic pipe = new AnnotateNonTokenizedConcrete();
-        Communication annotated = pipe.annotate(c);
-        String fileName = annotated.getId() + ".concrete";
-        Path concreteOutPath = outPath.resolve(fileName);
-        new WritableCommunication(annotated).writeToFile(concreteOutPath, true);
+        LOGGER.info("Annotating single .concrete file at: {}", inPath.toString());
+        try (InputStream in = Files.newInputStream(inPath);
+            BufferedInputStream bin = new BufferedInputStream(in, 1024 * 8 * 24);) {
+          byte[] inputBytes = IOUtils.toByteArray(bin);
+          Communication c = ser.fromBytes(inputBytes);
+          // SectionedCommunicationAnalytic<StanfordPostNERCommunication> pipe = new AnnotateNonTokenizedConcrete();
+          WrappedCommunication annotated = analytic.annotate(c);
+          Communication ar = annotated.getRoot();
+          String fileName = ar.getId() + ".concrete";
+          Path concreteOutPath = outPath.resolve(fileName);
+          new WritableCommunication(ar).writeToFile(concreteOutPath, true);
+        }
       } else {
-        int nElementsInitPath = initPath.getNameCount();
-        Path inputFileName = initPath.getName(nElementsInitPath - 1);
-        // LOGGER.info("Input FN: {}", inputFileName.toString());
+        int nElementsInitPath = inPath.getNameCount();
+        Path inputFileName = inPath.getName(nElementsInitPath - 1);
         String noExtStr = inputFileName.toString().split("\\.")[0];
         String fileName = noExtStr + ".tar";
         Path localOutPath = outPath.resolve(fileName);
         // Iterate over the archive.
         AutoCloseableIterator<byte[]> iter;
-        try (InputStream is = Files.newInputStream(initPath);
-            BufferedInputStream bis = new BufferedInputStream(is);
+        try (InputStream is = Files.newInputStream(inPath);
+            BufferedInputStream bis = new BufferedInputStream(is, 1024 * 8 * 24);
             OutputStream os = Files.newOutputStream(localOutPath);
-            BufferedOutputStream bos = new BufferedOutputStream(os);
+            BufferedOutputStream bos = new BufferedOutputStream(os, 1024 * 8 * 24);
             TarArchiver archiver = new TarArchiver(bos);) {
           // If .tar - read from .tar.
           if (isTarExt)
@@ -128,29 +111,27 @@ public class ConcreteStanfordAnnotator {
           else
             iter = new TarGzArchiveEntryByteIterator(bis);
 
-          SectionedCommunicationAnalytic pipe = null;
-          StopWatch sw = null;
+          final StopWatch sw = new StopWatch();
+          sw.start();
+
           int docCtr = 0;
           if (iter.hasNext()) {
+            LOGGER.info("Iterating over archive: {}", inPath.toString());
+
             Communication comm = ser.fromBytes(iter.next());
-            pipe = new AnnotateNonTokenizedConcrete();
-            LOGGER.info("Iterating over archive: {}", initPath.toString());
-            sw = new StopWatch();
-            sw.start();
-            Communication annot = pipe.annotate(comm);
-            archiver.addEntry(new ArchivableCommunication(annot));
+            WrappedCommunication annot = analytic.annotate(comm);
+            archiver.addEntry(new ArchivableCommunication(annot.getRoot()));
             docCtr++;
           } else {
-            LOGGER.info("Iterating over archive: {}", initPath.toString());
-            LOGGER.warn("Archive {} is empty", initPath.toString());
-            sw = new StopWatch();
-            sw.start();
+            LOGGER.info("Iterating over archive: {}", inPath.toString());
+            LOGGER.warn("Archive {} is empty", inPath.toString());
           }
+
           while (iter.hasNext()) {
             Communication n = ser.fromBytes(iter.next());
             LOGGER.info("Annotating communication: {}", n.getId());
-            Communication a = pipe.annotate(n);
-            archiver.addEntry(new ArchivableCommunication(a));
+            WrappedCommunication a = analytic.annotate(n);
+            archiver.addEntry(new ArchivableCommunication(a.getRoot()));
             docCtr++;
           }
 
@@ -175,7 +156,17 @@ public class ConcreteStanfordAnnotator {
         }
       }
     } catch (IOException | ConcreteException | AnalyticException e) {
-      LOGGER.error("Caught exception while running StanfordAgigaPipe over archive.", e);
+      LOGGER.error("Caught exception while running the analytic over archive.", e);
+    }
+  }
+
+  public static void prepareInputOutput(Path in, Path out) throws IOException {
+    if (!Files.exists(in))
+      throw new IOException(in.toString() + " does not exist. Ensure it exists and re-run this program.");
+
+    if (!Files.exists(out)) {
+      LOGGER.debug("Attempting to create output directory.");
+      Files.createDirectories(out);
     }
   }
 }

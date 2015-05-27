@@ -5,6 +5,8 @@
 package edu.jhu.hlt.concrete.stanford;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,13 +26,16 @@ import edu.jhu.hlt.concrete.EntitySet;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
+import edu.jhu.hlt.concrete.Token;
+import edu.jhu.hlt.concrete.TokenList;
 import edu.jhu.hlt.concrete.Tokenization;
+import edu.jhu.hlt.concrete.TokenizationKind;
 import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
-import edu.jhu.hlt.concrete.analytics.base.SectionedCommunicationAnalytic;
+import edu.jhu.hlt.concrete.analytics.base.NonSentencedSectionedCommunicationAnalytic;
 import edu.jhu.hlt.concrete.communications.PerspectiveCommunication;
 import edu.jhu.hlt.concrete.miscommunication.MiscommunicationException;
-import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunication;
-import edu.jhu.hlt.concrete.miscommunication.sectioned.SectionedCommunication;
+import edu.jhu.hlt.concrete.miscommunication.sectioned.NonSentencedSectionedCommunication;
+import edu.jhu.hlt.concrete.tokenization.TokenizationFactory;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.Timing;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
@@ -47,7 +52,7 @@ import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.util.CoreMap;
 
-public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnalytic {
+public class AnnotateNonTokenizedConcrete implements NonSentencedSectionedCommunicationAnalytic<StanfordPostNERCommunication> {
 
   private static final Logger logger = LoggerFactory
       .getLogger(AnnotateNonTokenizedConcrete.class);
@@ -57,17 +62,17 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
       + "       --annotate-sections <comma-separated-list of type names> (default: PASSAGE)\n"
       + "       --debug\n\t\tto print debugging messages (default: false)\n";
 
-  private static final String[] defaultKindsToFullyProcess = new String[] { "Passage" };
   private static final String[] defaultKindsNoCoref = new String[] { "Title",
       "Dateline" };
+  private static final String[] defaultKindsToNotProcess = new String[] { };
 
   private int sentenceCount = 1; // for flat files, no document structure
 
   private final InMemoryAnnoPipeline pipeline;
-  private final Set<String> kindsToProcessSet;
+  private final Set<String> kindsToSkipSet;
   private final Set<String> kindsForNoCoref;
 
-  private String language;
+  private PipelineLanguage language;
 
   /**
    * The global character offset. The exact meaning is determined by
@@ -101,51 +106,26 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
   }
 
   public AnnotateNonTokenizedConcrete() {
-    this(Arrays.asList(defaultKindsToFullyProcess), Arrays
+    this(PipelineLanguage.ENGLISH, Arrays.asList(defaultKindsToNotProcess), Arrays
         .asList(defaultKindsNoCoref), true);
   }
 
-  public AnnotateNonTokenizedConcrete(String lang) {
-    this();
-    this.language = lang;
+  public AnnotateNonTokenizedConcrete(PipelineLanguage lang) {
+    this(lang, Arrays.asList(defaultKindsToNotProcess), Arrays
+        .asList(defaultKindsNoCoref), true);
   }
 
-  public AnnotateNonTokenizedConcrete(Collection<String> typesToAnnotate,
+  public AnnotateNonTokenizedConcrete(PipelineLanguage lang, Collection<String> typesToSkip,
       Collection<String> typesToTokenizeOnly, boolean allowEmptyMentions) {
-    this.kindsToProcessSet = new HashSet<>();
-    this.kindsToProcessSet.addAll(typesToAnnotate);
+    this.kindsToSkipSet = new HashSet<>();
+    this.kindsToSkipSet.addAll(typesToSkip);
 
     this.kindsForNoCoref = new HashSet<>();
     this.kindsForNoCoref.addAll(typesToTokenizeOnly);
 
-    this.pipeline = new InMemoryAnnoPipeline();
+    this.language = lang;
+    this.pipeline = new InMemoryAnnoPipeline(this.language);
     this.allowEmptyEntitiesAndEntityMentions = allowEmptyMentions;
-    this.language = "en";
-  }
-
-  public Communication process(Communication comm) throws ConcreteException, AnalyticException {
-    PerspectiveCommunication pc = new PerspectiveCommunication(comm,
-        "PerspectiveCreator");
-    Communication persp = pc.getPerspective();
-
-    // hopefully MD is never null
-    // The Optional.ofNullable can be removed due to the validator object,
-    // but keeping it around won't hurt.
-    AnnotationMetadata md = Optional.ofNullable(persp.getMetadata()).orElse(
-        new AnnotationMetadata());
-    String csToolName = ProjectConstants.PROJECT_NAME + " "
-        + ProjectConstants.VERSION;
-    String newToolName = csToolName + " perspective";
-
-    String mdToolName = md.isSetTool() ? md.getTool() : "";
-    if (!mdToolName.isEmpty())
-      newToolName += " on old tool: " + mdToolName;
-
-    md.setTool(newToolName);
-    persp.setMetadata(md);
-    resetGlobals();
-    this.annotateSects(persp);
-    return persp;
   }
 
   /**
@@ -229,10 +209,10 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
       StringBuilder sb) throws AnalyticException {
     logger.debug("Annotating Section: {}", section.getUuid());
     logger.debug("\ttext = {}", sectionText);
-    logger.debug("\tkind = {} in annotateNames: {}", section.getKind(), this.kindsToProcessSet);
+    logger.debug("\tkind = {} in annotateNames: {}", section.getKind(), this.kindsToSkipSet);
     boolean allButCoref = kindsForNoCoref.contains(section.getKind());
-    boolean allWithCoref = kindsToProcessSet.contains(section.getKind());
-    if (!allWithCoref && !allButCoref) {
+    boolean basicProcessing = kindsToSkipSet.contains(section.getKind());
+    if (basicProcessing) {
       basicProcessingOnly(section, sectionAnnotation, sectionStartCharOffset, sb);
     } else if (allButCoref) {
       // Only tokenize & sentence split
@@ -283,6 +263,16 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
     for (Sentence sentence : section.getSentenceList()) {
       if (sentence.isSetTokenization())
         tokenizations.add(sentence.getTokenization());
+      else {
+        Tokenization tkz = TokenizationFactory.create();
+        tkz.setKind(TokenizationKind.TOKEN_LIST);
+        TokenList tl = new TokenList();
+        tl.setTokenList(new ArrayList<Token>());
+        tkz.setTokenList(tl);
+        tkz.setDependencyParseList(new ArrayList<>());
+        tkz.setTokenTaggingList(new ArrayList<>());
+        tkz.setParseList(new ArrayList<>());
+      }
     }
   }
 
@@ -294,7 +284,7 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
    * <li>constituency and dependency parsing, and</li>
    * <li>named entity recognition.</li>
    * </ul>
-   * Note that corefence resolution is done only once all contentful sections
+   * Note that coreference resolution is done only once all contentful sections
    * have been properly annotated.
    *
    * @throws AnalyticException
@@ -663,7 +653,7 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
   }
 
   public Set<String> getSectionTypesToAnnotate() {
-    return new HashSet<>(this.kindsToProcessSet);
+    return new HashSet<>(this.kindsToSkipSet);
   }
 
   /**
@@ -685,14 +675,6 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
     }
     return sb.toString().trim();
   }
-
-//  @Override
-//  public boolean ensurePreconditionsMet(Communication comm) {
-//    CommunicationValidator cv = new CommunicationValidator(comm);
-//    boolean initialValidity = cv.validate();
-//    return initialValidity;
-//    // return PrereqValidator.verifyCommunication(comm);
-//  }
 
   /**
    * A validator object to ensure that all prerequisites are met. The
@@ -773,9 +755,9 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
    * @see edu.jhu.hlt.concrete.analytics.base.Analytic#annotate(edu.jhu.hlt.concrete.Communication)
    */
   @Override
-  public Communication annotate(Communication arg0) throws AnalyticException {
+  public StanfordPostNERCommunication annotate(Communication arg0) throws AnalyticException {
     try {
-      return this.annotate(new CachedSectionedCommunication(arg0));
+      return this.annotate(new NonSentencedSectionedCommunication(arg0));
     } catch (MiscommunicationException e) {
       throw new AnalyticException(e);
     }
@@ -805,12 +787,17 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
     return ProjectConstants.VERSION;
   }
 
-  /* (non-Javadoc)
-   * @see edu.jhu.hlt.concrete.analytics.base.SectionedCommunicationAnalytic#annotate(edu.jhu.hlt.concrete.miscommunication.sectioned.SectionedCommunication)
+  /**
+   * @param arg0
+   *          a {@link NonSentencedSectionedCommunication}
+   * @return a {@link StanfordPostNERCommunication} with the analytic's annotations
+   * @throws AnalyticException
+   *           on analytic error
    */
   @Override
-  public Communication annotate(SectionedCommunication arg0) throws AnalyticException {
+  public StanfordPostNERCommunication annotate(NonSentencedSectionedCommunication arg0) throws AnalyticException {
     try {
+
       PerspectiveCommunication pc = new PerspectiveCommunication(arg0.getRoot(),
           "PerspectiveCreator");
       Communication persp = pc.getPerspective();
@@ -832,11 +819,34 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
       persp.setMetadata(md);
       resetGlobals();
       this.annotateSects(persp);
-      return persp;
-    } catch (ConcreteException e) {
-      throw new AnalyticException(e);
-    } catch (AnalyticException e) {
+      StanfordPostNERCommunication post = new StanfordPostNERCommunication(persp);
+      return post;
+    } catch (ConcreteException | MiscommunicationException e) {
       throw new AnalyticException(e);
     }
+  }
+
+  public static void main(String[] args) {
+    int argLen = args.length;
+    if (argLen < 2) {
+      logger.info("This program takes at least 2 arguments:");
+      logger.info("Argument 1: path to a .concrete file (representing a communication), a .tar file, or .tar.gz file"
+          + " with concrete communication objects.");
+      logger.info("The input communication(s) must have Sections, but no Sentences.");
+      logger.info("Argument 2: path to an output file, including the extension.");
+      logger.info("Argument 3 (optional): language. Default: en. Supported: en [English], cn [Chinese]");
+
+      logger.info("Usage example: {} {} {} [{}]", AnnotateNonTokenizedConcrete.class.toString(),
+          "path/to/input/file.extension", "path/to/output/file.extension", "en");
+      System.exit(1);
+    }
+
+    // infer language
+    String langStr = argLen >= 3 ? args[2] : "en";
+    PipelineLanguage pl = PipelineLanguage.getEnumeration(langStr);
+    NonSentencedSectionedCommunicationAnalytic<StanfordPostNERCommunication> annotator = new AnnotateNonTokenizedConcrete(pl);
+    Path inPath = Paths.get(args[0]);
+    Path outPath = Paths.get(args[1]);
+    new ConcreteStanfordRunner().run(inPath, outPath, annotator);
   }
 }

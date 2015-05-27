@@ -35,6 +35,7 @@ import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.TokenizationKind;
 import edu.jhu.hlt.concrete.UUID;
 import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
+import edu.jhu.hlt.concrete.util.Timing;
 import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 import edu.jhu.hlt.concrete.validation.ValidatableTextSpan;
 import edu.stanford.nlp.dcoref.CorefChain;
@@ -50,10 +51,8 @@ import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations;
 import edu.stanford.nlp.semgraph.SemanticGraphEdge;
 import edu.stanford.nlp.trees.GrammaticalRelation;
 import edu.stanford.nlp.trees.HeadFinder;
-import edu.stanford.nlp.trees.SemanticHeadFinder;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations;
-import edu.stanford.nlp.trees.international.pennchinese.ChineseSemanticHeadFinder;
 import edu.stanford.nlp.util.CoreMap;
 import edu.stanford.nlp.util.TypesafeMap;
 
@@ -69,43 +68,26 @@ class ConcreteAnnotator {
 
   public static final String toolName = "Concrete-Stanford Pipeline";
   public static final String corpusName = "";
-  public static final long annotationTime = System.currentTimeMillis();
-  /**
-  *
-  */
+
   private HeadFinder HEAD_FINDER;
+
+  private final String languageString;
 
   private final ConcreteStanfordProperties csProps;
   // private final boolean allowEmptyMentions;
-  private final String language;
 
   private final String[] annotatorList;
 
-  public ConcreteAnnotator(String language) {
-    this.csProps = new ConcreteStanfordProperties();
-    // this.allowEmptyMentions = this.csProps.getAllowEmptyMentions();
-    this.language = language;
-    this.annotatorList = ConcreteAnnotator.getDefaultAnnotators();
-    initHeadFinder();
+  public ConcreteAnnotator(PipelineLanguage language) {
+    this(language, ConcreteAnnotator.getDefaultAnnotators());
   }
 
-  public ConcreteAnnotator(String language, String[] annotators) {
+  public ConcreteAnnotator(PipelineLanguage language, String[] annotators) {
     this.csProps = new ConcreteStanfordProperties();
     // this.allowEmptyMentions = this.csProps.getAllowEmptyMentions();
-    this.language = language;
     this.annotatorList = annotators;
-    initHeadFinder();
-  }
-
-  private void initHeadFinder() {
-    if (language.equals("cn"))
-      this.HEAD_FINDER = new ChineseSemanticHeadFinder();
-    else if (language.equals("en")) {
-      this.HEAD_FINDER = new SemanticHeadFinder();
-    } else {
-      logger.warn("Do not support language {}", language);
-      throw new IllegalArgumentException("Do not support language "+language);
-    }
+    this.HEAD_FINDER = language.getHeadFinder();
+    this.languageString = language.toString();
   }
 
   private AnnotationMetadata getMetadata(String addToToolName) {
@@ -115,7 +97,7 @@ class ConcreteAnnotator {
 
     AnnotationMetadata md = new AnnotationMetadata();
     md.setTool(fullToolName);
-    md.setTimestamp(annotationTime);
+    md.setTimestamp(Timing.currentLocalTime());
     return md;
   }
 
@@ -697,7 +679,6 @@ class ConcreteAnnotator {
             tokId);
       }
     }
-
   }
 
   /**
@@ -935,7 +916,6 @@ class ConcreteAnnotator {
   }
 
   public String getLanguage() {
-    return language;
+    return this.languageString;
   }
-
 }

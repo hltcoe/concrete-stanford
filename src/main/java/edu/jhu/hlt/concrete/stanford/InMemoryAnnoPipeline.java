@@ -37,12 +37,10 @@ import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations;
 import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation;
 import edu.stanford.nlp.semgraph.SemanticGraphEdge;
-import edu.stanford.nlp.trees.EnglishGrammaticalStructureFactory;
 import edu.stanford.nlp.trees.GrammaticalStructure;
 import edu.stanford.nlp.trees.GrammaticalStructureFactory;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
-import edu.stanford.nlp.trees.international.pennchinese.ChineseGrammaticalStructureFactory;
 import edu.stanford.nlp.util.CoreMap;
 
 /**
@@ -68,7 +66,7 @@ public class InMemoryAnnoPipeline {
   private final WordsToSentencesAnnotator words2SentencesAnnotator;
   // NOTE: we're only using this for its annotationToDoc method
   private StanfordCoreNLP pipeline;
-  private static GrammaticalStructureFactory gsf;
+  private final GrammaticalStructureFactory gsf;
   private String[] documentLevelStages;
 
   private static String firstPassTokArgs = "" + "invertible=true," + // default
@@ -94,81 +92,21 @@ public class InMemoryAnnoPipeline {
       "untokenizable=noneKeep," + // override
       "strictTreebank3=false"; // default
 
-  public InMemoryAnnoPipeline() {
-    documentLevelStages = new String[] { "pos", "lemma", "parse", "ner" };
-    docCounter = 0;
-    ptbTokenizer = new TokenizerAnnotator();
-    ptbTokenizerUnofficial = new TokenizerAnnotator(true, "en",
-        firstPassTokArgs);
-    gsf = new EnglishGrammaticalStructureFactory();
-    words2SentencesAnnotator = new WordsToSentencesAnnotator();
-    Properties props = new Properties();
-    String annotatorList = "tokenize, ssplit, pos, lemma, parse, ner";
-    logger.debug("Using annotators: {}", annotatorList);
-
-    props.put("annotators", annotatorList);
-    props.setProperty("output.printSingletonEntities", "true");
-    logger.debug("Loading models and resources.");
-    pipeline = new StanfordCoreNLP(props);
-    logger.debug("Done.");
-  }
-
-  public InMemoryAnnoPipeline(String lang) {
+  public InMemoryAnnoPipeline(PipelineLanguage lang) {
     docCounter = 0;
     ptbTokenizer = new TokenizerAnnotator();
     String omg = null;
+    // needed?
+    if (lang == PipelineLanguage.ENGLISH)
+      omg = "en";
+
     ptbTokenizerUnofficial = new TokenizerAnnotator(true, omg, firstPassTokArgs);
     words2SentencesAnnotator = new WordsToSentencesAnnotator();
-    if (lang.equals("en")) {
-      documentLevelStages = new String[] { "pos", "lemma", "parse", "ner" };
-      gsf = new EnglishGrammaticalStructureFactory();
-      Properties props = new Properties();
-      String annotatorList = "tokenize, ssplit, pos, lemma, parse, ner";
-      logger.debug("Using annotators: {}", annotatorList);
-
-      props.put("annotators", annotatorList);
-      props.setProperty("output.printSingletonEntities", "true");
-      logger.debug("Loading models and resources.");
-      pipeline = new StanfordCoreNLP(props);
-    } else if (lang.equals("cn")) {
-      gsf = new ChineseGrammaticalStructureFactory();
-      pipeline = makeChinesePipeline();
-      documentLevelStages = new String[] { "pos", "lemma", "parse" };
-    } else {
-      logger.error("Do not support language: {}", lang);
-      throw new IllegalArgumentException("Do not support language: " + lang);
-    }
+    this.documentLevelStages = lang.getDocumentLevelStages();
+    this.gsf = lang.getGrammaticalFactory();
+    Properties props = lang.getProperties();
+    this.pipeline = new StanfordCoreNLP(props);
     logger.debug("Done.");
-  }
-
-  public static StanfordCoreNLP makeChinesePipeline() {
-    Properties props = new Properties();
-    String annotatorList = "segment, ssplit, pos, parse";
-    logger.debug("Using annotators: {}", annotatorList);
-
-    props.setProperty("customAnnotatorClass.segment",
-        "edu.stanford.nlp.pipeline.ChineseSegmenterAnnotator");
-
-    props.setProperty("segment.model",
-        "edu/stanford/nlp/models/segmenter/chinese/ctb.gz");
-    props.setProperty("segment.sighanCorporaDict",
-        "edu/stanford/nlp/models/segmenter/chinese");
-    props.setProperty("segment.serDictionary",
-        "edu/stanford/nlp/models/segmenter/chinese/dict-chris6.ser.gz");
-    props.setProperty("segment.sighanPostProcessing", "true");
-
-    props.setProperty("ssplit.boundaryTokenRegex", "[.]|[!?]+|[。]|[！？]+");
-    logger.debug("Loading segmentation models and resources.");
-
-    props.setProperty("pos.model", "edu/stanford/nlp/models/pos-tagger/chinese-distsim/chinese-distsim.tagger");
-    logger.debug("Loading pos models and resources.");
-
-    props.setProperty("parse.model",
-        "edu/stanford/nlp/models/lexparser/chinesePCFG.ser.gz");
-    logger.debug("Loading parser models and resources.");
-    props.put("annotators", annotatorList);
-    StanfordCoreNLP cpipeline = new StanfordCoreNLP(props);
-    return cpipeline;
   }
 
   void prepForNext() {
@@ -300,7 +238,7 @@ public class InMemoryAnnoPipeline {
           fixNullDependencyGraphs(annotation);
         }
       } catch (Exception e) {
-        logger.warn("Error annotating stage: {}" + stage);
+        logger.warn("Error annotating stage: {}", stage);
         exceptionThrown = true;
       }
     }
@@ -358,7 +296,7 @@ public class InMemoryAnnoPipeline {
     }
   }
 
-  private static void fillInParseAnnotations(boolean verbose, CoreMap sentence,
+  private void fillInParseAnnotations(boolean verbose, CoreMap sentence,
       Tree tree) {
     ParserAnnotatorUtils.fillInParseAnnotations(verbose, true, gsf, sentence,
         tree, GrammaticalStructure.Extras.NONE);

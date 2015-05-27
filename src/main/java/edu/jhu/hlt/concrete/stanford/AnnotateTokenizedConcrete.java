@@ -5,23 +5,13 @@
 package edu.jhu.hlt.concrete.stanford;
 
 import java.io.IOException;
-import java.net.URI;
-import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,12 +24,9 @@ import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
 import edu.jhu.hlt.concrete.analytics.base.TokenizationedCommunicationAnalytic;
-import edu.jhu.hlt.concrete.communications.WritableCommunication;
 import edu.jhu.hlt.concrete.miscommunication.MiscommunicationException;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
-import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
-import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.Timing;
 import edu.stanford.nlp.ling.CoreAnnotations;
@@ -64,23 +51,24 @@ import edu.stanford.nlp.util.CoreMap;
  * @author mgormley
  * @author npeng
  */
-public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAnalytic {
+public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAnalytic<StanfordPreNERCommunication> {
 
-  private static final Logger log = LoggerFactory
+  private static final Logger logger = LoggerFactory
       .getLogger(AnnotateTokenizedConcrete.class);
 
   private final InMemoryAnnoPipeline pipeline;
-  private final String language;
+  // private final String language;
+  private final PipelineLanguage lang;
 
   private final static String[] ChineseSectionName = new String[] { "</TURN>",
       "</HEADLINE>", "</TEXT>", "</POST>", "</post>", "</quote>" };
   private static Set<String> ChineseSectionNameSet = new HashSet<String>(
       Arrays.asList(ChineseSectionName));
 
-  public AnnotateTokenizedConcrete(String lang) {
-    log.info("Loading models for Stanford tools");
-    language = lang;
-    pipeline = new InMemoryAnnoPipeline(lang);
+  public AnnotateTokenizedConcrete(PipelineLanguage lang) {
+    logger.info("Loading models for Stanford tools");
+    this.lang = lang;
+    this.pipeline = new InMemoryAnnoPipeline(lang);
   }
 
   /**
@@ -102,11 +90,11 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
       try {
         pipeline.annotateLocalStages(sSectionAnno);
         String[] annotationList = { "pos", "cparse", "dparse" };
-        ConcreteAnnotator ca = new ConcreteAnnotator(language, annotationList);
+        ConcreteAnnotator ca = new ConcreteAnnotator(this.lang, annotationList);
         int procCharOffset = cSection.getTextSpan().getStart();
         ca.augmentSectionAnnotations(cSection, sSectionAnno, procCharOffset, sb);
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        throw new AnalyticException(e);
       }
     }
   }
@@ -125,7 +113,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
     try {
       pipeline.annotateLocalStages(sSentAnno);
       String[] annotationList = { "pos", "cparse", "dparse" };
-      ConcreteAnnotator ca = new ConcreteAnnotator(language, annotationList);
+      ConcreteAnnotator ca = new ConcreteAnnotator(this.lang, annotationList);
       int procCharOffset = cSent.getTextSpan().getStart();
       ca.augmentTokenization(cSent.getTokenization(), sSentAnno, procCharOffset);
     } catch (IOException e) {
@@ -184,18 +172,13 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
     List<List<CoreLabel>> sSents = new ArrayList<>();
     for (Sentence cSent : cSents) {
       List<CoreLabel> sSent = concreteSentToCoreLabels(cSent, comm);
-      /*
-       * for (CoreLabel tok : sSent) { if (tok.word().equals("("))
-       * tok.setWord("（"); else if (tok.word().equals(")")) tok.setWord("）"); }
-       */
       sToks.addAll(sSent);
       sSents.add(sSent);
     }
 
     List<CoreMap> sentences = mimicWordsToSentsAnnotator(sSents, comm.getText());
 
-    log.info("The tokenlist = {}", sToks);
-    // log.info("The sentencelist = " + sentences);
+    logger.info("The tokenlist = {}", sToks);
     sSectionAnno.set(CoreAnnotations.TokensAnnotation.class, sToks);
     sSectionAnno.set(CoreAnnotations.SentencesAnnotation.class, sentences);
     return sSectionAnno;
@@ -231,13 +214,13 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
           cSpan.getStart(), length);
       sSent.add(sTok);
     }
-    if (log.isDebugEnabled()) {
+    if (logger.isDebugEnabled()) {
       StringBuilder sb = new StringBuilder();
       for (CoreLabel sTok : sSent) {
         sb.append(sTok.word());
         sb.append(" ");
       }
-      log.debug("Converted sentence: {}", sb.toString());
+      logger.debug("Converted sentence: {}", sb.toString());
     }
     return sSent;
   }
@@ -263,9 +246,11 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
       int end = sentenceTokens.get(last)
           .get(CharacterOffsetEndAnnotation.class);
       String sentenceText = "";
-      if (language.equals("en")) {
+      switch (this.lang) {
+      case ENGLISH:
         sentenceText = text.substring(begin, end);
-      } else if (language.equals("cn")) {
+        break;
+      case CHINESE:
         StringBuilder sb = new StringBuilder();
         int cnt = 0;
         for (CoreLabel token : sentenceTokens) {
@@ -275,11 +260,11 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
           cnt++;
         }
         sentenceText = sb.toString();
-      } else {
-        log.error("Do not support language {}", language);
-        throw new IllegalArgumentException("Do not support language "
-            + language);
+        break;
+      default:
+        throw new IllegalArgumentException("Language: " + this.lang.toString() + " is not yet supported.");
       }
+
       // create a sentence annotation with text and token offsets
       Annotation sentence = new Annotation(sentenceText);
       sentence.set(CharacterOffsetBeginAnnotation.class, begin);
@@ -293,16 +278,6 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
       sentences.add(sentence);
     }
     return sentences;
-  }
-
-  public static FileSystem getNewZipFileSystem(Path zipFile) throws IOException {
-    if (Files.exists(zipFile)) {
-      Files.delete(zipFile);
-    }
-    URI uri = URI.create("jar:file:" + zipFile.toUri().getPath());
-    Map<String, String> env = new HashMap<>();
-    env.put("create", "true");
-    return FileSystems.newFileSystem(uri, env);
   }
 
   /**
@@ -319,61 +294,27 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
    */
   public static void main(String[] args) throws IOException, ConcreteException,
       AnalyticException {
+    int argLen = args.length;
+    if (argLen < 2) {
+      logger.info("This program takes at least 2 arguments:");
+      logger.info("Argument 1: path to a .concrete file (representing a communication), a .tar file, or .tar.gz file"
+          + " with concrete communication objects.");
+      logger.info("The input communication(s) must have Tokenizations.");
+      logger.info("Argument 2: path to an output file, including the extension.");
+      logger.info("Argument 3 (optional): language. Default: en. Supported: en [English], cn [Chinese]");
+
+      logger.info("Usage example: {} {} {} [{}]", AnnotateTokenizedConcrete.class.toString(),
+          "path/to/input/file.extension", "path/to/output/file.extension", "en");
+      System.exit(1);
+    }
+
+    // infer language
+    String langStr = argLen >= 3 ? args[2] : "en";
+    PipelineLanguage pl = PipelineLanguage.getEnumeration(langStr);
+    TokenizationedCommunicationAnalytic<StanfordPreNERCommunication> annotator = new AnnotateTokenizedConcrete(pl);
     Path inPath = Paths.get(args[0]);
     Path outPath = Paths.get(args[1]);
-    String lang = "en";
-    if (args.length >= 3) {
-      lang = args[2];
-    }
-    CommunicationSerializer cs = new CompactCommunicationSerializer();
-    AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete(lang);
-
-    if (args[0].endsWith(".zip") && args[1].endsWith(".zip")) {
-      // Write out to a zip file.
-      try (FileSystem zipfs = getNewZipFileSystem(outPath)) {
-        try (ZipFile zf = new ZipFile(inPath.toFile())) {
-          Enumeration<? extends ZipEntry> e = zf.entries();
-          while (e.hasMoreElements()) {
-            ZipEntry ze = e.nextElement();
-            log.info("Annotating communication: " + ze.getName());
-            final Communication comm = cs
-                .fromInputStream(zf.getInputStream(ze));
-            annotator.annotateWithStanfordNlp(comm);
-            new WritableCommunication(comm).writeToFile(
-                zipfs.getPath(ze.getName()), true);
-          }
-        }
-      }
-    } else if (args[0].endsWith(".comm") && args[1].endsWith(".comm")) {
-      // Write out to a file.
-      log.info("Annotating communication: " + inPath.getFileName());
-      final Communication comm = cs.fromPath(inPath);
-      annotator.annotateWithStanfordNlp(comm);
-      new WritableCommunication(comm).writeToFile(outPath, true);
-    } else {
-      // This assumes directory --> directory
-      // Write out to a directory.
-      if (!Files.exists(inPath)) {
-        throw new IOException("Input directory " + inPath + " doesn't exist.");
-      }
-      if (!Files.isDirectory(inPath)) {
-        throw new IOException("Input path " + inPath
-            + " exists, but is not a directory.");
-      }
-      if (!Files.exists(outPath)) {
-        Files.createDirectory(outPath);
-      }
-
-      try (DirectoryStream<Path> stream = Files.newDirectoryStream(inPath)) {
-        for (Path inFile : stream) {
-          log.info("Annotating communication: {}", inFile.getFileName());
-          final Communication comm = cs.fromPath(inFile);
-          annotator.annotateWithStanfordNlp(comm);
-          new WritableCommunication(comm).writeToFile(
-              outPath.resolve(inFile.getFileName()), true);
-        }
-      }
-    }
+    new ConcreteStanfordRunner().run(inPath, outPath, annotator);
   }
 
 
@@ -477,7 +418,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
    * @see edu.jhu.hlt.concrete.analytics.base.Analytic#annotate(edu.jhu.hlt.concrete.Communication)
    */
   @Override
-  public Communication annotate(Communication arg0) throws AnalyticException {
+  public StanfordPreNERCommunication annotate(Communication arg0) throws AnalyticException {
     try {
       return this.annotate(new CachedTokenizationCommunication(arg0));
     } catch (MiscommunicationException e) {
@@ -513,9 +454,13 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
    * @see edu.jhu.hlt.concrete.analytics.base.TokenizationedCommunicationAnalytic#annotate(edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication)
    */
   @Override
-  public Communication annotate(TokenizedCommunication arg0) throws AnalyticException {
+  public StanfordPreNERCommunication annotate(TokenizedCommunication arg0) throws AnalyticException {
     Communication cpy = new Communication(arg0.getRoot());
     annotateWithStanfordNlp(cpy);
-    return cpy;
+    try {
+      return new StanfordPreNERCommunication(cpy);
+    } catch (MiscommunicationException e) {
+      throw new AnalyticException(e);
+    }
   }
 }
