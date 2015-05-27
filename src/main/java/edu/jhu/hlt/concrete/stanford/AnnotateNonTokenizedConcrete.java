@@ -24,7 +24,10 @@ import edu.jhu.hlt.concrete.EntitySet;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
+import edu.jhu.hlt.concrete.Token;
+import edu.jhu.hlt.concrete.TokenList;
 import edu.jhu.hlt.concrete.Tokenization;
+import edu.jhu.hlt.concrete.TokenizationKind;
 import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
 import edu.jhu.hlt.concrete.analytics.base.SectionedCommunicationAnalytic;
 import edu.jhu.hlt.concrete.communications.PerspectiveCommunication;
@@ -32,6 +35,7 @@ import edu.jhu.hlt.concrete.miscommunication.MiscommunicationException;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.NonSentencedSectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.SectionedCommunication;
+import edu.jhu.hlt.concrete.tokenization.TokenizationFactory;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.Timing;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
@@ -259,6 +263,16 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
     for (Sentence sentence : section.getSentenceList()) {
       if (sentence.isSetTokenization())
         tokenizations.add(sentence.getTokenization());
+      else {
+        Tokenization tkz = TokenizationFactory.create();
+        tkz.setKind(TokenizationKind.TOKEN_LIST);
+        TokenList tl = new TokenList();
+        tl.setTokenList(new ArrayList<Token>());
+        tkz.setTokenList(tl);
+        tkz.setDependencyParseList(new ArrayList<>());
+        tkz.setTokenTaggingList(new ArrayList<>());
+        tkz.setParseList(new ArrayList<>());
+      }
     }
   }
 
@@ -819,7 +833,8 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
       persp.setMetadata(md);
       resetGlobals();
       this.annotateSects(persp);
-      return new StanfordPostNERCommunication(persp);
+      StanfordPostNERCommunication post = new StanfordPostNERCommunication(persp);
+      return post;
     } catch (ConcreteException | MiscommunicationException e) {
       throw new AnalyticException(e);
     }

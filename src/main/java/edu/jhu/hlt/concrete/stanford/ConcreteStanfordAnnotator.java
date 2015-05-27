@@ -46,13 +46,11 @@ public class ConcreteStanfordAnnotator {
   public static void main(String[] args) {
     if (args.length != 2) {
       LOGGER.info("This program takes 2 arguments.");
-      LOGGER
-          .info("The first is a path to a .concrete file, .tar file containing .concrete files, or "
-              + "a .tar.gz with .concrete files.");
+      LOGGER.info("The first is a path to a .concrete file, .tar file containing .concrete files, or "
+          + "a .tar.gz with .concrete files.");
       LOGGER.info("Each .concrete file must contain section segmentations.");
-      LOGGER
-          .info("The second argument is a path to the output file, matching the input file "
-              + "(if arg 1 == .concrete file, then output == .concrete file, etc.)");
+      LOGGER.info("The second argument is a path to the output file, matching the input file "
+          + "(if arg 1 == .concrete file, then output == .concrete file, etc.)");
       LOGGER.info("Example usage: ");
       LOGGER.info("{} /path/to/.concrete/file /path/to/output/file", ConcreteStanfordAnnotator.class.getName());
       System.exit(1);
@@ -111,7 +109,6 @@ public class ConcreteStanfordAnnotator {
       } else {
         int nElementsInitPath = initPath.getNameCount();
         Path inputFileName = initPath.getName(nElementsInitPath - 1);
-        // LOGGER.info("Input FN: {}", inputFileName.toString());
         String noExtStr = inputFileName.toString().split("\\.")[0];
         String fileName = noExtStr + ".tar";
         Path localOutPath = outPath.resolve(fileName);
