@@ -5,6 +5,8 @@
 package edu.jhu.hlt.concrete.stanford;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,12 +31,10 @@ import edu.jhu.hlt.concrete.TokenList;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.TokenizationKind;
 import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
-import edu.jhu.hlt.concrete.analytics.base.SectionedCommunicationAnalytic;
+import edu.jhu.hlt.concrete.analytics.base.NonSentencedSectionedCommunicationAnalytic;
 import edu.jhu.hlt.concrete.communications.PerspectiveCommunication;
 import edu.jhu.hlt.concrete.miscommunication.MiscommunicationException;
-import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.NonSentencedSectionedCommunication;
-import edu.jhu.hlt.concrete.miscommunication.sectioned.SectionedCommunication;
 import edu.jhu.hlt.concrete.tokenization.TokenizationFactory;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.Timing;
@@ -52,7 +52,7 @@ import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.util.CoreMap;
 
-public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnalytic<StanfordPostNERCommunication> {
+public class AnnotateNonTokenizedConcrete implements NonSentencedSectionedCommunicationAnalytic<StanfordPostNERCommunication> {
 
   private static final Logger logger = LoggerFactory
       .getLogger(AnnotateNonTokenizedConcrete.class);
@@ -757,7 +757,7 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
   @Override
   public StanfordPostNERCommunication annotate(Communication arg0) throws AnalyticException {
     try {
-      return this.annotate(new CachedSectionedCommunication(arg0));
+      return this.annotate(new NonSentencedSectionedCommunication(arg0));
     } catch (MiscommunicationException e) {
       throw new AnalyticException(e);
     }
@@ -788,22 +788,16 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
   }
 
   /**
-   * @param comm
-   *          a {@link Communication} with {@link Section}s, but whose sections do not contain {@link Sentence}s
-   * @return a {@link Communication} with stanford annotations
+   * @param arg0
+   *          a {@link NonSentencedSectionedCommunication}
+   * @return a {@link StanfordPostNERCommunication} with the analytic's annotations
    * @throws AnalyticException
    *           on analytic error
    */
-  public StanfordPostNERCommunication annotate(NonSentencedSectionedCommunication comm) throws AnalyticException {
-    return this.annotate(comm);
-  }
-
-  /* (non-Javadoc)
-   * @see edu.jhu.hlt.concrete.analytics.base.SectionedCommunicationAnalytic#annotate(edu.jhu.hlt.concrete.miscommunication.sectioned.SectionedCommunication)
-   */
   @Override
-  public StanfordPostNERCommunication annotate(SectionedCommunication arg0) throws AnalyticException {
+  public StanfordPostNERCommunication annotate(NonSentencedSectionedCommunication arg0) throws AnalyticException {
     try {
+
       PerspectiveCommunication pc = new PerspectiveCommunication(arg0.getRoot(),
           "PerspectiveCreator");
       Communication persp = pc.getPerspective();
@@ -830,5 +824,29 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
     } catch (ConcreteException | MiscommunicationException e) {
       throw new AnalyticException(e);
     }
+  }
+
+  public static void main(String[] args) {
+    int argLen = args.length;
+    if (argLen < 2) {
+      logger.info("This program takes at least 2 arguments:");
+      logger.info("Argument 1: path to a .concrete file (representing a communication), a .tar file, or .tar.gz file"
+          + " with concrete communication objects.");
+      logger.info("The input communication(s) must have Sections, but no Sentences.");
+      logger.info("Argument 2: path to an output file, including the extension.");
+      logger.info("Argument 3 (optional): language. Default: en. Supported: en [English], cn [Chinese]");
+
+      logger.info("Usage example: {} {} {} [{}]", AnnotateNonTokenizedConcrete.class.toString(),
+          "path/to/input/file.extension", "path/to/output/file.extension", "en");
+      System.exit(1);
+    }
+
+    // infer language
+    String langStr = argLen >= 3 ? args[2] : "en";
+    PipelineLanguage pl = PipelineLanguage.getEnumeration(langStr);
+    NonSentencedSectionedCommunicationAnalytic<StanfordPostNERCommunication> annotator = new AnnotateNonTokenizedConcrete(pl);
+    Path inPath = Paths.get(args[0]);
+    Path outPath = Paths.get(args[1]);
+    new ConcreteStanfordRunner().run(inPath, outPath, annotator);
   }
 }
