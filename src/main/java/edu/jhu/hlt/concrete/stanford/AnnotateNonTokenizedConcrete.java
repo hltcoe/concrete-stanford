@@ -107,16 +107,16 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
   }
 
   public AnnotateNonTokenizedConcrete() {
-    this(Arrays.asList(defaultKindsToFullyProcess), Arrays
+    this(Languages.ENGLISH, Arrays.asList(defaultKindsToFullyProcess), Arrays
         .asList(defaultKindsNoCoref), true);
   }
 
   public AnnotateNonTokenizedConcrete(Languages lang) {
-    this();
-    this.language = lang;
+    this(lang, Arrays.asList(defaultKindsToFullyProcess), Arrays
+        .asList(defaultKindsNoCoref), true);
   }
 
-  public AnnotateNonTokenizedConcrete(Collection<String> typesToAnnotate,
+  public AnnotateNonTokenizedConcrete(Languages lang, Collection<String> typesToAnnotate,
       Collection<String> typesToTokenizeOnly, boolean allowEmptyMentions) {
     this.kindsToProcessSet = new HashSet<>();
     this.kindsToProcessSet.addAll(typesToAnnotate);
@@ -124,9 +124,9 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
     this.kindsForNoCoref = new HashSet<>();
     this.kindsForNoCoref.addAll(typesToTokenizeOnly);
 
-    this.pipeline = new InMemoryAnnoPipeline();
-    this.allowEmptyEntitiesAndEntityMentions = allowEmptyMentions;
     this.language = Languages.ENGLISH;
+    this.pipeline = new InMemoryAnnoPipeline(this.language);
+    this.allowEmptyEntitiesAndEntityMentions = allowEmptyMentions;
   }
 
   /**

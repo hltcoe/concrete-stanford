@@ -203,29 +203,13 @@ public class InMemoryAnnoPipeline {
     public abstract HeadFinder getHeadFinder();
   }
 
-  public InMemoryAnnoPipeline() {
-    documentLevelStages = new String[] { "pos", "lemma", "parse", "ner" };
-    docCounter = 0;
-    ptbTokenizer = new TokenizerAnnotator();
-    ptbTokenizerUnofficial = new TokenizerAnnotator(true, "en",
-        firstPassTokArgs);
-    gsf = new EnglishGrammaticalStructureFactory();
-    words2SentencesAnnotator = new WordsToSentencesAnnotator();
-    Properties props = new Properties();
-    String annotatorList = "tokenize, ssplit, pos, lemma, parse, ner";
-    logger.debug("Using annotators: {}", annotatorList);
-
-    props.put("annotators", annotatorList);
-    props.setProperty("output.printSingletonEntities", "true");
-    logger.debug("Loading models and resources.");
-    pipeline = new StanfordCoreNLP(props);
-    logger.debug("Done.");
-  }
-
   public InMemoryAnnoPipeline(Languages lang) {
     docCounter = 0;
     ptbTokenizer = new TokenizerAnnotator();
     String omg = null;
+    if (lang == Languages.ENGLISH)
+      omg = "en";
+
     ptbTokenizerUnofficial = new TokenizerAnnotator(true, omg, firstPassTokArgs);
     words2SentencesAnnotator = new WordsToSentencesAnnotator();
     this.documentLevelStages = lang.getDocumentLevelStages();
