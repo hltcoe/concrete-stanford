@@ -5,20 +5,16 @@
 package edu.jhu.hlt.concrete.stanford;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -40,6 +36,7 @@ import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommuni
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
+import edu.jhu.hlt.concrete.stanford.InMemoryAnnoPipeline.Languages;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.Timing;
 import edu.stanford.nlp.ling.CoreAnnotations;
@@ -70,17 +67,18 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
       .getLogger(AnnotateTokenizedConcrete.class);
 
   private final InMemoryAnnoPipeline pipeline;
-  private final String language;
+  // private final String language;
+  private final Languages lang;
 
   private final static String[] ChineseSectionName = new String[] { "</TURN>",
       "</HEADLINE>", "</TEXT>", "</POST>", "</post>", "</quote>" };
   private static Set<String> ChineseSectionNameSet = new HashSet<String>(
       Arrays.asList(ChineseSectionName));
 
-  public AnnotateTokenizedConcrete(String lang) {
+  public AnnotateTokenizedConcrete(Languages lang) {
     log.info("Loading models for Stanford tools");
-    language = lang;
-    pipeline = new InMemoryAnnoPipeline(lang);
+    this.lang = lang;
+    this.pipeline = new InMemoryAnnoPipeline(lang);
   }
 
   /**
@@ -102,7 +100,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
       try {
         pipeline.annotateLocalStages(sSectionAnno);
         String[] annotationList = { "pos", "cparse", "dparse" };
-        ConcreteAnnotator ca = new ConcreteAnnotator(language, annotationList);
+        ConcreteAnnotator ca = new ConcreteAnnotator(this.lang, annotationList);
         int procCharOffset = cSection.getTextSpan().getStart();
         ca.augmentSectionAnnotations(cSection, sSectionAnno, procCharOffset, sb);
       } catch (IOException e) {
@@ -125,7 +123,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
     try {
       pipeline.annotateLocalStages(sSentAnno);
       String[] annotationList = { "pos", "cparse", "dparse" };
-      ConcreteAnnotator ca = new ConcreteAnnotator(language, annotationList);
+      ConcreteAnnotator ca = new ConcreteAnnotator(this.lang, annotationList);
       int procCharOffset = cSent.getTextSpan().getStart();
       ca.augmentTokenization(cSent.getTokenization(), sSentAnno, procCharOffset);
     } catch (IOException e) {
@@ -184,10 +182,6 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
     List<List<CoreLabel>> sSents = new ArrayList<>();
     for (Sentence cSent : cSents) {
       List<CoreLabel> sSent = concreteSentToCoreLabels(cSent, comm);
-      /*
-       * for (CoreLabel tok : sSent) { if (tok.word().equals("("))
-       * tok.setWord("（"); else if (tok.word().equals(")")) tok.setWord("）"); }
-       */
       sToks.addAll(sSent);
       sSents.add(sSent);
     }
@@ -195,7 +189,6 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
     List<CoreMap> sentences = mimicWordsToSentsAnnotator(sSents, comm.getText());
 
     log.info("The tokenlist = {}", sToks);
-    // log.info("The sentencelist = " + sentences);
     sSectionAnno.set(CoreAnnotations.TokensAnnotation.class, sToks);
     sSectionAnno.set(CoreAnnotations.SentencesAnnotation.class, sentences);
     return sSectionAnno;
@@ -263,9 +256,11 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
       int end = sentenceTokens.get(last)
           .get(CharacterOffsetEndAnnotation.class);
       String sentenceText = "";
-      if (language.equals("en")) {
+      switch (this.lang) {
+      case EN:
         sentenceText = text.substring(begin, end);
-      } else if (language.equals("cn")) {
+        break;
+      case CN:
         StringBuilder sb = new StringBuilder();
         int cnt = 0;
         for (CoreLabel token : sentenceTokens) {
@@ -275,11 +270,11 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
           cnt++;
         }
         sentenceText = sb.toString();
-      } else {
-        log.error("Do not support language {}", language);
-        throw new IllegalArgumentException("Do not support language "
-            + language);
+        break;
+      default:
+        throw new IllegalArgumentException("Language: " + this.lang.toString() + " is not yet supported.");
       }
+
       // create a sentence annotation with text and token offsets
       Annotation sentence = new Annotation(sentenceText);
       sentence.set(CharacterOffsetBeginAnnotation.class, begin);
@@ -293,16 +288,6 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
       sentences.add(sentence);
     }
     return sentences;
-  }
-
-  public static FileSystem getNewZipFileSystem(Path zipFile) throws IOException {
-    if (Files.exists(zipFile)) {
-      Files.delete(zipFile);
-    }
-    URI uri = URI.create("jar:file:" + zipFile.toUri().getPath());
-    Map<String, String> env = new HashMap<>();
-    env.put("create", "true");
-    return FileSystems.newFileSystem(uri, env);
   }
 
   /**
@@ -325,8 +310,9 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
     if (args.length >= 3) {
       lang = args[2];
     }
+    Languages language = Languages.getEnumeration(lang);
     CommunicationSerializer cs = new CompactCommunicationSerializer();
-    AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete(lang);
+    AnnotateTokenizedConcrete annotator = new AnnotateTokenizedConcrete(language);
 
     if (args[0].endsWith(".zip") && args[1].endsWith(".zip")) {
       // Write out to a zip file.

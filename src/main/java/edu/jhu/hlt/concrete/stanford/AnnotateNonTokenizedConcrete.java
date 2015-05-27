@@ -35,6 +35,7 @@ import edu.jhu.hlt.concrete.miscommunication.MiscommunicationException;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.NonSentencedSectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.SectionedCommunication;
+import edu.jhu.hlt.concrete.stanford.InMemoryAnnoPipeline.Languages;
 import edu.jhu.hlt.concrete.tokenization.TokenizationFactory;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.Timing;
@@ -72,7 +73,7 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
   private final Set<String> kindsToProcessSet;
   private final Set<String> kindsForNoCoref;
 
-  private String language;
+  private Languages language;
 
   /**
    * The global character offset. The exact meaning is determined by
@@ -110,7 +111,7 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
         .asList(defaultKindsNoCoref), true);
   }
 
-  public AnnotateNonTokenizedConcrete(String lang) {
+  public AnnotateNonTokenizedConcrete(Languages lang) {
     this();
     this.language = lang;
   }
@@ -125,7 +126,7 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
 
     this.pipeline = new InMemoryAnnoPipeline();
     this.allowEmptyEntitiesAndEntityMentions = allowEmptyMentions;
-    this.language = "en";
+    this.language = Languages.EN;
   }
 
   /**
@@ -675,14 +676,6 @@ public class AnnotateNonTokenizedConcrete implements SectionedCommunicationAnaly
     }
     return sb.toString().trim();
   }
-
-//  @Override
-//  public boolean ensurePreconditionsMet(Communication comm) {
-//    CommunicationValidator cv = new CommunicationValidator(comm);
-//    boolean initialValidity = cv.validate();
-//    return initialValidity;
-//    // return PrereqValidator.verifyCommunication(comm);
-//  }
 
   /**
    * A validator object to ensure that all prerequisites are met. The
