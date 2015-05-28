@@ -71,11 +71,11 @@ public class ConcreteStanfordRunner {
       // Ends with .tar.gz (else, second if)
       boolean isTarExt = lowerOutPathStr.endsWith(".tar");
       boolean isTarGzExt = lowerOutPathStr.endsWith(".tar.gz");
-      boolean isConcreteExt = lowerOutPathStr.endsWith(".concrete");
+      boolean isConcreteExt = lowerOutPathStr.endsWith(".concrete") || lowerOutPathStr.endsWith(".comm");
 
       // If no extention matches, exit.
       if (!isTarExt && !isTarGzExt && !isConcreteExt) {
-        LOGGER.error("Input file extension was not '.concrete', '.tar', or '.tar.gz'; exiting.");
+        LOGGER.error("Input file extension was not '.concrete', '.comm', '.tar', or '.tar.gz'; exiting.");
         System.exit(1);
       } else if (isConcreteExt) {
         // IF .concrete, run single communication.
