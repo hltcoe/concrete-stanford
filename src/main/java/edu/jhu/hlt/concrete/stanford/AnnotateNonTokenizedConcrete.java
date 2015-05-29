@@ -31,10 +31,12 @@ import edu.jhu.hlt.concrete.TokenList;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.TokenizationKind;
 import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
+import edu.jhu.hlt.concrete.analytics.base.NoEmptySentenceListOrTokenizedCommunicationAnalytic;
 import edu.jhu.hlt.concrete.analytics.base.NonSentencedSectionedCommunicationAnalytic;
 import edu.jhu.hlt.concrete.communications.PerspectiveCommunication;
 import edu.jhu.hlt.concrete.miscommunication.MiscommunicationException;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.NonSentencedSectionedCommunication;
+import edu.jhu.hlt.concrete.miscommunication.sentenced.NoEmptySentenceListOrTokenizedCommunication;
 import edu.jhu.hlt.concrete.tokenization.TokenizationFactory;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.Timing;
@@ -52,7 +54,8 @@ import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.util.CoreMap;
 
-public class AnnotateNonTokenizedConcrete implements NonSentencedSectionedCommunicationAnalytic<StanfordPostNERCommunication> {
+public class AnnotateNonTokenizedConcrete implements NonSentencedSectionedCommunicationAnalytic<StanfordPostNERCommunication>,
+    NoEmptySentenceListOrTokenizedCommunicationAnalytic<StanfordPostNERCommunication> {
 
   private static final Logger logger = LoggerFactory
       .getLogger(AnnotateNonTokenizedConcrete.class);
@@ -751,13 +754,23 @@ public class AnnotateNonTokenizedConcrete implements NonSentencedSectionedCommun
 
   }
 
-  /* (non-Javadoc)
-   * @see edu.jhu.hlt.concrete.analytics.base.Analytic#annotate(edu.jhu.hlt.concrete.Communication)
+  /*
+   * (non-Javadoc)
+   * @see edu.jhu.hlt.concrete.analytics.base.UncheckedAnalytic#annotate(edu.jhu.hlt.concrete.Communication)
    */
   @Override
   public StanfordPostNERCommunication annotate(Communication arg0) throws AnalyticException {
+    // try to loosely infer what is being dealt with
+    boolean anySents = Optional.ofNullable(arg0.getSectionList())
+        .orElseThrow(() -> new AnalyticException("Communication must have sections."))
+        .stream()
+        .anyMatch(sct -> sct.isSetSentenceList());
     try {
-      return this.annotate(new NonSentencedSectionedCommunication(arg0));
+      // if sentences are found, try to annotate via NoEmptySentence route.
+      if (anySents)
+        return this.annotate(new NoEmptySentenceListOrTokenizedCommunication(arg0));
+      else
+        return this.annotate(new NonSentencedSectionedCommunication(arg0));
     } catch (MiscommunicationException e) {
       throw new AnalyticException(e);
     }
@@ -788,17 +801,30 @@ public class AnnotateNonTokenizedConcrete implements NonSentencedSectionedCommun
   }
 
   /**
-   * @param arg0
+   * @param c
    *          a {@link NonSentencedSectionedCommunication}
    * @return a {@link StanfordPostNERCommunication} with the analytic's annotations
    * @throws AnalyticException
    *           on analytic error
    */
   @Override
-  public StanfordPostNERCommunication annotate(NonSentencedSectionedCommunication arg0) throws AnalyticException {
-    try {
+  public StanfordPostNERCommunication annotate(NonSentencedSectionedCommunication c) throws AnalyticException {
+    return this.annotateUnchecked(c.getRoot());
+  }
 
-      PerspectiveCommunication pc = new PerspectiveCommunication(arg0.getRoot(),
+  /**
+   * Core logic of taking an unannotated {@link Communication} and running stanford tools, including creating a {@link PerspectiveCommunication}. Does not
+   * validate requirements - as a result, should only be called by consumers who have guaranteed the Communcation's validity pre hoc.
+   *
+   * @param c
+   *          a {@link Communication}, must be valid for annotation
+   * @return a {@link StanfordPostNERCommunication} with stanford annotations
+   * @throws AnalyticException
+   *           on analytic error. Could be caused by unsanitized input (e.g., no Sections on a particular Communication)
+   */
+  private StanfordPostNERCommunication annotateUnchecked(Communication c) throws AnalyticException {
+    try {
+      PerspectiveCommunication pc = new PerspectiveCommunication(c,
           "PerspectiveCreator");
       Communication persp = pc.getPerspective();
 
@@ -848,5 +874,13 @@ public class AnnotateNonTokenizedConcrete implements NonSentencedSectionedCommun
     Path inPath = Paths.get(args[0]);
     Path outPath = Paths.get(args[1]);
     new ConcreteStanfordRunner().run(inPath, outPath, annotator);
+  }
+
+  /* (non-Javadoc)
+   * @see edu.jhu.hlt.concrete.analytics.base.NoEmptySentenceListOrTokenizedCommunicationAnalytic#annotate(edu.jhu.hlt.concrete.miscommunication.sentenced.NoEmptySentenceListOrTokenizedCommunication)
+   */
+  @Override
+  public StanfordPostNERCommunication annotate(NoEmptySentenceListOrTokenizedCommunication c) throws AnalyticException {
+    return this.annotateUnchecked(c.getRoot());
   }
 }
