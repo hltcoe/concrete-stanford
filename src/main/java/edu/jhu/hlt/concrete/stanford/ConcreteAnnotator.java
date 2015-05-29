@@ -770,7 +770,6 @@ class ConcreteAnnotator {
       // now check to make sure that we're not switching branches.
       if (priorBranch == 0) {
         priorBranch = whichBranch;
-        continue;
       } else {
         if (priorBranch != whichBranch) {
           throw new AnalyticException(
