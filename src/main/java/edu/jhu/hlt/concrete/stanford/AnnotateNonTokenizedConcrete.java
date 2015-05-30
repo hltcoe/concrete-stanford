@@ -454,7 +454,7 @@ public class AnnotateNonTokenizedConcrete implements NonSentencedSectionedCommun
         updateCharOffsetSetToken(token, isFirst, true);
         logger.debug("this token goes from {} to {}",
             token.get(CharacterOffsetBeginAnnotation.class),
-            + token.get(CharacterOffsetEndAnnotation.class));
+            token.get(CharacterOffsetEndAnnotation.class));
         logger.debug("\toriginal:[[{}]]", token.originalText());
         logger.debug("\tbefore:<<{}>>", token.before());
         logger.debug("\tafter:<<{}>>" + token.after());

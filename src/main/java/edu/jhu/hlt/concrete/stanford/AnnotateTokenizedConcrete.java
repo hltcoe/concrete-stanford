@@ -60,10 +60,10 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
   // private final String language;
   private final PipelineLanguage lang;
 
-  private final static String[] ChineseSectionName = new String[] { "</TURN>",
+  private final static String[] chineseSectionName = new String[] { "</TURN>",
       "</HEADLINE>", "</TEXT>", "</POST>", "</post>", "</quote>" };
   private static Set<String> ChineseSectionNameSet = new HashSet<String>(
-      Arrays.asList(ChineseSectionName));
+      Arrays.asList(chineseSectionName));
 
   public AnnotateTokenizedConcrete(PipelineLanguage lang) {
     logger.info("Loading models for Stanford tools");
@@ -202,13 +202,6 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
     for (Token cTok : cToks.getTokenList().getTokenList()) {
       TextSpan cSpan = cTok.getTextSpan();
       String text = cTok.getText();
-      if (text.equals("(")) {
-        // cTok.setText("（");
-        // text = "（";
-      } else if (text.equals(")")) {
-        // cTok.setText("）");
-        // text = "）";
-      }
       int length = cSpan.getEnding() - cSpan.getStart();
       CoreLabel sTok = coreLabelTokenFactory.makeToken(text, comm.getText(),
           cSpan.getStart(), length);

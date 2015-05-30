@@ -274,10 +274,9 @@ public class InMemoryAnnoPipeline {
         if (sentence.containsKey(TreeAnnotation.class)) {
           fillInParseAnnotations(false, sentence, sentence.get(TreeAnnotation.class));
         }
-      } catch (Exception e) {
+      } catch (RuntimeException e) {
         logger.warn("In stanfordToXML. Error filling in parse annotation for sentence {}", sentence);
       }
-
     }
     logger.debug("annotation keys :: {}", annotation.keySet().toString());
     return exceptionThrown;
@@ -372,7 +371,7 @@ public class InMemoryAnnoPipeline {
           if (sentence.containsKey(TreeAnnotation.class)) {
             fillInParseAnnotations(false, sentence, sentence.get(TreeAnnotation.class));
           }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
           logger.warn("In stanfordToXML. Error filling in parse annotation for sentence {}", sentence);
         }
 
@@ -510,7 +509,8 @@ public class InMemoryAnnoPipeline {
         rootDepElem.appendChild(rootIndex);
         rootElem.appendChild(rootDepElem);
         parentElem.appendChild(rootElem);
-      } catch (Exception e) {
+      } catch (RuntimeException e) {
+        logger.warn("Caught runtime exception.", e);
       }
       for (SemanticGraphEdge edge : semGraph.edgeListSorted()) {
         String rel = edge.getRelation().toString();
