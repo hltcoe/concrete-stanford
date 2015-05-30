@@ -62,7 +62,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
 
   private final static String[] chineseSectionName = new String[] { "</TURN>",
       "</HEADLINE>", "</TEXT>", "</POST>", "</post>", "</quote>" };
-  private static Set<String> ChineseSectionNameSet = new HashSet<String>(
+  private static Set<String> chineseSectionNameSet = new HashSet<String>(
       Arrays.asList(chineseSectionName));
 
   public AnnotateTokenizedConcrete(PipelineLanguage lang) {
@@ -84,7 +84,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
     StringBuilder sb = new StringBuilder();
     for (Section cSection : comm.getSectionList()) {
       if (cSection.isSetLabel()
-          && !ChineseSectionNameSet.contains(cSection.getLabel()))
+          && !chineseSectionNameSet.contains(cSection.getLabel()))
         continue;
       Annotation sSectionAnno = getSectionAsAnnotation(cSection, comm);
       try {
