@@ -435,10 +435,14 @@ class ConcreteAnnotator {
             .warn("Concrete sentence {} does not have raw text spans set. We can compute these on the fly, but something might be wrong.", concSent.getUuid());
         Token firstToken = tokenList.get(0);
         Token lastToken = tokenList.get(numTokens - 1);
-        TextSpan rawTS = makeSafeSpan(firstToken.getRawTextSpan().getStart(),
-            lastToken.getRawTextSpan().getEnding());
-        concSent.setRawTextSpan(rawTS);
-        logger.debug("Setting sentence raw text span to : {}", rawTS);
+        if(firstToken.isSetRawTextSpan() && lastToken.isSetRawTextSpan()) {
+          TextSpan rawTS = makeSafeSpan(firstToken.getRawTextSpan().getStart(),
+                                        lastToken.getRawTextSpan().getEnding());
+          concSent.setRawTextSpan(rawTS);
+          logger.debug("Setting sentence raw text span to : {}", rawTS);
+        } else {
+          logger.info("Sentence {} is not getting a rawTextSpan: either the first or last tokens (or both) in Tokenization {} does not a rawTextSpan", concSent.getUuid(), tokenization.getUuid());
+        }
       }
       // and finally, add the sentence text to the string builder
       sb.append(sentText);
