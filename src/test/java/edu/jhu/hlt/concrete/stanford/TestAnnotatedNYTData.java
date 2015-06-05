@@ -6,11 +6,14 @@
 package edu.jhu.hlt.concrete.stanford;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.After;
 import org.junit.Before;
@@ -23,10 +26,14 @@ import com.nytlabs.corpus.NYTCorpusDocumentParser;
 
 import edu.jhu.hlt.annotatednyt.AnnotatedNYTDocument;
 import edu.jhu.hlt.concrete.Communication;
+import edu.jhu.hlt.concrete.EntityMention;
+import edu.jhu.hlt.concrete.EntityMentionSet;
 import edu.jhu.hlt.concrete.Section;
+import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
+import edu.jhu.hlt.concrete.TokenRefSequence;
 import edu.jhu.hlt.concrete.ingesters.annotatednyt.CommunicationizableAnnotatedNYTDocument;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
@@ -123,6 +130,29 @@ public class TestAnnotatedNYTData {
     logger.info("New text: {}", sRoot.getText());
     assertEquals(first.getTextSpan(), sRoot.getSectionListIterator().next().getTextSpan());
 
+    assertTrue(sRoot.isSetEntityMentionSetList());
+    assertEquals(1, sRoot.getEntityMentionSetList().size());
+    EntityMentionSet ems = sRoot.getEntityMentionSetList().get(0);
+    assertTrue(ems.isSetMentionList());
+    Map<String, Tokenization> tokMap = new HashMap<>();
+    for(Section sec : sRoot.getSectionList()) {
+      for(Sentence sent : sec.getSentenceList()) {
+        tokMap.put(sent.getTokenization().getUuid().getUuidString(),
+                   sent.getTokenization());
+      }
+    }
+    for(EntityMention em : ems.getMentionList()) {
+      assertTrue(em.isSetTokens());
+      TokenRefSequence trs = em.getTokens();
+      assertTrue(trs.isSetTokenIndexList());
+      String tokId = trs.getTokenizationId().getUuidString();
+      Tokenization tokenization = tokMap.get(tokId);
+      assertTrue(tokenization != null);
+      if(em.isSetText()) {
+        
+      }
+    }
+    
 //    for (Section s : cscPost.getSections()) {
 //      SuperTextSpan sts = new SuperTextSpan(s.getTextSpan(), sRoot);
 //      logger.info("On section: {}", s.toString());
