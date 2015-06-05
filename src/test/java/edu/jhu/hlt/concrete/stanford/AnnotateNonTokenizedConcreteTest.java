@@ -35,7 +35,7 @@ import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.TokenTagging;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.communications.WritableCommunication;
-import edu.jhu.hlt.concrete.ingesters.gigaword.CommunicationizableGigawordDocument;
+import edu.jhu.hlt.concrete.ingesters.gigaword.GigawordDocumentConverter;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
 import edu.jhu.hlt.concrete.random.RandomConcreteFactory;
@@ -45,8 +45,6 @@ import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.jhu.hlt.concrete.util.SuperTextSpan;
 import edu.jhu.hlt.concrete.uuid.UUIDFactory;
-import gigaword.api.GigawordDocumentConverter;
-import gigaword.interfaces.GigawordDocument;
 
 /**
  * @author max
@@ -109,16 +107,11 @@ public class AnnotateNonTokenizedConcreteTest {
     c.addToSectionList(SingleSectionSegmenter.createSingleSection(c, "Passage"));
 
     GigawordDocumentConverter conv = new GigawordDocumentConverter();
-    GigawordDocument pdc = conv.fromPathString(this.pathToAFPComm);
-    this.mapped = new CommunicationizableGigawordDocument(pdc)
-        .toCommunication();
+    this.mapped = conv.fromPath(this.pathToAFPComm);
     this.randomTestComm = new Communication(c);
 
-    this.wonkyNYT = new CommunicationizableGigawordDocument(
-        conv.fromPathString(this.pathToNYTComm)).toCommunication();
-
-    this.nyt1999 = new CommunicationizableGigawordDocument(
-        conv.fromPathString(this.pathTo1999NYTComm)).toCommunication();
+    this.wonkyNYT = conv.fromPath(this.pathToNYTComm);
+    this.nyt1999 = conv.fromPath(this.pathTo1999NYTComm);
   }
 
   /**
