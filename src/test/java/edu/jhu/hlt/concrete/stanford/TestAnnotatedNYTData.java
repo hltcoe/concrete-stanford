@@ -148,8 +148,17 @@ public class TestAnnotatedNYTData {
       String tokId = trs.getTokenizationId().getUuidString();
       Tokenization tokenization = tokMap.get(tokId);
       assertTrue(tokenization != null);
+      final int numToks = tokenization.getTokenList().getTokenList().size();
+      for(Integer i : trs.getTokenIndexList()) {
+        assertTrue(i >= 0 && i < numToks);
+      }
       if(em.isSetText()) {
-        
+        StringBuilder sb = new StringBuilder();
+        List<Token> tokList = tokenization.getTokenList().getTokenList();
+        for(Integer i : trs.getTokenIndexList()) {
+          sb.append(tokList.get(i).getText() + " ");
+        }
+        assertEquals(sb.toString().trim(), em.getText());
       }
     }
     
