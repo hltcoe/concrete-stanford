@@ -189,10 +189,10 @@ class ConcreteAnnotator {
    */
   public static TokenRefSequence extractTokenRefSequence(CorefMention coreMention,
       UUID tokUuid, boolean representative) throws AnalyticException {
-    int start = coreMention.startIndex;
-    int end = coreMention.endIndex;
+    int start = ConcreteAnnotator.coreMentionTokenAsIndex(coreMention.startIndex);
+    int end   = ConcreteAnnotator.coreMentionTokenAsIndex(coreMention.endIndex);
     logger.debug("Working on mention string: {}", coreMention.mentionSpan);
-    int head = coreMention.headIndex;
+    int head = ConcreteAnnotator.coreMentionTokenAsIndex(coreMention.headIndex);
     if (end - start < 0) {
       throw new AnalyticException(
           "Calling extractTokenRefSequence on mention " + coreMention
@@ -560,6 +560,10 @@ class ConcreteAnnotator {
     return sentNum - 1;
   }
 
+  public static int coreMentionTokenAsIndex(int tokenIndex) {
+    return tokenIndex - 1;
+  }
+    
   public String getLanguage() {
     return this.languageString;
   }
