@@ -9,12 +9,12 @@ import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,13 +27,10 @@ import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.TokenTagging;
 import edu.jhu.hlt.concrete.Tokenization;
+import edu.jhu.hlt.concrete.communications.WritableCommunication;
 import edu.jhu.hlt.concrete.ingesters.gigaword.GigawordDocumentConverter;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
-import edu.jhu.hlt.concrete.stanford.ConcreteStanfordPreCorefAnalytic;
-import edu.jhu.hlt.concrete.stanford.ConcreteStanfordTokensSentenceAnalytic;
-import edu.jhu.hlt.concrete.stanford.MarkupRewriter;
-import edu.jhu.hlt.concrete.stanford.PipelineLanguage;
 import edu.jhu.hlt.concrete.util.SuperTextSpan;
 
 /**
@@ -48,17 +45,14 @@ public class GigawordTest {
   ConcreteStanfordTokensSentenceAnalytic analytic;
   ConcreteStanfordPreCorefAnalytic preCorefAnalytic;
 
-  private final Set<String> gwMarkupTags = new HashSet<>();
-
   @Before
   public void setUp() throws Exception {
-
-
     this.comm = new GigawordDocumentConverter().fromPath(this.p);
     LOGGER.info("Loaded comm: {} [UUID: {}]", comm.getId(), comm.getUuid().getUuidString());
   }
 
-
+  @Rule
+  public TemporaryFolder tf = new TemporaryFolder();
 
   private static void assertSectionListEquality(List<Section> l1, List<Section> l2) {
     assertEquals(l1.size(), l2.size());
@@ -172,5 +166,7 @@ public class GigawordTest {
         }
       }
     }
+
+    new WritableCommunication(preCorefRoot).writeToFile(this.tf.getRoot().toPath(), true);
   }
 }

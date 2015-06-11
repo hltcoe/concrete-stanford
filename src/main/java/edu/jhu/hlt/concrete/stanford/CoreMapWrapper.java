@@ -72,7 +72,7 @@ public class CoreMapWrapper {
     this.tokenBeginOffset = cm.get(TokenBeginAnnotation.class);
     this.tokenEndOffset = cm.get(TokenEndAnnotation.class);
     this.clList = cm.get(TokensAnnotation.class);
-    LOGGER.debug("CoreLabel list has {} elements.", clList.size());
+    LOGGER.trace("CoreLabel list has {} elements.", clList.size());
   }
 
 
@@ -174,9 +174,12 @@ public class CoreMapWrapper {
 
     List<TokenTagging> tokTagList = new ArrayList<>();
 
-    TokenTagging nerTT = TokenTaggingFactory.create("NER");
-    TokenTagging posTT = TokenTaggingFactory.create("POS");
-    TokenTagging lemmaTT = TokenTaggingFactory.create("LEMMA");
+    TokenTagging nerTT = TokenTaggingFactory.create("NER")
+        .setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford-NER"));
+    TokenTagging posTT = TokenTaggingFactory.create("POS")
+        .setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford-POS"));
+    TokenTagging lemmaTT = TokenTaggingFactory.create("LEMMA")
+        .setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford-LEMMA"));
 
     for (CoreLabel cl : clList) {
       final Set<Class<?>> keySet = cl.keySet();
@@ -202,7 +205,7 @@ public class CoreMapWrapper {
     tkz.setTokenTaggingList(tokTagList);
     TokenList tl = new TokenList(cTokenList);
     tkz.setTokenList(tl);
-    AnnotationMetadata md = AnnotationMetadataFactory.fromCurrentLocalTime().setTool("modular-test");
+    AnnotationMetadata md = AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford-Tokenization");
     tkz.setMetadata(md);
     return tkz;
   }

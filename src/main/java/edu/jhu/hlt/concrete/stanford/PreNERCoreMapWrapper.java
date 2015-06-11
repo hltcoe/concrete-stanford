@@ -85,6 +85,7 @@ public class PreNERCoreMapWrapper {
     Parse p = ParseFactory.create();
     TheoryDependencies deps = new TheoryDependencies();
     deps.addToTokenizationTheoryList(tokenizationUUID);
+    // TODO
     AnnotationMetadata md = new AnnotationMetadata("fix later", Timing.currentLocalTime(), 1);
     p.setMetadata(md);
     constructConstituent(root, idCounter, left, right, n, p, tokenizationUUID, hf);
