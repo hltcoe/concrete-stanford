@@ -20,8 +20,8 @@ public enum PipelineLanguage {
 
   ENGLISH ("en") {
     @Override
-    public String[] getDocumentLevelStages() {
-      return new String[] { "pos", "lemma", "parse", "ner" };
+    public String[] getPostTokenizationAnnotators() {
+      return new String[] { "pos", "lemma", "parse", "ner", "dcoref" };
     }
 
     @Override
@@ -47,8 +47,8 @@ public enum PipelineLanguage {
   },
   CHINESE ("cn") {
     @Override
-    public String[] getDocumentLevelStages() {
-      return new String[] { "pos", "lemma", "parse", "ner" };
+    public String[] getPostTokenizationAnnotators() {
+      return new String[] { "pos", "parse" };
     }
 
     @Override
@@ -116,7 +116,7 @@ public enum PipelineLanguage {
     throw new IllegalArgumentException("No matching Languages for value: " + v);
   }
 
-  public abstract String[] getDocumentLevelStages();
+  public abstract String[] getPostTokenizationAnnotators();
 
   public abstract Properties getProperties();
 

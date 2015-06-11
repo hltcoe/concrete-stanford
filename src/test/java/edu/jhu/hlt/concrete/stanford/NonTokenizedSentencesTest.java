@@ -50,7 +50,6 @@ public class NonTokenizedSentencesTest {
   @Before
   public void setUp() throws Exception {
     this.pipe = new AnnotateNonTokenizedConcrete();
-    this.kindsToAnnotate = this.pipe.getSectionTypesToAnnotate();
   }
 
   private Communication getTestComm() throws Exception {

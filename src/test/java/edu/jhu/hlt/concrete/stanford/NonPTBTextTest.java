@@ -22,19 +22,25 @@ import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.TokenList;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.TokenizationKind;
+import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
+import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
 import edu.jhu.hlt.concrete.random.RandomConcreteFactory;
+import edu.jhu.hlt.concrete.stanford.ConcreteStanfordPreCorefAnalytic;
+import edu.jhu.hlt.concrete.stanford.ConcreteStanfordTokensSentenceAnalytic;
+import edu.jhu.hlt.concrete.stanford.PipelineLanguage;
 import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 
 public class NonPTBTextTest {
 
-  private static final Logger LOGGER = LoggerFactory
-      .getLogger(NonPTBTextTest.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(NonPTBTextTest.class);
 
-  RandomConcreteFactory cf = new RandomConcreteFactory();
+  private final RandomConcreteFactory cf = new RandomConcreteFactory();
 
   public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 ( Hanfeng ) 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 ( ChinaHuanengGroup ) 和 中信 ( CITIC ) .";
   // Note in the English sentence below, we have carefully included extra whitespace at the start, middle, and end of the sentence.
   public static final String englishText1 = "   John ( a boy )    ran fast .  ";
+
+  ConcreteStanfordTokensSentenceAnalytic preAnalytic = new ConcreteStanfordTokensSentenceAnalytic();
 
   @Test
   public void testChinese1() throws Exception {
@@ -73,10 +79,11 @@ public class NonPTBTextTest {
 
     assertTrue(new CommunicationValidator(chineseComm).validate());
 
-    AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete(PipelineLanguage.CHINESE);
-    atc.annotateWithStanfordNlp(chineseComm);
-    assertTrue(tokenization.isSetParseList());
-    assertEquals(1, tokenization.getParseListSize());
+    TokenizedCommunication tc = new CachedTokenizationCommunication(chineseComm);
+    TokenizedCommunication wDepParse = new ConcreteStanfordPreCorefAnalytic(PipelineLanguage.CHINESE).annotate(tc);
+    Tokenization ntkz = wDepParse.getTokenizations().get(0);
+    assertTrue(ntkz.isSetParseList());
+    assertEquals(1, ntkz.getParseListSize());
   }
 
   @Test
@@ -120,32 +127,36 @@ public class NonPTBTextTest {
     tokenization.setTokenTaggingList(new ArrayList<>());
     sentence.setTokenization(tokenization);
     assertTrue(new CommunicationValidator(englishComm).validate());
-    AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete(PipelineLanguage.ENGLISH);
-    atc.annotateWithStanfordNlp(englishComm);
-    assertEquals(8, tokenList.getTokenListSize());
-    assertTrue(tokenization.isSetParseList());
-    assertEquals(1, tokenization.getParseListSize());
+    TokenizedCommunication tc = new CachedTokenizationCommunication(englishComm);
+    TokenizedCommunication wDepParse = new ConcreteStanfordPreCorefAnalytic().annotate(tc);
+    Tokenization ntkz = wDepParse.getTokenizations().get(0);
+    TokenList ntl = ntkz.getTokenList();
+    // AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete(PipelineLanguage.ENGLISH);
+    // atc.annotateWithStanfordNlp(englishComm);
+    assertEquals(8, ntl.getTokenListSize());
+    assertTrue(ntkz.isSetParseList());
+    assertEquals(1, ntkz.getParseListSize());
     int maxCParseSpan = 0;
-    for (Constituent cons : tokenization.getParseList().get(0)
+    for (Constituent cons : ntkz.getParseList().get(0)
         .getConstituentList()) {
       maxCParseSpan = cons.getEnding() > maxCParseSpan ? cons.getEnding()
           : maxCParseSpan;
     }
     assertEquals(8, maxCParseSpan);
-    
-    assertEquals("John", tokenList.getTokenList().get(0).getText());
-    assertEquals("(", tokenList.getTokenList().get(1).getText());
-    assertEquals("run", tokenList.getTokenList().get(5).getText());
-    assertEquals("fast", tokenList.getTokenList().get(6).getText());
-    
-    TextSpan ts;  
-    ts = tokenList.getTokenList().get(0).getTextSpan();
+
+    assertEquals("John", ntl.getTokenList().get(0).getText());
+    // assertEquals("(", ntl.getTokenList().get(1).getText());
+    assertEquals("ran", ntl.getTokenList().get(5).getText());
+    assertEquals("fast", ntl.getTokenList().get(6).getText());
+
+    TextSpan ts;
+    ts = ntl.getTokenList().get(0).getTextSpan();
     assertEquals("John", englishText1.substring(ts.getStart(), ts.getEnding()));
-    ts = tokenList.getTokenList().get(1).getTextSpan();
+    ts = ntl.getTokenList().get(1).getTextSpan();
     assertEquals("(", englishText1.substring(ts.getStart(), ts.getEnding()));
-    ts = tokenList.getTokenList().get(5).getTextSpan();
-    assertEquals("run", englishText1.substring(ts.getStart(), ts.getEnding()));
-    ts = tokenList.getTokenList().get(6).getTextSpan();
+    ts = ntl.getTokenList().get(5).getTextSpan();
+    assertEquals("ran", englishText1.substring(ts.getStart(), ts.getEnding()));
+    ts = ntl.getTokenList().get(6).getTextSpan();
     assertEquals("fast", englishText1.substring(ts.getStart(), ts.getEnding()));
   }
 }

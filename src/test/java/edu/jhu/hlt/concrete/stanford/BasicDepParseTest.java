@@ -12,7 +12,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
@@ -22,6 +25,10 @@ import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.Tokenization;
+import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
+import edu.jhu.hlt.concrete.stanford.ConcreteStanfordPreCorefAnalytic;
+import edu.jhu.hlt.concrete.stanford.ConcreteStanfordTokensSentenceAnalytic;
+import edu.jhu.hlt.concrete.stanford.PipelineLanguage;
 import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 
 /**
@@ -45,10 +52,22 @@ import edu.jhu.hlt.concrete.uuid.UUIDFactory;
  * @author travis
  */
 public class BasicDepParseTest {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(BasicDepParseTest.class);
+
   public static Communication getTestCommunication() {
     return unsectionedCommunicationFromText(
         //"My dog also likes eating sausage.");
         "The Stanford Parser is a very precise piece of equipment.");
+  }
+
+  ConcreteStanfordTokensSentenceAnalytic preAnalytic;
+  ConcreteStanfordPreCorefAnalytic analytic;
+
+  @Before
+  public void setUp() throws Exception {
+    this.preAnalytic = new ConcreteStanfordTokensSentenceAnalytic();
+    this.analytic = new ConcreteStanfordPreCorefAnalytic(PipelineLanguage.ENGLISH);
   }
 
   /**
@@ -111,12 +130,11 @@ public class BasicDepParseTest {
     Assert.assertEquals(1, dps.size());
     for (Dependency e : dps.get(0).getDependencyList()) {
       Assert.assertTrue(e.getDep() >= 0);
-      Token word = toks.getTokenList().getTokenList().get(e.getDep());
+      List<Token> tokList = toks.getTokenList().getTokenList();
+      Token word = tokList.get(e.getDep());
       String h = "ROOT-0";
-      if (e.isSetGov()) {
-        h = String.format("%s-%d",
-            toks.getTokenList().getTokenList().get(e.getGov()).getText(),
-            e.getGov() + 1);
+      if (e.isSetGov() && e.getGov() >= 0) {
+        h = String.format("%s-%d", tokList.get(e.getGov()).getText(), e.getGov() + 1);
       }
       String dep = String.format("%s(%s, %s-%d)",
           e.getEdgeType(),
@@ -131,12 +149,15 @@ public class BasicDepParseTest {
   @Test
   public void test() throws Exception {
     Communication c = getTestCommunication();
-    AnnotateNonTokenizedConcrete pipe = new AnnotateNonTokenizedConcrete();
-    c = pipe.annotate(c).getRoot();
+    TokenizedCommunication tc = this.preAnalytic.annotate(c);
+    tc.getSections().forEach(s -> LOGGER.debug("Got section: {}", s.toString()));
+    tc.getSentences().forEach(s -> LOGGER.debug("Got sentence: {}", s.toString()));
+    TokenizedCommunication postPre = this.analytic.annotate(tc);
+    c = postPre.getRoot();
     Set<String> gold = getExpectedBasicDependencies();
     Set<String> hyp = getObservedBasicDependencies(c);
-    System.out.println("gold = " + gold);
-    System.out.println("hyp = " + hyp);
+    LOGGER.debug("gold = {}", gold);
+    LOGGER.debug("hyp = {}", hyp);
     assertTrue(gold.equals(hyp));
   }
 }

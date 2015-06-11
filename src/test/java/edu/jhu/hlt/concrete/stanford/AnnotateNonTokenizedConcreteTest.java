@@ -101,7 +101,6 @@ public class AnnotateNonTokenizedConcreteTest {
   @Before
   public void setUp() throws Exception {
     this.pipe = new AnnotateNonTokenizedConcrete();
-    this.kindsToAnnotate = this.pipe.getSectionTypesToAnnotate();
 
     Communication c = this.cf.communication();
     c.addToSectionList(SingleSectionSegmenter.createSingleSection(c, "Passage"));
