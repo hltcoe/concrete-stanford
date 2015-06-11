@@ -4,6 +4,9 @@
  */
 package edu.jhu.hlt.concrete.stanford;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,5 +95,41 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
     } catch (MiscommunicationException e) {
       throw new AnalyticException(e);
     }
+  }
+
+  /**
+   * Usage is: inputPath outputPath [language] Currently, three modes between
+   * inputPath and outputPath are supported:
+   * <ul>
+   * <li>.tar to .tar</li>
+   * <li>.tar.gz to .tar.gz</li>
+   * <li>single comm to single comm</li>
+   * </ul>
+   * <br>
+   * The optional third argument language defaults to en (English). Currently,
+   * the only other supported option is cn (Chinese).
+   */
+  public static void main(String[] args) {
+    int argLen = args.length;
+    if (argLen < 2) {
+      logger.info("This program takes at least 2 arguments:");
+      logger.info("Argument 1: path to a .concrete file (representing a communication), a .tar file, or .tar.gz file"
+          + " with concrete communication objects.");
+      logger.info("The input communication(s) must have Tokenizations.");
+      logger.info("Argument 2: path to an output file, including the extension.");
+      logger.info("Argument 3 (optional): language. Default: en. Supported: en [English], cn [Chinese]");
+
+      logger.info("Usage example: {} {} {} [{}]", AnnotateTokenizedConcrete.class.toString(),
+          "path/to/input/file.extension", "path/to/output/file.extension", "en");
+      System.exit(1);
+    }
+
+    // infer language
+    String langStr = argLen >= 3 ? args[2] : "en";
+    PipelineLanguage pl = PipelineLanguage.getEnumeration(langStr);
+    TokenizationedCommunicationAnalytic<StanfordPostNERCommunication> annotator = new AnnotateTokenizedConcrete(pl);
+    Path inPath = Paths.get(args[0]);
+    Path outPath = Paths.get(args[1]);
+    new ConcreteStanfordRunner().run(inPath, outPath, annotator);
   }
 }
