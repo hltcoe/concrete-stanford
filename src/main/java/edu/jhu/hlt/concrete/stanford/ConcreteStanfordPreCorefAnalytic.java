@@ -52,6 +52,9 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     // this.pipeline = StanfordPipelineFactory.preCorefPipeline();
     this.lang = lang;
     this.hf = this.lang.getHeadFinder();
+
+    // needed to avoid NPE when using existingAnnotator.
+    new StanfordCoreNLP(this.lang.getProperties());
   }
 
   public ConcreteStanfordPreCorefAnalytic() {

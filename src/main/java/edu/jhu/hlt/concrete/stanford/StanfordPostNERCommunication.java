@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.DependencyParse;
 import edu.jhu.hlt.concrete.Entity;
@@ -35,6 +38,8 @@ import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
 public class StanfordPostNERCommunication implements TokenizedCommunication, EntitiedCommunication, EntityMentionedCommunication,
     DependencyParsedCommunication, NamedEntityTaggedCommunication, PartOfSpeechTaggedCommunication, LemmatizedCommunication {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(StanfordPostNERCommunication.class);
+
   private final StanfordPreNERCommunication preNER;
 
   private final EntityMentionSet ems;
@@ -49,12 +54,12 @@ public class StanfordPostNERCommunication implements TokenizedCommunication, Ent
     Iterator<EntityMentionSet> emsIter = c.getEntityMentionSetListIterator();
     this.ems = emsIter.next();
     if (emsIter.hasNext())
-      throw new MiscommunicationException("EntityMentionSet had more than one member from Stanford.");
+      LOGGER.info("Communication has >1 EntityMentionSet...");
 
     Iterator<EntitySet> esIter = c.getEntitySetListIterator();
     this.es = esIter.next();
     if (esIter.hasNext())
-      throw new MiscommunicationException("EntitySet had more than one member from Stanford.");
+      LOGGER.info("Communication has >1 EntitySet...");
   }
 
   /* (non-Javadoc)

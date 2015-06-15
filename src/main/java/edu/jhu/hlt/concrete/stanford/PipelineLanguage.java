@@ -27,7 +27,7 @@ public enum PipelineLanguage {
     @Override
     public Properties getProperties() {
       Properties props = new Properties();
-      String annotatorList = "tokenize, ssplit, pos, lemma, parse, ner";
+      String annotatorList = "tokenize, ssplit, pos, lemma, parse, ner, dcoref";
       logger.debug("Using annotators: {}", annotatorList);
 
       props.put("annotators", annotatorList);
