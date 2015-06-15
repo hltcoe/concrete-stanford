@@ -57,7 +57,6 @@ public class ConcreteStanfordRunner {
       prepareInputOutput(inPath, outPath);
     } catch (IOException e) {
       LOGGER.error("Caught IOException when checking input and output directories.", e);
-      System.exit(1);
     }
 
     String lowerOutPathStr = inPath.toString().toLowerCase();
@@ -87,9 +86,7 @@ public class ConcreteStanfordRunner {
           // SectionedCommunicationAnalytic<StanfordPostNERCommunication> pipe = new AnnotateNonTokenizedConcrete();
           WrappedCommunication annotated = analytic.annotate(c);
           Communication ar = annotated.getRoot();
-          String fileName = ar.getId() + ".concrete";
-          Path concreteOutPath = outPath.resolve(fileName);
-          new WritableCommunication(ar).writeToFile(concreteOutPath, true);
+          new WritableCommunication(ar).writeToFile(outPath, true);
         } catch (AnalyticException e) {
           LOGGER.error("Caught exception when running the analytic.", e);
         }
@@ -166,9 +163,10 @@ public class ConcreteStanfordRunner {
     if (!Files.exists(in))
       throw new IOException(in.toString() + " does not exist. Ensure it exists and re-run this program.");
 
-    if (!Files.exists(out)) {
-      LOGGER.debug("Attempting to create output directory.");
-      Files.createDirectories(out);
+    Path outPath = out.getParent();
+    if (!Files.exists(outPath)) {
+      LOGGER.debug("Attempting to create output directory: {}", outPath.toString());
+      Files.createDirectories(outPath);
     }
   }
 }

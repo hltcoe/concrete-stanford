@@ -16,7 +16,7 @@
   <name>Concrete Stanford</name>
 
   <properties>
-    <concrete.version>4.5.7</concrete.version>
+    <concrete.version>4.5.8</concrete.version>
   </properties>
 
   <build>
