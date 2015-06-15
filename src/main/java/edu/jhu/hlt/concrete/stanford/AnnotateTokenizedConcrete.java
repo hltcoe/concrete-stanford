@@ -17,6 +17,7 @@ import edu.jhu.hlt.concrete.miscommunication.MiscommunicationException;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
 import edu.jhu.hlt.concrete.util.Timing;
+import edu.jhu.hlt.utilt.ex.LoggedUncaughtExceptionHandler;
 
 /**
  * Given tokenized Concrete as input, this class will annotate sentences with
@@ -110,6 +111,7 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
    * the only other supported option is cn (Chinese).
    */
   public static void main(String[] args) {
+    Thread.setDefaultUncaughtExceptionHandler(new LoggedUncaughtExceptionHandler());
     int argLen = args.length;
     if (argLen < 2) {
       logger.info("This program takes at least 2 arguments:");

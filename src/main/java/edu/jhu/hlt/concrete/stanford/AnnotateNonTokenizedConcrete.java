@@ -18,6 +18,7 @@ import edu.jhu.hlt.concrete.miscommunication.MiscommunicationException;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.NonSentencedSectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
 import edu.jhu.hlt.concrete.util.Timing;
+import edu.jhu.hlt.utilt.ex.LoggedUncaughtExceptionHandler;
 
 public class AnnotateNonTokenizedConcrete implements NonSentencedSectionedCommunicationAnalytic<StanfordPostNERCommunication> {
 
@@ -94,6 +95,7 @@ public class AnnotateNonTokenizedConcrete implements NonSentencedSectionedCommun
   }
 
   public static void main(String[] args) {
+    Thread.setDefaultUncaughtExceptionHandler(new LoggedUncaughtExceptionHandler());
     int argLen = args.length;
     if (argLen < 2) {
       logger.info("This program takes at least 2 arguments:");

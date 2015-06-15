@@ -90,8 +90,8 @@ public class ConcreteStanfordRunner {
           String fileName = ar.getId() + ".concrete";
           Path concreteOutPath = outPath.resolve(fileName);
           new WritableCommunication(ar).writeToFile(concreteOutPath, true);
-        } catch (Exception e) {
-          LOGGER.error("Caught exception when closing the input stream.", e);
+        } catch (AnalyticException e) {
+          LOGGER.error("Caught exception when running the analytic.", e);
         }
       } else {
         int nElementsInitPath = inPath.getNameCount();
