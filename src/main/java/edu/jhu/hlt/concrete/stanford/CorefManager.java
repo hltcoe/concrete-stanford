@@ -79,7 +79,7 @@ class CorefManager {
 
     // AnnotationMetadata md = this.getMetadata(this.csProps.getCorefToolName())
     // .setDependencies(td);
-    AnnotationMetadata md = AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Coref").setDependencies(td);
+    AnnotationMetadata md = AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford Coref").setDependencies(td);
     ems.setMetadata(md);
     EntitySet es = new EntitySet().setUuid(UUIDFactory.newUUID())
         .setMetadata(md)

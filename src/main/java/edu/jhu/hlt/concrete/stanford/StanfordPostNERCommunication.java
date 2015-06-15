@@ -5,11 +5,8 @@
 package edu.jhu.hlt.concrete.stanford;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Optional;
 
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.DependencyParse;
@@ -38,28 +35,35 @@ import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
 public class StanfordPostNERCommunication implements TokenizedCommunication, EntitiedCommunication, EntityMentionedCommunication,
     DependencyParsedCommunication, NamedEntityTaggedCommunication, PartOfSpeechTaggedCommunication, LemmatizedCommunication {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(StanfordPostNERCommunication.class);
-
   private final StanfordPreNERCommunication preNER;
 
   private final EntityMentionSet ems;
   private final EntitySet es;
+
+  private final List<EntityMention> emList = new ArrayList<>();
+  private final List<Entity> entityList = new ArrayList<>();
 
   /**
    *
    */
   StanfordPostNERCommunication(final Communication c) throws MiscommunicationException {
     this.preNER = new StanfordPreNERCommunication(c);
+    Optional<EntityMentionSet> stanfordEMS = c.getEntityMentionSetList().stream()
+        .filter(ems -> ems.getMetadata().getTool().contains("Stanford"))
+        .findAny();
+    if (!stanfordEMS.isPresent())
+      throw new MiscommunicationException("No Stanford EntityMentionSet was found in this communication [ID: " + c.getId() + "]");
+    this.ems = stanfordEMS.get();
 
-    Iterator<EntityMentionSet> emsIter = c.getEntityMentionSetListIterator();
-    this.ems = emsIter.next();
-    if (emsIter.hasNext())
-      LOGGER.info("Communication has >1 EntityMentionSet...");
+    Optional<EntitySet> stanfordES = c.getEntitySetList().stream()
+        .filter(ems -> ems.getMetadata().getTool().contains("Stanford"))
+        .findAny();
+    if (!stanfordES.isPresent())
+      throw new MiscommunicationException("No Stanford EntitySet was found in this communication [ID: " + c.getId() + "]");
+    this.es = stanfordES.get();
 
-    Iterator<EntitySet> esIter = c.getEntitySetListIterator();
-    this.es = esIter.next();
-    if (esIter.hasNext())
-      LOGGER.info("Communication has >1 EntitySet...");
+    c.getEntityMentionSetList().forEach(ems -> this.emList.addAll(ems.getMentionList()));
+    c.getEntitySetList().forEach(es -> this.entityList.addAll(es.getEntityList()));
   }
 
   /* (non-Javadoc)
@@ -115,7 +119,7 @@ public class StanfordPostNERCommunication implements TokenizedCommunication, Ent
    */
   @Override
   public List<EntityMention> getEntityMentions() {
-    return new ArrayList<>(this.ems.getMentionList());
+    return new ArrayList<>(this.emList);
   }
 
   /* (non-Javadoc)
@@ -123,7 +127,7 @@ public class StanfordPostNERCommunication implements TokenizedCommunication, Ent
    */
   @Override
   public List<Entity> getEntities() {
-    return new ArrayList<>(this.es.getEntityList());
+    return new ArrayList<>(this.entityList);
   }
 
   /* (non-Javadoc)
@@ -140,5 +144,21 @@ public class StanfordPostNERCommunication implements TokenizedCommunication, Ent
   @Override
   public List<TokenTagging> getLemmaTaggings() {
     return this.preNER.getLemmaTaggings();
+  }
+
+  /**
+   * @return the pointer to the {@link EntityMentionSet} produced by Stanford. This is a pointer: changes made to this object
+   * will be reflected in the object.
+   */
+  public EntityMentionSet getStanfordEntityMentionSet() {
+    return this.ems;
+  }
+
+  /**
+   * @return the pointer to the {@link EntitySet} produced by Stanford. This is a pointer: changes made to this object
+   * will be reflected in the object.
+   */
+  public EntitySet getStanfordEntitySet() {
+    return this.es;
   }
 }
