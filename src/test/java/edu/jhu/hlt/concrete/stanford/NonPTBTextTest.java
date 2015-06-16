@@ -25,9 +25,6 @@ import edu.jhu.hlt.concrete.TokenizationKind;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
 import edu.jhu.hlt.concrete.random.RandomConcreteFactory;
-import edu.jhu.hlt.concrete.stanford.ConcreteStanfordPreCorefAnalytic;
-import edu.jhu.hlt.concrete.stanford.ConcreteStanfordTokensSentenceAnalytic;
-import edu.jhu.hlt.concrete.stanford.PipelineLanguage;
 import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 
 public class NonPTBTextTest {
@@ -39,8 +36,6 @@ public class NonPTBTextTest {
   public static final String chineseText1 = "德国 工程 集团 西门子 和 瑞典 能源 公司 Vattenfall 已 将 邯峰 ( Hanfeng ) 火力 发电厂 40%  的 股份 转让 给 中国 华 能 集团 ( ChinaHuanengGroup ) 和 中信 ( CITIC ) .";
   // Note in the English sentence below, we have carefully included extra whitespace at the start, middle, and end of the sentence.
   public static final String englishText1 = "   John ( a boy )    ran fast .  ";
-
-  ConcreteStanfordTokensSentenceAnalytic preAnalytic = new ConcreteStanfordTokensSentenceAnalytic();
 
   @Test
   public void testChinese1() throws Exception {

@@ -48,35 +48,32 @@ public enum PipelineLanguage {
   CHINESE ("cn") {
     @Override
     public String[] getPostTokenizationAnnotators() {
-      return new String[] { "pos", "parse" };
+      return new String[] { "pos", "ner", "parse" };
     }
 
     @Override
     public Properties getProperties() {
       Properties props = new Properties();
-      String annotatorList = "segment, ssplit, pos, parse";
+      String annotatorList = "segment, ssplit, pos, ner, parse";
       logger.debug("Using annotators: {}", annotatorList);
 
-      props.setProperty("customAnnotatorClass.segment",
-          "edu.stanford.nlp.pipeline.ChineseSegmenterAnnotator");
+      props.setProperty("customAnnotatorClass.segment", "edu.stanford.nlp.pipeline.ChineseSegmenterAnnotator");
 
-      props.setProperty("segment.model",
-          "edu/stanford/nlp/models/segmenter/chinese/ctb.gz");
-      props.setProperty("segment.sighanCorporaDict",
-          "edu/stanford/nlp/models/segmenter/chinese");
-      props.setProperty("segment.serDictionary",
-          "edu/stanford/nlp/models/segmenter/chinese/dict-chris6.ser.gz");
+      props.setProperty("segment.model", "edu/stanford/nlp/models/segmenter/chinese/ctb.gz");
+      props.setProperty("segment.sighanCorporaDict", "edu/stanford/nlp/models/segmenter/chinese");
+      props.setProperty("segment.serDictionary", "edu/stanford/nlp/models/segmenter/chinese/dict-chris6.ser.gz");
       props.setProperty("segment.sighanPostProcessing", "true");
 
       props.setProperty("ssplit.boundaryTokenRegex", "[.]|[!?]+|[。]|[！？]+");
-      logger.debug("Loading segmentation models and resources.");
 
       props.setProperty("pos.model", "edu/stanford/nlp/models/pos-tagger/chinese-distsim/chinese-distsim.tagger");
-      logger.debug("Loading pos models and resources.");
 
-      props.setProperty("parse.model",
-          "edu/stanford/nlp/models/lexparser/chinesePCFG.ser.gz");
-      logger.debug("Loading parser models and resources.");
+      props.setProperty("ner.model", "edu/stanford/nlp/models/ner/chinese.misc.distsim.crf.ser.gz");
+      props.setProperty("ner.applyNumericClassifiers", "false");
+      props.setProperty("ner.useSUTime", "false");
+
+      props.setProperty("parse.model", "edu/stanford/nlp/models/lexparser/chinesePCFG.ser.gz");
+
       props.put("annotators", annotatorList);
       return props;
     }

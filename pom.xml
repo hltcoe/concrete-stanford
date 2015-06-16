@@ -17,6 +17,7 @@
 
   <properties>
     <concrete.version>4.5.8</concrete.version>
+    <stanford.version>3.5.2</stanford.version>
   </properties>
 
   <build>
@@ -114,18 +115,19 @@
     <dependency>
       <groupId>edu.stanford.nlp</groupId>
       <artifactId>stanford-corenlp</artifactId>
-      <version>3.5.1</version>
-    </dependency>
-    <dependency>
-      <groupId>edu.stanford.nlp</groupId>
-      <artifactId>stanford-chinese-corenlp-models</artifactId>
-      <version>3.5.1</version>
+      <version>${stanford.version}</version>
     </dependency>
     <dependency>
       <groupId>edu.stanford.nlp</groupId>
       <artifactId>stanford-corenlp</artifactId>
-      <version>3.5.1</version>
+      <version>${stanford.version}</version>
       <classifier>models</classifier>
+    </dependency>
+    <dependency>
+      <groupId>edu.stanford.nlp</groupId>
+      <artifactId>stanford-corenlp</artifactId>
+      <version>${stanford.version}</version>
+      <classifier>models-chinese</classifier>
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
