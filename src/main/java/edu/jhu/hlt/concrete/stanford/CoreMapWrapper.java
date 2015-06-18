@@ -175,11 +175,11 @@ public class CoreMapWrapper {
     List<TokenTagging> tokTagList = new ArrayList<>();
 
     TokenTagging nerTT = TokenTaggingFactory.create("NER")
-        .setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford-NER"));
+        .setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
     TokenTagging posTT = TokenTaggingFactory.create("POS")
-        .setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford-POS"));
+        .setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
     TokenTagging lemmaTT = TokenTaggingFactory.create("LEMMA")
-        .setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford-LEMMA"));
+        .setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
 
     for (CoreLabel cl : clList) {
       final Set<Class<?>> keySet = cl.keySet();
@@ -205,7 +205,7 @@ public class CoreMapWrapper {
     tkz.setTokenTaggingList(tokTagList);
     TokenList tl = new TokenList(cTokenList);
     tkz.setTokenList(tl);
-    AnnotationMetadata md = AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford-Tokenization");
+    AnnotationMetadata md = AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP PTB");
     tkz.setMetadata(md);
     return tkz;
   }

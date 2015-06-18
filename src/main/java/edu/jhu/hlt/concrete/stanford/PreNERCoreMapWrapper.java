@@ -85,8 +85,7 @@ public class PreNERCoreMapWrapper {
     Parse p = ParseFactory.create();
     TheoryDependencies deps = new TheoryDependencies();
     deps.addToTokenizationTheoryList(tokenizationUUID);
-    // TODO
-    AnnotationMetadata md = new AnnotationMetadata("fix later", Timing.currentLocalTime(), 1);
+    AnnotationMetadata md = new AnnotationMetadata("Stanford CoreNLP", Timing.currentLocalTime(), 1);
     p.setMetadata(md);
     constructConstituent(root, idCounter, left, right, n, p, tokenizationUUID, hf);
     if (!p.isSetConstituentList()) {
@@ -163,15 +162,15 @@ public class PreNERCoreMapWrapper {
     // possibly add a check if sg.size() == 0
     this.basicDeps.ifPresent(sg -> {
       LOGGER.debug("Generating DependencyParse from basic dependencies.");
-      depParseList.add(this.makeDepParse(sg, tokUuid, "basic"));
+      depParseList.add(this.makeDepParse(sg, tokUuid, "Stanford CoreNLP basic"));
     });
     this.colDeps.ifPresent(sg -> {
       LOGGER.debug("Generating DependencyParse from collapsed dependencies.");
-      depParseList.add(this.makeDepParse(sg, tokUuid, "col"));
+      depParseList.add(this.makeDepParse(sg, tokUuid, "Stanford CoreNLP col"));
     });
     this.colCCDeps.ifPresent(sg -> {
       LOGGER.debug("Generating DependencyParse from collapsed-CC dependencies.");
-      depParseList.add(this.makeDepParse(sg, tokUuid, "col-CC"));
+      depParseList.add(this.makeDepParse(sg, tokUuid, "Stanford CoreNLP col-CC"));
     });
 
     return depParseList;
