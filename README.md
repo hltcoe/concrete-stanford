@@ -9,7 +9,7 @@ with `Tokenization` objects, and optionally `EntityMention` and `Entity` objects
 <dependency>
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.5.0</version>
+  <version>4.5.2</version>
 </dependency>
 ```
 
@@ -84,8 +84,6 @@ constituency parse).
 ### Non-Tokenized Input
 The main annotator for non-tokenized input is `AnnotateNonTokenizedConcrete`.
 It requires sectioned data, and each section **must** have valid `textSpans` set.
-While there are other requirements (see `AnnotateNonTokenizedConcrete.ensurePreconditionsMet`),
-these are the most important.
 
 In addition to the above added annotations, `AnnotateNonTokenizedConcrete` will add entity
 mention identification and coreference.
@@ -94,11 +92,6 @@ mention identification and coreference.
 
 The main annotator for non-tokenized input is `AnnotateTokenizedConcrete`.
 It requires fully Tokenized data; each {`Section`,`Sentence`,`Token`} **must** have valid `textSpans` set.
-While there are other requirements (see `AnnotateTokenizedConcrete.ensurePreconditionsMet`), these
-are the most important.
-
-Unlike for non-tokenized input, `AnnotateTokenizedConcrete` will **NOT** add entity
-mention identification and coreference.
 
 ## Running the tool
 ### Prepare
@@ -112,7 +105,7 @@ The following should be compliant in any `sh`-like shell.
 export CONC_STAN_INPUT_FILE=/path/to/.concrete/or/.tar/or/.tar.gz
 export CONC_STAN_OUTPUT_DIR=/path/to/output/dir
 mvn clean compile assembly:single
-java -cp target/concrete-stanford-4.5.0-jar-with-dependencies.jar edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete \
+java -cp target/concrete-stanford-4.5.2-jar-with-dependencies.jar edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete \
 $CONC_STAN_INPUT_FILE \
 $CONC_STAN_OUTPUT_DIR
 ```
