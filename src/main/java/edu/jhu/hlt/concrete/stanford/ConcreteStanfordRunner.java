@@ -9,8 +9,10 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -163,10 +165,16 @@ public class ConcreteStanfordRunner {
     if (!Files.exists(in))
       throw new IOException(in.toString() + " does not exist. Ensure it exists and re-run this program.");
 
-    Path outPath = out.getParent();
-    if (!Files.exists(outPath)) {
-      LOGGER.debug("Attempting to create output directory: {}", outPath.toString());
-      Files.createDirectories(outPath);
-    }
+    Optional<Path> outPath = Optional.ofNullable(out.getParent());
+    outPath.ifPresent(p -> {
+      if (!Files.exists(p)) {
+        LOGGER.debug("Attempting to create output directory: {}", outPath.toString());
+        try {
+          Files.createDirectories(p);
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+      }
+    });
   }
 }
