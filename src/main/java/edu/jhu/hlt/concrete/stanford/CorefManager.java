@@ -69,7 +69,7 @@ class CorefManager {
     final int tkzListSize = tkzList.size();
     if (cmListSize != tkzListSize)
       throw new AnalyticException("Communication " + commId + " had a different number of coreMaps and Tokenizations."
-          + "\nCoreMaps: " + tkzListSize + " vs. Tokenizations: " + tkzListSize);
+          + "\nCoreMaps: " + cmListSize + " vs. Tokenizations: " + tkzListSize);
 
     EntityMentionSet ems = new EntityMentionSet()
         .setUuid(UUIDFactory.newUUID())

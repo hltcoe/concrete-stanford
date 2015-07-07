@@ -124,8 +124,10 @@ public class ConcreteStanfordTokensSentenceAnalytic implements SectionedCommunic
     List<Section> sList = arg0.getSections();
     // for each section, run stanford tokenization and sentence splitting
     for (Section s : sList) {
+      LOGGER.debug("Annotating section: {}", s.getUuid().getUuidString());
       final TextSpan sts = s.getTextSpan();
       final String sectTxt = new SuperTextSpan(sts, cp).getText();
+      LOGGER.debug("Section text: {}", sectTxt);
       final Annotation sectAnnotation = new Annotation(sectTxt);
       LOGGER.trace("Got annotation keys:");
       sectAnnotation.keySet().forEach(k -> LOGGER.trace("{}", k));

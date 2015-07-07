@@ -116,24 +116,17 @@ public class ConcreteStanfordRunner {
           sw.start();
 
           int docCtr = 0;
-          if (iter.hasNext()) {
-            LOGGER.info("Iterating over archive: {}", inPath.toString());
-
-            Communication comm = ser.fromBytes(iter.next());
-            WrappedCommunication annot = analytic.annotate(comm);
-            archiver.addEntry(new ArchivableCommunication(annot.getRoot()));
-            docCtr++;
-          } else {
-            LOGGER.info("Iterating over archive: {}", inPath.toString());
-            LOGGER.warn("Archive {} is empty", inPath.toString());
-          }
-
+          LOGGER.info("Iterating over archive: {}", inPath.toString());
           while (iter.hasNext()) {
             Communication n = ser.fromBytes(iter.next());
             LOGGER.info("Annotating communication: {}", n.getId());
-            WrappedCommunication a = analytic.annotate(n);
-            archiver.addEntry(new ArchivableCommunication(a.getRoot()));
-            docCtr++;
+            try {
+              WrappedCommunication a = analytic.annotate(n);
+              archiver.addEntry(new ArchivableCommunication(a.getRoot()));
+              docCtr++;
+            } catch (AnalyticException | IOException e) {
+              LOGGER.error("Caught exception processing document: " + n.getId(), e);
+            }
           }
 
           try {
@@ -156,7 +149,7 @@ public class ConcreteStanfordRunner {
           }
         }
       }
-    } catch (IOException | ConcreteException | AnalyticException e) {
+    } catch (IOException | ConcreteException e) {
       LOGGER.error("Caught exception while running the analytic over archive.", e);
     }
   }
