@@ -9,7 +9,7 @@ with `Tokenization` objects, and optionally `EntityMention` and `Entity` objects
 <dependency>
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.6.0</version>
+  <version>4.6.1</version>
 </dependency>
 ```
 
