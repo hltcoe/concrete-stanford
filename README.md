@@ -15,11 +15,13 @@ with `Tokenization` objects, and optionally `EntityMention` and `Entity` objects
 
 ## Sectioned Communications are required
 
-All examples assume the input files contain `Communication` objects with, at minimum,
-`Section` objects underneath them. This library will not produce useful output
-if there are no `Section` objects underneath the `Communication` objects that are run.
-There are two primary drivers --- one that processes Tokenized `Concrete` files, and one that does not.
-Each has its own requirements, described below.
+All examples assume the input files contain `Communication` objects
+with, at minimum, `Section` objects underneath them and the `text`
+field set. This library will not produce useful output if there are no
+`Section` objects underneath the `Communication` objects that are run.
+There are two primary drivers --- one that processes Tokenized
+`Concrete` files, and one that does not.  Each has its own
+requirements, described below.
 
 ## Quick start / API Usage
 
@@ -69,7 +71,7 @@ You can also run this tool as a command line program: both `AnnotateTokenizedCon
 * Argument 1: a path to a file on disk that is either a serialized Concrete `Communication` (ending with
 `.concrete`), a `.tar` file of serialized Concrete `Communication` objects, or a `.tar.gz` file
 with serialized Concrete `Communication` objects. Recall that each `Communication` must have
-`Section` objects.
+`Section` objects and must have `text` fields set.
 * Argument 2: a path that represents the desired output directory.
 * Argument 3 (optional): The language to use. Currently supported are `en` and `cn` (for English
 and Chinese). The default is `en`.

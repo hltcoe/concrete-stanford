@@ -121,6 +121,8 @@ public class ConcreteStanfordTokensSentenceAnalytic implements SectionedCommunic
   @Override
   public TokenizedCommunication annotate(SectionedCommunication arg0) throws AnalyticException {
     final Communication cp = new Communication(arg0.getRoot());
+    if(!cp.isSetText())
+      throw new AnalyticException("communication.text must be set to run this analytic.");
     List<Section> sList = arg0.getSections();
     // for each section, run stanford tokenization and sentence splitting
     for (Section s : sList) {

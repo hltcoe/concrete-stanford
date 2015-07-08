@@ -118,6 +118,8 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
   @Override
   public TokenizedCommunication annotate(TokenizedCommunication arg0) throws AnalyticException {
     final Communication root = new Communication(arg0.getRoot());
+    if (!root.isSetText())
+      throw new AnalyticException("communication.text must be set to run this analytic.");
     final List<Section> sectList = root.getSectionList();
     final String commText = root.getText();
 
