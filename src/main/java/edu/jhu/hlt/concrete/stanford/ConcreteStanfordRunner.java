@@ -71,7 +71,7 @@ public class ConcreteStanfordRunner {
       // Ends with .tar (else, first if)
       // Ends with .tar.gz (else, second if)
       boolean isTarExt = lowerOutPathStr.endsWith(".tar");
-      boolean isTarGzExt = lowerOutPathStr.endsWith(".tar.gz");
+      boolean isTarGzExt = lowerOutPathStr.endsWith(".tar.gz") || lowerOutPathStr.endsWith(".tgz");
       boolean isConcreteExt = lowerOutPathStr.endsWith(".concrete") || lowerOutPathStr.endsWith(".comm");
 
       // If no extention matches, exit.
