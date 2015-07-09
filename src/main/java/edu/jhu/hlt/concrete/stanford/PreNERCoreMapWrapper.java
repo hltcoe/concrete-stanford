@@ -115,6 +115,7 @@ public class PreNERCoreMapWrapper {
    constituent.setTag(root.value());
    constituent.setStart(left);
    constituent.setEnding(right);
+   p.addToConstituentList(constituent);
    Tree headTree = null;
    if (!root.isLeaf()) {
      try {
@@ -144,7 +145,6 @@ public class PreNERCoreMapWrapper {
    if (headTreeIdx >= 0)
      constituent.setHeadChildIndex(headTreeIdx);
 
-   p.addToConstituentList(constituent);
    if (!constituent.isSetChildList())
      constituent.setChildList(new ArrayList<Integer>());
    return constituent.getId();
