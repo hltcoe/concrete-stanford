@@ -9,7 +9,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -45,10 +47,15 @@ public class GigawordTest {
   ConcreteStanfordTokensSentenceAnalytic analytic;
   ConcreteStanfordPreCorefAnalytic preCorefAnalytic;
 
+  public Set<String> ptbTokens = new HashSet<>();
+
   @Before
   public void setUp() throws Exception {
     this.comm = new GigawordDocumentConverter().fromPath(this.p);
     LOGGER.info("Loaded comm: {} [UUID: {}]", comm.getId(), comm.getUuid().getUuidString());
+
+    ptbTokens.add("-LRB-");
+    ptbTokens.add("-RRB-");
   }
 
   @Rule
@@ -78,8 +85,28 @@ public class GigawordTest {
 
     CachedSectionedCommunication csc = new CachedSectionedCommunication(this.comm);
     TokenizedCommunication tkzc = this.analytic.annotate(csc);
+    Communication newComm = tkzc.getRoot();
+    List<Section> osList = tkzc.getSections();
+    osList.forEach(sect -> {
+      final Section ns = new Section(sect);
+      ns.unsetSentenceList();
+      LOGGER.info("Got section: {}", ns.toString());
 
-    List<Section> osList = this.comm.getSectionList();
+      sect.getSentenceList().forEach(sent -> {
+        final Sentence nsent = new Sentence(sent);
+        nsent.unsetTokenization();
+
+        LOGGER.info("Got sentence: {}", nsent.toString());
+
+        sent.getTokenization().getTokenList().getTokenList().forEach(tok -> {
+          LOGGER.info("Got token: {}", tok);
+          String tokTxt = tok.getText();
+          if (!this.ptbTokens.contains(tokTxt))
+            assertEquals("Token text and text from textspan should be equal.", tok.getText(), new SuperTextSpan(tok.getTextSpan(), newComm).getText());
+        });
+      });
+    });
+
     Communication nRoot = tkzc.getRoot();
     assertTrue(new CommunicationValidator(nRoot).validate());
     assertEquals(this.comm.getText(), nRoot.getText());

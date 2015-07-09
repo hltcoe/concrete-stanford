@@ -139,9 +139,10 @@ public class CoreMapWrapper {
 
     Sentence st = SentenceFactory.create();
     Integer bi = this.startOffset;
-    LOGGER.trace("Stanford sentence start offset: {}", bi);
+    LOGGER.debug("Current char offset: {}", charOffset);
+    LOGGER.debug("Stanford sentence start offset: {}", bi);
     Integer ei = this.endOffset;
-    LOGGER.trace("Stanford sentence end offset: {}", ei);
+    LOGGER.debug("Stanford sentence end offset: {}", ei);
     // Optional<Integer> stidx = Optional.ofNullable(cm.get(SentenceIndexAnnotation.class));
     LOGGER.trace("Stanford sentence idx: {}", this.idx);
     LOGGER.trace("Stanford sentence token begin: {}", this.tokenBeginOffset);
@@ -153,7 +154,7 @@ public class CoreMapWrapper {
     // TextSpan ts = new TextSpan(bi, ei);
     st.setTextSpan(ts);
     try {
-      Tokenization tkz = this.coreLabelToTokenization(bi);
+      Tokenization tkz = this.coreLabelToTokenization(charOffset);
       st.setTokenization(tkz);
       if (!st.isSetTokenization())
         // TODO: needed?
