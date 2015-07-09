@@ -80,14 +80,13 @@ public class PreNERCoreMapWrapper {
     int right = root.getLeaves().size();
     if (right != n)
       throw new AnalyticException("number of leaves in the parse (" + right + ") is not equal to the number of tokens in the sentence (" + n + ")");
-    int[] idCounter = new int[] { 0 };
 
     Parse p = ParseFactory.create();
     TheoryDependencies deps = new TheoryDependencies();
     deps.addToTokenizationTheoryList(tokenizationUUID);
     AnnotationMetadata md = new AnnotationMetadata("Stanford CoreNLP", Timing.currentLocalTime(), 1);
     p.setMetadata(md);
-    constructConstituent(root, idCounter, left, right, n, p, tokenizationUUID, hf);
+    constructConstituent(root, left, right, n, p, tokenizationUUID, hf);
     if (!p.isSetConstituentList()) {
       LOGGER.warn("Setting constituent list to compensate for the empty parse for tokenization id {} and tree {}", tokenizationUUID, root);
       p.setConstituentList(new ArrayList<Constituent>());
@@ -98,9 +97,6 @@ public class PreNERCoreMapWrapper {
   /**
   *
   * @param root
-  * @param idCounter
-  *          is basically an int*, lets this recursive method update max id
-  *          value
   * @param left
   * @param right
   * @param n
@@ -110,15 +106,12 @@ public class PreNERCoreMapWrapper {
   * @return The constituent ID
   * @throws AnalyticException
   */
- private static int constructConstituent(Tree root, int[] idCounter, int left,
+ private static int constructConstituent(Tree root, int left,
      int right, int n, Parse p, UUID tokenizationUUID, HeadFinder hf)
      throws AnalyticException {
-   if (idCounter.length != 1)
-     throw new AnalyticException("ID counter must be one, but was: "
-         + idCounter.length);
 
    Constituent constituent = new Constituent();
-   constituent.setId(idCounter[0]++);
+   constituent.setId(p.getConstituentListSize());
    constituent.setTag(root.value());
    constituent.setStart(left);
    constituent.setEnding(right);
@@ -136,7 +129,7 @@ public class PreNERCoreMapWrapper {
    int leftPtr = left;
    for (Tree child : root.getChildrenAsList()) {
      int width = child.getLeaves().size();
-     int childId = constructConstituent(child, idCounter, leftPtr, leftPtr
+     int childId = constructConstituent(child, leftPtr, leftPtr
          + width, n, p, tokenizationUUID, hf);
      constituent.addToChildList(childId);
 
