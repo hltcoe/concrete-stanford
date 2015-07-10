@@ -171,8 +171,7 @@ public class GigawordTest {
       Sentence oSent = allOldSents.get(i);
       Sentence nSent = allNewSents.get(i);
       assertEquals(oSent.getTextSpan(), nSent.getTextSpan());
-      // TODO: Why does below fail?
-      // assertEquals(oSent.getUuid().getUuidString(), nSent.getUuid().getUuidString());
+      assertEquals(oSent.getUuid().getUuidString(), nSent.getUuid().getUuidString());
     }
 
     Section newThirdSect = preCorefRoot.getSectionList().get(2);

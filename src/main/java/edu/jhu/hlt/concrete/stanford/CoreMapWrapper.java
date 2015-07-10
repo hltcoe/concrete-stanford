@@ -132,6 +132,17 @@ public class CoreMapWrapper {
     return this.toSentence(0);
   }
 
+  public Sentence toSentence(final int charOffset, final Sentence orig) throws AnalyticException {
+    if (this.st != null)
+      return st;
+
+    // could probably be cleaned up
+    Tokenization updatedLocalTkz = this.coreLabelToTokenization(charOffset, orig.getTokenization());
+    orig.setTokenization(updatedLocalTkz);
+    this.st = orig;
+    return orig;
+  }
+
   public Sentence toSentence(final int charOffset) throws AnalyticException {
     // If previously computed, return.
     if (this.st != null)
@@ -143,7 +154,6 @@ public class CoreMapWrapper {
     LOGGER.debug("Stanford sentence start offset: {}", bi);
     Integer ei = this.endOffset;
     LOGGER.debug("Stanford sentence end offset: {}", ei);
-    // Optional<Integer> stidx = Optional.ofNullable(cm.get(SentenceIndexAnnotation.class));
     LOGGER.trace("Stanford sentence idx: {}", this.idx);
     LOGGER.trace("Stanford sentence token begin: {}", this.tokenBeginOffset);
     LOGGER.trace("Stanford sentence token end: {}", this.tokenEndOffset);
@@ -151,7 +161,6 @@ public class CoreMapWrapper {
     if (bi == null || ei == null)
       throw new AnalyticException("Unable to create a textspan from CoreMap: either the begin or end index was null.");
     TextSpan ts = TextSpanFactory.withOffset(bi, ei, charOffset);
-    // TextSpan ts = new TextSpan(bi, ei);
     st.setTextSpan(ts);
     try {
       Tokenization tkz = this.coreLabelToTokenization(charOffset);
@@ -168,13 +177,7 @@ public class CoreMapWrapper {
     }
   }
 
-  private Tokenization coreLabelToTokenization(int cOffset) throws AnalyticException, ConcreteException {
-    Tokenization tkz = TokenizationFactory.create();
-    tkz.setKind(TokenizationKind.TOKEN_LIST);
-    List<Token> cTokenList = new ArrayList<>();
-
-    List<TokenTagging> tokTagList = new ArrayList<>();
-
+  private StanfordToConcreteConversionOutput convertCoreLabels(final int cOffset) throws AnalyticException {
     TokenTagging nerTT = TokenTaggingFactory.create("NER")
         .setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
     TokenTagging posTT = TokenTaggingFactory.create("POS")
@@ -182,7 +185,8 @@ public class CoreMapWrapper {
     TokenTagging lemmaTT = TokenTaggingFactory.create("LEMMA")
         .setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
 
-    for (CoreLabel cl : clList) {
+    List<Token> tokList = new ArrayList<>(this.clList.size());
+    for (CoreLabel cl : this.clList) {
       final Set<Class<?>> keySet = cl.keySet();
       Token t;
       if (keySet.contains(PartOfSpeechAnnotation.class)) {
@@ -205,17 +209,46 @@ public class CoreMapWrapper {
         t = wrapper.toConcreteToken(cOffset);
       }
 
-      cTokenList.add(t);
+      tokList.add(t);
     }
 
-    tokTagList.add(nerTT);
-    tokTagList.add(posTT);
-    tokTagList.add(lemmaTT);
-    tkz.setTokenTaggingList(tokTagList);
-    TokenList tl = new TokenList(cTokenList);
-    tkz.setTokenList(tl);
+    // this is literally just a 4-tuple
+    // to make other things cleaner
+    return new StanfordToConcreteConversionOutput(tokList, nerTT, posTT, lemmaTT);
+  }
+
+  private Tokenization coreLabelToTokenization(final int cOffset, final Tokenization orig) throws AnalyticException {
+    StanfordToConcreteConversionOutput output = this.convertCoreLabels(cOffset);
+    List<Token> outputTL = output.getTokenList();
+    List<Token> origTokenList = orig.getTokenList().getTokenList();
+    if (origTokenList.isEmpty())
+      origTokenList.addAll(outputTL);
+
+    // if the "previous" tokenization had tokens,
+    // make sure they equal the new ones
+    else if (!origTokenList.equals(outputTL)) {
+      LOGGER.error("Token lists did not match.");
+      LOGGER.error("Original tokens: ");
+      origTokenList.forEach(t -> LOGGER.error("{}", t));
+      LOGGER.error("New tokens: ");
+      outputTL.forEach(t -> LOGGER.error("{}", t));
+      throw new AnalyticException("Token lists did not match.");
+    }
+
+    orig.addToTokenTaggingList(output.getNerTT());
+    orig.addToTokenTaggingList(output.getPosTT());
+    orig.addToTokenTaggingList(output.getLemmaTT());
+
+    return orig;
+  }
+
+  private Tokenization coreLabelToTokenization(int cOffset) throws AnalyticException, ConcreteException {
+    Tokenization tkz = TokenizationFactory.create();
+    tkz.setKind(TokenizationKind.TOKEN_LIST);
+    List<Token> tlist = new ArrayList<>();
+    tkz.setTokenList(new TokenList(tlist));
     AnnotationMetadata md = AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP PTB");
     tkz.setMetadata(md);
-    return tkz;
+    return this.coreLabelToTokenization(cOffset, tkz);
   }
 }

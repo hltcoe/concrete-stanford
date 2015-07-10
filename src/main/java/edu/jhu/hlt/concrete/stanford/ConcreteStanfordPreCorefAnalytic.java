@@ -95,19 +95,33 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     return notes;
   }
 
-  private static List<Sentence> annotationToSentenceList(Annotation anno, int offset, HeadFinder hf) {
+  private static List<Sentence> annotationToSentenceList(Annotation anno, int offset, HeadFinder hf,
+      final List<Sentence> origSentListRef) throws AnalyticException {
     List<Sentence> slist = new ArrayList<>();
-    anno.get(SentencesAnnotation.class).stream()
-      .map(cm -> {
-        // LOGGER.info("Got Sentence offset: {}", cm.toString());
-        try {
-          return new PreNERCoreMapWrapper(cm, hf).toSentence(offset);
-        } catch (AnalyticException e) {
-          throw new RuntimeException(e);
-        }
-      })
-    .sequential()
-    .forEach(st -> slist.add(st));
+
+    // TODO: Refactor into a for loop with integer index.
+    // Use the index to point to a list of Tokenization objects,
+    // pass that in to toSentence to preserve the original
+    // Sentence objects (UUID etc.).
+    List<CoreMap> cmList = anno.get(SentencesAnnotation.class);
+    final int cmListSize = cmList.size();
+    for (int i = 0; i < cmListSize; i++) {
+      CoreMap cm = cmList.get(i);
+      Sentence orig = origSentListRef.get(i);
+      Sentence merged = new PreNERCoreMapWrapper(cm, hf).toSentence(offset, orig);
+      slist.add(merged);
+    }
+//    anno.get(SentencesAnnotation.class).stream()
+//      .map(cm -> {
+//        // LOGGER.info("Got Sentence offset: {}", cm.toString());
+//        try {
+//          return
+//        } catch (AnalyticException e) {
+//          throw new RuntimeException(e);
+//        }
+//      })
+//    .sequential()
+//    .forEach(st -> slist.add(st));
 
     return slist;
   }
@@ -151,10 +165,9 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
           ParserAnnotatorUtils.fillInParseAnnotations(false, true, this.lang.getGrammaticalFactory(), cm, tree, GrammaticalStructure.Extras.NONE);
         });
 
-    anno.get(SentencesAnnotation.class).forEach(cm -> LOGGER.trace("Got CoreMap post-fill-in: {}", cm.toShorterString(new String[0])));
-    // temp
-    // final int firstSectionOff = sectList.get(0).getTextSpan().getStart();
-    List<Sentence> postSentences = annotationToSentenceList(anno, 0, hf);
+    anno.get(SentencesAnnotation.class)
+        .forEach(cm -> LOGGER.trace("Got CoreMap post-fill-in: {}", cm.toShorterString(new String[0])));
+    List<Sentence> postSentences = annotationToSentenceList(anno, 0, hf, arg0.getSentences());
     postSentences.forEach(st -> LOGGER.trace("Got pre-coref sentence: {}", st.toString()));
     Map<TextSpan, Sentence> tsToSentenceMap = new HashMap<>();
     postSentences.forEach(st -> tsToSentenceMap.put(st.getTextSpan(), st));

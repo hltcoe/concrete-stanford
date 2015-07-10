@@ -17,6 +17,7 @@ import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.Constituent;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
+import edu.jhu.hlt.concrete.SpanLink;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.TokenList;
@@ -50,6 +51,11 @@ public class NonPTBEnglishTextTest {
     Sentence sentence = new Sentence().setUuid(UUIDFactory.newUUID()).setTextSpan(new TextSpan().setStart(2).setEnding(englishText1.length()));
     section.addToSentenceList(sentence);
     Tokenization tokenization = new Tokenization().setUuid(UUIDFactory.newUUID()).setMetadata(md).setKind(TokenizationKind.TOKEN_LIST);
+    // Below is purely for verification purposes:
+    // analytic should not destroy old tokenization
+    // annotations.
+    tokenization.addToSpanLinkList(new SpanLink());
+    tokenization.addToSpanLinkList(new SpanLink());
     TokenList tokenList = new TokenList();
     int tokId = 0;
     Pattern whitespace = Pattern.compile("[^ ]+");
@@ -70,6 +76,7 @@ public class NonPTBEnglishTextTest {
     TokenizedCommunication tc = new CachedTokenizationCommunication(englishComm);
     TokenizedCommunication wDepParse = new ConcreteStanfordPreCorefAnalytic().annotate(tc);
     Tokenization ntkz = wDepParse.getTokenizations().get(0);
+    assertEquals(2, ntkz.getSpanLinkListSize());
     TokenList ntl = ntkz.getTokenList();
     // AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete(PipelineLanguage.ENGLISH);
     // atc.annotateWithStanfordNlp(englishComm);

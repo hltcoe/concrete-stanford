@@ -210,12 +210,33 @@ public class PreNERCoreMapWrapper {
   public Sentence toSentence(final int offset) throws AnalyticException {
     Sentence pre = this.wrapper.toSentence(offset);
     LOGGER.debug("Got sentence from original wrapper: {}", pre.toString());
-    Tokenization tkz = pre.getTokenization();
-    UUID tkzID = tkz.getUuid();
-    List<DependencyParse> dpList = this.constructDependencyParses(tkzID);
-    tkz.setDependencyParseList(dpList);
-    Parse p = makeConcreteCParse(this.tree, tkz.getTokenList().getTokenListSize(), tkzID, this.hf);
-    tkz.addToParseList(p);
+    // adds annotations in-place.
+    this.addStanfordAnalyticOutput(pre);
     return pre;
+  }
+
+  /**
+   * Adds annotations to an already established {@link Sentence} object.
+   * <br>
+   * <br>
+   * Not consistent with the "return something new" paradigm - this mutates
+   * the passed in sentence object.
+   *
+   * @param st the {@link Sentence} to add annotations to
+   * @throws AnalyticException on error generating {@link Parse} or {@link DependencyParse}
+   */
+  private void addStanfordAnalyticOutput(final Sentence st) throws AnalyticException {
+    Tokenization newTkz = st.getTokenization();
+    UUID tkzID = newTkz.getUuid();
+    List<DependencyParse> dpList = this.constructDependencyParses(tkzID);
+    dpList.forEach(dp -> newTkz.addToDependencyParseList(dp));
+    Parse p = makeConcreteCParse(this.tree, newTkz.getTokenList().getTokenListSize(), tkzID, this.hf);
+    newTkz.addToParseList(p);
+  }
+
+  public Sentence toSentence(final int offset, final Sentence origSent) throws AnalyticException {
+    Sentence updated = this.wrapper.toSentence(offset, origSent);
+    this.addStanfordAnalyticOutput(updated);
+    return updated;
   }
 }

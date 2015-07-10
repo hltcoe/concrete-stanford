@@ -8,7 +8,6 @@ package edu.jhu.hlt.concrete.stanford;
 import java.util.Optional;
 
 import edu.jhu.hlt.concrete.TaggedToken;
-import edu.jhu.hlt.concrete.util.ConcreteException;
 import edu.stanford.nlp.ling.CoreAnnotations.LemmaAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.NamedEntityTagAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
@@ -54,7 +53,7 @@ public class PreNERCoreLabelWrapper {
     return this.lemmaTag.map(x -> this.toTaggedToken(x));
   }
 
-  public Optional<TaggedToken> toPOSToken() throws ConcreteException {
+  public Optional<TaggedToken> toPOSToken() {
     return this.posTag.map(x -> this.toTaggedToken(x));
   }
 
