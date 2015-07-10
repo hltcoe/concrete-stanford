@@ -187,7 +187,15 @@ public class CoreMapWrapper {
       Token t;
       if (keySet.contains(PartOfSpeechAnnotation.class)) {
         PreNERCoreLabelWrapper wrapper = new PreNERCoreLabelWrapper(cl);
-        t = wrapper.getOrig().toConcreteToken(cOffset);
+        // below might be a huge hack -
+        // but if the offset hasn't "caught up", then
+        // the sentence offsets aren't captured by below call.
+        // happens when a zoner does not start a section/sentence
+        // on a character.
+        if (cOffset == 0 && this.startOffset > 0)
+          t = wrapper.getOrig().toConcreteToken(this.startOffset);
+        else
+          t = wrapper.getOrig().toConcreteToken(cOffset);
         wrapper.toPOSToken().ifPresent(tt -> posTT.addToTaggedTokenList(tt));
         wrapper.toNERToken().ifPresent(tt -> nerTT.addToTaggedTokenList(tt));
         wrapper.toLemmaToken().ifPresent(tt -> lemmaTT.addToTaggedTokenList(tt));

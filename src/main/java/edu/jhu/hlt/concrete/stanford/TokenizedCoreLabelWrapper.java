@@ -74,7 +74,7 @@ public class TokenizedCoreLabelWrapper {
 
   public Token toConcreteToken(int cOffset) throws AnalyticException {
     TextSpan ts = TextSpanFactory.withOffset(this.startSentenceOffset, this.endSentenceOffset, cOffset);
-
+    LOGGER.debug("Creating concrete token text span: {}", ts);
     final int stanIdx = this.getIndex();
     final int concIndex = stanIdx - 1;
     if (concIndex < 0)
@@ -82,7 +82,9 @@ public class TokenizedCoreLabelWrapper {
     Token t = new Token(concIndex);
     t.setTextSpan(ts);
     // might be null (?)
-    t.setText(this.text);
+    final String ttxt = this.text;
+    LOGGER.debug("Setting Concrete token text: {}", ttxt);
+    t.setText(ttxt);
     return t;
   }
 

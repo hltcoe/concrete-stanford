@@ -207,8 +207,8 @@ public class PreNERCoreMapWrapper {
     return depList;
   }
 
-  public Sentence toSentence() throws AnalyticException {
-    Sentence pre = this.wrapper.toSentence();
+  public Sentence toSentence(final int offset) throws AnalyticException {
+    Sentence pre = this.wrapper.toSentence(offset);
     LOGGER.debug("Got sentence from original wrapper: {}", pre.toString());
     Tokenization tkz = pre.getTokenization();
     UUID tkzID = tkz.getUuid();

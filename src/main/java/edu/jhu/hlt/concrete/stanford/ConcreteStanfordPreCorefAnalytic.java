@@ -95,13 +95,13 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     return notes;
   }
 
-  private static List<Sentence> annotationToSentenceList(Annotation anno, HeadFinder hf) {
+  private static List<Sentence> annotationToSentenceList(Annotation anno, int offset, HeadFinder hf) {
     List<Sentence> slist = new ArrayList<>();
     anno.get(SentencesAnnotation.class).stream()
       .map(cm -> {
         // LOGGER.info("Got Sentence offset: {}", cm.toString());
         try {
-          return new PreNERCoreMapWrapper(cm, hf).toSentence();
+          return new PreNERCoreMapWrapper(cm, hf).toSentence(offset);
         } catch (AnalyticException e) {
           throw new RuntimeException(e);
         }
@@ -124,7 +124,8 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     final String commText = root.getText();
 
     List<CoreMap> allCoreMaps = new ArrayList<>();
-    String noMarkup = MarkupRewriter.removeMarkup(commText);
+    // String noMarkup = MarkupRewriter.removeMarkup(commText);
+    String noMarkup = commText;
     sectList.forEach(sect -> {
       List<CoreMap> cmList = ConcreteToStanfordMapper.concreteSectionToCoreMapList(sect, commText);
       allCoreMaps.addAll(cmList);
@@ -151,7 +152,9 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
         });
 
     anno.get(SentencesAnnotation.class).forEach(cm -> LOGGER.trace("Got CoreMap post-fill-in: {}", cm.toShorterString(new String[0])));
-    List<Sentence> postSentences = annotationToSentenceList(anno, hf);
+    // temp
+    // final int firstSectionOff = sectList.get(0).getTextSpan().getStart();
+    List<Sentence> postSentences = annotationToSentenceList(anno, 0, hf);
     postSentences.forEach(st -> LOGGER.trace("Got pre-coref sentence: {}", st.toString()));
     Map<TextSpan, Sentence> tsToSentenceMap = new HashMap<>();
     postSentences.forEach(st -> tsToSentenceMap.put(st.getTextSpan(), st));
@@ -161,7 +164,7 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
       List<Sentence> sentList = sect.getSentenceList();
       sentList.forEach(st -> {
         TextSpan ts = st.getTextSpan();
-        LOGGER.trace("Trying to find span: {}", ts.toString());
+        LOGGER.debug("Trying to find span: {}", ts.toString());
         if (tsToSentenceMap.containsKey(ts)) {
           Sentence newSent = tsToSentenceMap.get(ts);
           st.setTokenization(newSent.getTokenization());
