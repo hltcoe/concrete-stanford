@@ -13,11 +13,13 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.joda.time.Duration;
 import org.joda.time.Minutes;
+import org.joda.time.Seconds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +31,7 @@ import edu.jhu.hlt.concrete.analytics.base.Analytic;
 import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
 import edu.jhu.hlt.concrete.communications.WritableCommunication;
 import edu.jhu.hlt.concrete.miscommunication.WrappedCommunication;
+import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
 import edu.jhu.hlt.concrete.serialization.CommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.CompactCommunicationSerializer;
 import edu.jhu.hlt.concrete.serialization.archiver.ArchivableCommunication;
@@ -53,7 +56,7 @@ public class ConcreteStanfordRunner {
 
   }
 
-  public void run(Path inPath, Path outPath, Analytic<? extends WrappedCommunication> analytic) {
+  public void run(Path inPath, Path outPath, Analytic<? extends TokenizedCommunication> analytic) {
     LOGGER.debug("Checking input and output directories.");
     try {
       prepareInputOutput(inPath, outPath);
@@ -116,12 +119,17 @@ public class ConcreteStanfordRunner {
           sw.start();
 
           int docCtr = 0;
+          final AtomicInteger tokenCtr = new AtomicInteger(0);
           LOGGER.info("Iterating over archive: {}", inPath.toString());
           while (iter.hasNext()) {
             Communication n = ser.fromBytes(iter.next());
             LOGGER.info("Annotating communication: {}", n.getId());
             try {
-              WrappedCommunication a = analytic.annotate(n);
+              TokenizedCommunication a = analytic.annotate(n);
+              a.getTokenizations().parallelStream()
+                  .map(tkzToInt -> tkzToInt.getTokenList().getTokenListSize())
+                  .forEach(ct -> tokenCtr.addAndGet(ct));
+
               archiver.addEntry(new ArchivableCommunication(a.getRoot()));
               docCtr++;
             } catch (AnalyticException | IOException e) {
@@ -137,15 +145,21 @@ public class ConcreteStanfordRunner {
           }
 
           sw.stop();
-          Minutes m = new Duration(sw.getTime()).toStandardMinutes();
+          Duration rt = new Duration(sw.getTime());
+          Seconds st = rt.toStandardSeconds();
+          Minutes m = rt.toStandardMinutes();
           int minutesInt = m.getMinutes();
 
           LOGGER.info("Complete.");
           LOGGER.info("Runtime: approximately {} minutes.", minutesInt);
           LOGGER.info("Processed {} documents.", docCtr);
+          final int tokens = tokenCtr.get();
+          LOGGER.info("Processed {} tokens.", tokens);
           if (docCtr > 0 && minutesInt > 0) {
-            float perMin = (float) docCtr / (float) minutesInt;
+            final float minutesFloat = minutesInt;
+            float perMin = docCtr / minutesFloat;
             LOGGER.info("Processed approximately {} documents/minute.", perMin);
+            LOGGER.info("Processed approximately {} tokens/second.", st.getSeconds() / minutesFloat);
           }
         }
       }
