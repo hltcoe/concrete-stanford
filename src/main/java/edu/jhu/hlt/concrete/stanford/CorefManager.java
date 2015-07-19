@@ -83,7 +83,8 @@ class CorefManager {
     ems.setMetadata(md);
     EntitySet es = new EntitySet().setUuid(UUIDFactory.newUUID())
         .setMetadata(md)
-        .setEntityList(new ArrayList<Entity>());
+        .setEntityList(new ArrayList<Entity>())
+        .setMentionSetId(ems.getUuid());
 
     Optional<Map<Integer, CorefChain>> coreNlpChainsOption = Optional.ofNullable(this.annotation.get(CorefCoreAnnotations.CorefChainAnnotation.class));
     if (coreNlpChainsOption.isPresent()) {
