@@ -163,7 +163,7 @@ public class ConcreteStanfordRunner {
           }
         }
       }
-    } catch (IOException | ConcreteException e) {
+    } catch (IOException | ConcreteException | StringIndexOutOfBoundsException e) {
       LOGGER.error("Caught exception while running the analytic over archive.", e);
     }
   }
