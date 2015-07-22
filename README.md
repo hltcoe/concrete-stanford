@@ -77,9 +77,7 @@ with serialized Concrete `Communication` objects. Recall that each `Communicatio
 | Input                                    | Result                                                           |
 | -----------------------------------------|------------------------------------------------------------------|
 | `.concrete` or `.comm` file              | Produces a single new `.concrete` or `.comm` file                |
-| -----------------------------------------|------------------------------------------------------------------|
 | `.tar` file with `Communciation` objects | Produces a single `.tar. file with annotated `Communication`s    |
-| -----------------------------------------|------------------------------------------------------------------|
 | `.tar.gz` ...                            | Produces a single `.tar.gz` file with annotated `Communication`s |
 
 
