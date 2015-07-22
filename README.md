@@ -73,14 +73,15 @@ You can also run this tool as a command line program: both `AnnotateTokenizedCon
 with serialized Concrete `Communication` objects. Recall that each `Communication` must have
 `Section` objects and must have `text` fields set.
 * Argument 2: a path that represents the desired output. The below are supported:
-Input | Result
---------------------------------------------------------------------------------
-`.concrete` or `.comm` file | Produces a single new `.concrete` or `.comm` file
---------------------------------------------------------------------------------
-`.tar` file with `Communciation` objects | Produces a single `.tar. file with annotated `Communication`s
---------------------------------------------------------------------------------
-`.tar.gz` ... | Produces a single `.tar.gz` file with annotated `Communication`s
---------------------------------------------------------------------------------
+
+| Input                                    | Result                                                           |
+| -----------------------------------------|------------------------------------------------------------------|
+| `.concrete` or `.comm` file              | Produces a single new `.concrete` or `.comm` file                |
+| -----------------------------------------|------------------------------------------------------------------|
+| `.tar` file with `Communciation` objects | Produces a single `.tar. file with annotated `Communication`s    |
+| -----------------------------------------|------------------------------------------------------------------|
+| `.tar.gz` ...                            | Produces a single `.tar.gz` file with annotated `Communication`s |
+
 
 Alternatively, you can pass in a directory as output. If only a directory is
 used as output, the file name from the input will be used and extension mirrored
