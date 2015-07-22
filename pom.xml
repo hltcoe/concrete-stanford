@@ -91,6 +91,12 @@
       <version>${concrete.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>edu.jhu.hlt</groupId>
+      <artifactId>tift</artifactId>
+      <version>${concrete.version}</version>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>edu.jhu.hlt</groupId>

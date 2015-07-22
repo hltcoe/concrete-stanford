@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -73,9 +74,13 @@ public class ConcreteStanfordRunner {
       // Ends with .concrete (first if)
       // Ends with .tar (else, first if)
       // Ends with .tar.gz (else, second if)
+
       boolean isTarExt = lowerOutPathStr.endsWith(".tar");
       boolean isTarGzExt = lowerOutPathStr.endsWith(".tar.gz") || lowerOutPathStr.endsWith(".tgz");
       boolean isConcreteExt = lowerOutPathStr.endsWith(".concrete") || lowerOutPathStr.endsWith(".comm");
+
+      int nElementsInitPath = inPath.getNameCount();
+      Path inputFileName = inPath.getName(nElementsInitPath - 1);
 
       // If no extention matches, exit.
       if (!isTarExt && !isTarGzExt && !isConcreteExt) {
@@ -88,82 +93,87 @@ public class ConcreteStanfordRunner {
             BufferedInputStream bin = new BufferedInputStream(in, 1024 * 8 * 24);) {
           byte[] inputBytes = IOUtils.toByteArray(bin);
           Communication c = ser.fromBytes(inputBytes);
-          // SectionedCommunicationAnalytic<StanfordPostNERCommunication> pipe = new AnnotateNonTokenizedConcrete();
           WrappedCommunication annotated = analytic.annotate(c);
           Communication ar = annotated.getRoot();
-          new WritableCommunication(ar).writeToFile(outPath, true);
+          WritableCommunication wc = new WritableCommunication(ar);
+          if (Files.isDirectory(outPath))
+            wc.writeToFile(outPath.resolve(inputFileName), true);
+          else
+            wc.writeToFile(outPath, true);
         } catch (AnalyticException e) {
           LOGGER.error("Caught exception when running the analytic.", e);
         }
       } else {
-        int nElementsInitPath = inPath.getNameCount();
-        Path inputFileName = inPath.getName(nElementsInitPath - 1);
-        String noExtStr = inputFileName.toString().split("\\.")[0];
-        String fileName = noExtStr + ".tar";
-        Path localOutPath = outPath.resolve(fileName);
+
+        Path localOutPath;
+        if (Files.isDirectory(outPath))
+          // if directory, use same extension as input.
+          localOutPath = outPath.resolve(inputFileName);
+        else
+          localOutPath = outPath;
+
         // Iterate over the archive.
         AutoCloseableIterator<byte[]> iter;
         try (InputStream is = Files.newInputStream(inPath);
-            BufferedInputStream bis = new BufferedInputStream(is, 1024 * 8 * 24);
-            OutputStream os = Files.newOutputStream(localOutPath);
-            BufferedOutputStream bos = new BufferedOutputStream(os, 1024 * 8 * 24);
-            TarArchiver archiver = new TarArchiver(bos);) {
-          // If .tar - read from .tar.
-          if (isTarExt)
-            iter = new TarArchiveEntryByteIterator(bis);
-          // If .tar.gz - read from .tar.gz.
-          else
-            iter = new TarGzArchiveEntryByteIterator(bis);
+            BufferedInputStream bis = new BufferedInputStream(is, 1024 * 8 * 24);) {
 
-          final StopWatch sw = new StopWatch();
-          sw.start();
+          // open iterator based on file extension
+          iter = isTarExt ? new TarArchiveEntryByteIterator(bis) : new TarGzArchiveEntryByteIterator(bis);
+          try (OutputStream os = Files.newOutputStream(localOutPath);
+              BufferedOutputStream bos = new BufferedOutputStream(os, 1024 * 8 * 24);) {
+            TarArchiver archiver = isTarExt ? new TarArchiver(bos) : new TarArchiver(new GZIPOutputStream(bos, 1024 * 8 * 16));
 
-          int docCtr = 0;
-          final AtomicInteger tokenCtr = new AtomicInteger(0);
-          LOGGER.info("Iterating over archive: {}", inPath.toString());
-          while (iter.hasNext()) {
-            Communication n = ser.fromBytes(iter.next());
-            LOGGER.info("Annotating communication: {}", n.getId());
-            try {
-              TokenizedCommunication a = analytic.annotate(n);
-              a.getTokenizations().parallelStream()
-                  .map(tkzToInt -> tkzToInt.getTokenList().getTokenListSize())
-                  .forEach(ct -> tokenCtr.addAndGet(ct));
+            final StopWatch sw = new StopWatch();
+            sw.start();
 
-              archiver.addEntry(new ArchivableCommunication(a.getRoot()));
-              docCtr++;
-            } catch (AnalyticException | IOException e) {
-              LOGGER.error("Caught exception processing document: " + n.getId(), e);
+            int docCtr = 0;
+            final AtomicInteger tokenCtr = new AtomicInteger(0);
+            LOGGER.info("Iterating over archive: {}", inPath.toString());
+            while (iter.hasNext()) {
+              Communication n = ser.fromBytes(iter.next());
+              LOGGER.info("Annotating communication: {}", n.getId());
+              try {
+                TokenizedCommunication a = analytic.annotate(n);
+                a.getTokenizations().parallelStream()
+                    .map(tkzToInt -> tkzToInt.getTokenList().getTokenListSize())
+                    .forEach(ct -> tokenCtr.addAndGet(ct));
+
+                archiver.addEntry(new ArchivableCommunication(a.getRoot()));
+                docCtr++;
+              } catch (AnalyticException | IOException | StringIndexOutOfBoundsException e) {
+                LOGGER.error("Caught exception processing document: " + n.getId(), e);
+              }
             }
-          }
 
-          try {
-            iter.close();
-          } catch (Exception e) {
-            // unlikely.
-            LOGGER.error("Caught exception closing iterator.", e);
-          }
+            try {
+              archiver.close();
+              iter.close();
+            } catch (Exception e) {
+              // unlikely.
+              LOGGER.info("Caught exception closing iterator.", e);
+            }
 
-          sw.stop();
-          Duration rt = new Duration(sw.getTime());
-          Seconds st = rt.toStandardSeconds();
-          Minutes m = rt.toStandardMinutes();
-          int minutesInt = m.getMinutes();
+            sw.stop();
+            Duration rt = new Duration(sw.getTime());
+            Seconds st = rt.toStandardSeconds();
+            Minutes m = rt.toStandardMinutes();
+            int minutesInt = m.getMinutes();
 
-          LOGGER.info("Complete.");
-          LOGGER.info("Runtime: approximately {} minutes.", minutesInt);
-          LOGGER.info("Processed {} documents.", docCtr);
-          final int tokens = tokenCtr.get();
-          LOGGER.info("Processed {} tokens.", tokens);
-          if (docCtr > 0 && minutesInt > 0) {
-            final float minutesFloat = minutesInt;
-            float perMin = docCtr / minutesFloat;
-            LOGGER.info("Processed approximately {} documents/minute.", perMin);
-            LOGGER.info("Processed approximately {} tokens/second.", st.getSeconds() / minutesFloat);
+            LOGGER.info("Complete.");
+            LOGGER.info("Runtime: approximately {} minutes.", minutesInt);
+            LOGGER.info("Processed {} documents.", docCtr);
+            final int tokens = tokenCtr.get();
+            LOGGER.info("Processed {} tokens.", tokens);
+            if (docCtr > 0 && minutesInt > 0) {
+              final float minutesFloat = minutesInt;
+              float perMin = docCtr / minutesFloat;
+              LOGGER.info("Processed approximately {} documents/minute.", perMin);
+              LOGGER.info("Processed approximately {} tokens/second.", st.getSeconds() / minutesFloat);
+            }
           }
         }
       }
-    } catch (IOException | ConcreteException | StringIndexOutOfBoundsException e) {
+    } catch (IOException | ConcreteException e) {
       LOGGER.error("Caught exception while running the analytic over archive.", e);
     }
   }
