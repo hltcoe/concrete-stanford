@@ -9,7 +9,7 @@ with `Tokenization` objects, and optionally `EntityMention` and `Entity` objects
 <dependency>
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.6.3</version>
+  <version>4.6.5</version>
 </dependency>
 ```
 
@@ -119,7 +119,7 @@ The following should be compliant in any `sh`-like shell.
 export CONC_STAN_INPUT_FILE=/path/to/.concrete/or/.tar/or/.tar.gz
 export CONC_STAN_OUTPUT_DIR=/path/to/output/dir
 mvn clean compile assembly:single
-java -cp target/concrete-stanford-4.6.0-jar-with-dependencies.jar edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete \
+java -cp target/concrete-stanford-4.6.5-jar-with-dependencies.jar edu.jhu.hlt.concrete.stanford.AnnotateNonTokenizedConcrete \
 $CONC_STAN_INPUT_FILE \
 $CONC_STAN_OUTPUT_DIR
 ```
