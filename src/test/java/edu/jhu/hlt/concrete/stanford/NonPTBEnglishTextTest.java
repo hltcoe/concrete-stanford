@@ -4,8 +4,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -21,6 +23,7 @@ import edu.jhu.hlt.concrete.SpanLink;
 import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.Token;
 import edu.jhu.hlt.concrete.TokenList;
+import edu.jhu.hlt.concrete.TokenTagging;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.TokenizationKind;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
@@ -76,6 +79,13 @@ public class NonPTBEnglishTextTest {
     TokenizedCommunication tc = new CachedTokenizationCommunication(englishComm);
     TokenizedCommunication wDepParse = new ConcreteStanfordPreCorefAnalytic().annotate(tc);
     Tokenization ntkz = wDepParse.getTokenizations().get(0);
+    List<TokenTagging> ttList = ntkz.getTokenTaggingList();
+    LOGGER.info("token taggings: {}", ttList.size());
+    ttList.forEach(tt -> LOGGER.debug("Got TokenTagging: {}", tt));
+    List<TokenTagging> nerTTs = ttList.stream()
+        .filter (tt -> tt.getTaggingType().equalsIgnoreCase("NER")).collect(Collectors.toList());
+    assertEquals(1, nerTTs.size());
+
     assertEquals(2, ntkz.getSpanLinkListSize());
     TokenList ntl = ntkz.getTokenList();
     // AnnotateTokenizedConcrete atc = new AnnotateTokenizedConcrete(PipelineLanguage.ENGLISH);
