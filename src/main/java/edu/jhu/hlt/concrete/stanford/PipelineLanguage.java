@@ -44,6 +44,21 @@ public enum PipelineLanguage {
     public HeadFinder getHeadFinder() {
       return new SemanticHeadFinder();
     }
+
+    @Override
+    public String[] getUpToTokenizationAnnotators() {
+      return new String[] {"tokenize", "ssplit" };
+    }
+
+    @Override
+    public Properties getUpToTokenizationProperties() {
+      Properties props = new Properties();
+      String annotatorList = "tokenize, ssplit";
+      logger.debug("Using annotators: {}", annotatorList);
+
+      props.put("annotators", annotatorList);
+      return props;
+    }
   },
   CHINESE ("cn") {
     @Override
@@ -87,6 +102,31 @@ public enum PipelineLanguage {
     public HeadFinder getHeadFinder() {
       return new ChineseSemanticHeadFinder();
     }
+
+    @Override
+    public String[] getUpToTokenizationAnnotators() {
+      // TODO Auto-generated method stub
+      return new String[] { "segment", "ssplit" };
+    }
+
+    @Override
+    public Properties getUpToTokenizationProperties() {
+      Properties props = new Properties();
+      String annotatorList = "segment, ssplit";
+      logger.debug("Using annotators: {}", annotatorList);
+
+      props.setProperty("customAnnotatorClass.segment", "edu.stanford.nlp.pipeline.ChineseSegmenterAnnotator");
+
+      props.setProperty("segment.model", "edu/stanford/nlp/models/segmenter/chinese/ctb.gz");
+      props.setProperty("segment.sighanCorporaDict", "edu/stanford/nlp/models/segmenter/chinese");
+      props.setProperty("segment.serDictionary", "edu/stanford/nlp/models/segmenter/chinese/dict-chris6.ser.gz");
+      props.setProperty("segment.sighanPostProcessing", "true");
+
+      props.setProperty("ssplit.boundaryTokenRegex", "[.]|[!?]+|[。]|[！？]+");
+
+      props.put("annotators", annotatorList);
+      return props;
+    }
   };
 
   private static final Logger logger = LoggerFactory.getLogger(PipelineLanguage.class);
@@ -115,7 +155,10 @@ public enum PipelineLanguage {
 
   public abstract String[] getPostTokenizationAnnotators();
 
+  public abstract String[] getUpToTokenizationAnnotators();
+
   public abstract Properties getProperties();
+  public abstract Properties getUpToTokenizationProperties();
 
   public abstract GrammaticalStructureFactory getGrammaticalFactory();
 

@@ -42,7 +42,7 @@ public class ConcreteStanfordTokensSentenceAnalytic implements SectionedCommunic
    *
    */
   public ConcreteStanfordTokensSentenceAnalytic(PipelineLanguage lang) {
-    this.pipeline = new StanfordCoreNLP(lang.getProperties());
+    this.pipeline = new StanfordCoreNLP(lang.getUpToTokenizationProperties());
   }
 
   /**

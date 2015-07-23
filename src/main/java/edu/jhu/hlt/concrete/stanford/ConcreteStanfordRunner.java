@@ -12,7 +12,6 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
@@ -29,7 +28,6 @@ import edu.jhu.hlt.acute.archivers.tar.TarArchiver;
 import edu.jhu.hlt.acute.iterators.tar.TarArchiveEntryByteIterator;
 import edu.jhu.hlt.acute.iterators.tar.TarGzArchiveEntryByteIterator;
 import edu.jhu.hlt.concrete.Communication;
-import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.analytics.base.Analytic;
 import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
 import edu.jhu.hlt.concrete.communications.WritableCommunication;
@@ -136,10 +134,6 @@ public class ConcreteStanfordRunner {
               LOGGER.info("Annotating communication: {}", n.getId());
               try {
                 TokenizedCommunication a = analytic.annotate(n);
-                List<Tokenization> tkzList = a.getTokenizations();
-                tkzList.forEach(tkz -> {
-                  tkz.getTokenTaggingList().forEach(ttl -> LOGGER.info("Got TokenTagging: {}", ttl));
-                });
                 a.getTokenizations().parallelStream()
                     .map(tkzToInt -> tkzToInt.getTokenList().getTokenListSize())
                     .forEach(ct -> tokenCtr.addAndGet(ct));

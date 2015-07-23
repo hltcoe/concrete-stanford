@@ -217,6 +217,11 @@ public class CoreMapWrapper {
     return new StanfordToConcreteConversionOutput(tokList, nerTT, posTT, lemmaTT);
   }
 
+  private static void addToTokenTaggingListIfNotEmpty(TokenTagging tt, Tokenization tkz) {
+    if (tt.isSetTaggedTokenList() && tt.getTaggedTokenListSize() > 0)
+      tkz.addToTokenTaggingList(tt);
+  }
+
   private Tokenization coreLabelToTokenization(final int cOffset, final Tokenization orig) throws AnalyticException {
     StanfordToConcreteConversionOutput output = this.convertCoreLabels(cOffset);
     List<Token> outputTL = output.getTokenList();
@@ -235,9 +240,9 @@ public class CoreMapWrapper {
       throw new AnalyticException("Token lists did not match.");
     }
 
-    orig.addToTokenTaggingList(output.getNerTT());
-    orig.addToTokenTaggingList(output.getPosTT());
-    orig.addToTokenTaggingList(output.getLemmaTT());
+    addToTokenTaggingListIfNotEmpty(output.getNerTT(), orig);
+    addToTokenTaggingListIfNotEmpty(output.getPosTT(), orig);
+    addToTokenTaggingListIfNotEmpty(output.getLemmaTT(), orig);
 
     return orig;
   }

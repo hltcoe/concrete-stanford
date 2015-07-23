@@ -160,11 +160,11 @@ public class GigawordTest {
     List<Sentence> allOldSents = tkzc.getSentences();
     List<Sentence> allNewSents = preCoref.getSentences();
     allOldSents.forEach(sent -> {
-      LOGGER.info("Got old sent: {}", sent);
+      // LOGGER.info("Got old sent: {}", sent);
     });
     LOGGER.info("");
     allNewSents.forEach(sent -> {
-      LOGGER.info("Got new sent: {}", sent);
+      // LOGGER.info("Got new sent: {}", sent);
     });
     assertEquals(allOldSents.size(), allNewSents.size());
     for (int i = 0; i < allOldSents.size(); i++) {
@@ -185,8 +185,10 @@ public class GigawordTest {
       }
 
       LOGGER.info("Any tagged tokens? {}", ltkz.isSetTokenTaggingList());
+      List<TokenTagging> ttList = ltkz.getTokenTaggingList();
+      assertEquals(3, ttList.size());
       LOGGER.info("Tagged tokens:");
-      for (TokenTagging tt : ltkz.getTokenTaggingList()) {
+      for (TokenTagging tt : ttList) {
         for (TaggedToken tagt : tt.getTaggedTokenList()) {
           LOGGER.info("Got tagged token: {}", tagt.toString());
         }

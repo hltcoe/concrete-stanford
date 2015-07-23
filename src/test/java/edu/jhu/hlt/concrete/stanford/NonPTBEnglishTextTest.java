@@ -77,7 +77,9 @@ public class NonPTBEnglishTextTest {
     sentence.setTokenization(tokenization);
     assertTrue(new CommunicationValidator(englishComm).validate());
     TokenizedCommunication tc = new CachedTokenizationCommunication(englishComm);
+    assertEquals(1, tc.getTokenizations().size());
     TokenizedCommunication wDepParse = new ConcreteStanfordPreCorefAnalytic().annotate(tc);
+    assertEquals(1, wDepParse.getTokenizations().size());
     Tokenization ntkz = wDepParse.getTokenizations().get(0);
     List<TokenTagging> ttList = ntkz.getTokenTaggingList();
     LOGGER.info("token taggings: {}", ttList.size());
