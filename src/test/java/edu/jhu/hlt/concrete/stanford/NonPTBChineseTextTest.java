@@ -1,11 +1,13 @@
 package edu.jhu.hlt.concrete.stanford;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import concrete.validation.CommunicationValidator;
 import edu.jhu.hlt.concrete.AnnotationMetadata;
@@ -20,9 +22,12 @@ import edu.jhu.hlt.concrete.TokenizationKind;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
 import edu.jhu.hlt.concrete.random.RandomConcreteFactory;
+import edu.jhu.hlt.concrete.util.SuperTextSpan;
 import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 
 public class NonPTBChineseTextTest {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(NonPTBChineseTextTest.class);
 
   private final RandomConcreteFactory cf = new RandomConcreteFactory();
 
@@ -67,8 +72,28 @@ public class NonPTBChineseTextTest {
 
     TokenizedCommunication tc = new CachedTokenizationCommunication(chineseComm);
     TokenizedCommunication wDepParse = new ConcreteStanfordPreCorefAnalytic(PipelineLanguage.CHINESE).annotate(tc);
-    Tokenization ntkz = wDepParse.getTokenizations().get(0);
-    assertTrue(ntkz.isSetParseList());
-    assertEquals(1, ntkz.getParseListSize());
+
+    List<Section> sectList = tc.getSections();
+    sectList.forEach(s -> {
+      LOGGER.info("Got kind: {}", s.getKind());
+      LOGGER.info("Got text span: {}", new SuperTextSpan(s.getTextSpan(), chineseComm).getText());
+
+      s.getSentenceList().forEach(st -> {
+        LOGGER.info("Got sentence: {}", new SuperTextSpan(st.getTextSpan(), chineseComm).getText());
+        Tokenization tkz = st.getTokenization();
+        tkz.getTokenList().getTokenList().forEach(tok -> {
+          LOGGER.info("Got token text: {}", new SuperTextSpan(tok.getTextSpan(), chineseComm).getText());
+        });
+        tkz.getTokenTaggingList().forEach(tt -> {
+          LOGGER.info("Got TT: {} [kind: {}]", tt.getUuid().getUuidString(), tt.getTaggingType());
+        });
+      });
+    });
+
+    // List<Tokenization> ntkzList = wDepParse.getTokenizations();
+    // Tokenization ntkz = ntkzList.get(0);
+    // parse disabled by default
+    // assertTrue(ntkz.isSetParseList());
+    // assertEquals(1, ntkz.getParseListSize());
   }
 }

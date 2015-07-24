@@ -131,8 +131,8 @@ public class ConcreteStanfordTokensSentenceAnalytic implements SectionedCommunic
       final String sectTxt = new SuperTextSpan(sts, cp).getText();
       LOGGER.debug("Section text: {}", sectTxt);
       final Annotation sectAnnotation = new Annotation(sectTxt);
-      LOGGER.trace("Got annotation keys:");
-      sectAnnotation.keySet().forEach(k -> LOGGER.trace("{}", k));
+      LOGGER.debug("Got annotation keys:");
+      sectAnnotation.keySet().forEach(k -> LOGGER.debug("{}", k));
       this.pipeline.annotate(sectAnnotation);
       LOGGER.trace("Post annotation annotation keys:");
       sectAnnotation.keySet().forEach(k -> LOGGER.trace("{}", k));

@@ -10,13 +10,13 @@
 
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.6.5</version>
+  <version>4.6.6-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Concrete Stanford</name>
 
   <properties>
-    <concrete.version>4.6.7</concrete.version>
+    <concrete.version>4.6.8</concrete.version>
     <stanford.version>3.5.2</stanford.version>
   </properties>
 
@@ -82,6 +82,12 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-ingesters-gigaword</artifactId>
+      <version>${concrete.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>edu.jhu.hlt</groupId>
+      <artifactId>concrete-ingesters-bolt</artifactId>
       <version>${concrete.version}</version>
       <scope>test</scope>
     </dependency>

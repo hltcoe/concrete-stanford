@@ -63,13 +63,13 @@ public enum PipelineLanguage {
   CHINESE ("cn") {
     @Override
     public String[] getPostTokenizationAnnotators() {
-      return new String[] { "pos", "ner", "parse" };
+      return new String[] { "pos", "ner", };
     }
 
     @Override
     public Properties getProperties() {
       Properties props = new Properties();
-      String annotatorList = "segment, ssplit, pos, ner, parse";
+      String annotatorList = "segment, ssplit, pos, ner";
       logger.debug("Using annotators: {}", annotatorList);
 
       props.setProperty("customAnnotatorClass.segment", "edu.stanford.nlp.pipeline.ChineseSegmenterAnnotator");

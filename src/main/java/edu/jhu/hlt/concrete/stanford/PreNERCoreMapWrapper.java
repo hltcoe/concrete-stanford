@@ -46,7 +46,7 @@ public class PreNERCoreMapWrapper {
   private static final Logger LOGGER = LoggerFactory.getLogger(PreNERCoreMapWrapper.class);
 
   private final CoreMapWrapper wrapper;
-  private final Tree tree;
+  private final Optional<Tree> tree;
   private final Optional<SemanticGraph> basicDeps;
   private final Optional<SemanticGraph> colDeps;
   private final Optional<SemanticGraph> colCCDeps;
@@ -59,7 +59,7 @@ public class PreNERCoreMapWrapper {
   public PreNERCoreMapWrapper(final CoreMap cm, final HeadFinder hf) {
     this.wrapper = new CoreMapWrapper(cm);
     this.hf = hf;
-    this.tree = cm.get(TreeAnnotation.class);
+    this.tree = Optional.ofNullable(cm.get(TreeAnnotation.class));
     this.basicDeps = Optional.ofNullable(cm.get(BasicDependenciesAnnotation.class));
     this.colDeps = Optional.ofNullable(cm.get(CollapsedDependenciesAnnotation.class));
     this.colCCDeps = Optional.ofNullable(cm.get(CollapsedCCProcessedDependenciesAnnotation.class));
@@ -223,8 +223,11 @@ public class PreNERCoreMapWrapper {
     UUID tkzID = newTkz.getUuid();
     List<DependencyParse> dpList = this.constructDependencyParses(tkzID);
     dpList.forEach(dp -> newTkz.addToDependencyParseList(dp));
-    Parse p = makeConcreteCParse(this.tree, newTkz.getTokenList().getTokenListSize(), tkzID, this.hf);
-    newTkz.addToParseList(p);
+    // cannot use functional style here b/c of checked ex.
+    if (this.tree.isPresent()) {
+      Parse p = makeConcreteCParse(tree.get(), newTkz.getTokenList().getTokenListSize(), tkzID, this.hf);
+      newTkz.addToParseList(p);
+    }
   }
 
   public Sentence toSentence(final int offset, final Sentence origSent) throws AnalyticException {
