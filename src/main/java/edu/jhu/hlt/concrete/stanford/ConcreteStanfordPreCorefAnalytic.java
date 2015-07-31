@@ -45,6 +45,7 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
 
   private final HeadFinder hf;
   private final PipelineLanguage lang;
+
   /**
    *
    */
@@ -61,7 +62,9 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     this(PipelineLanguage.ENGLISH);
   }
 
-  /* (non-Javadoc)
+  /*
+   * (non-Javadoc)
+   * 
    * @see edu.jhu.hlt.concrete.safe.metadata.SafeAnnotationMetadata#getTimestamp()
    */
   @Override
@@ -69,7 +72,9 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     return Timing.currentLocalTime();
   }
 
-  /* (non-Javadoc)
+  /*
+   * (non-Javadoc)
+   * 
    * @see edu.jhu.hlt.concrete.metadata.tools.MetadataTool#getToolName()
    */
   @Override
@@ -77,7 +82,9 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     return ConcreteStanfordPreCorefAnalytic.class.getSimpleName();
   }
 
-  /* (non-Javadoc)
+  /*
+   * (non-Javadoc)
+   * 
    * @see edu.jhu.hlt.concrete.metadata.tools.MetadataTool#getToolVersion()
    */
   @Override
@@ -85,7 +92,9 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     return ProjectConstants.VERSION;
   }
 
-  /* (non-Javadoc)
+  /*
+   * (non-Javadoc)
+   * 
    * @see edu.jhu.hlt.concrete.metadata.tools.MetadataTool#getToolNotes()
    */
   @Override
@@ -95,39 +104,27 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     return notes;
   }
 
-  private static List<Sentence> annotationToSentenceList(Annotation anno, int offset, HeadFinder hf,
-      final List<Sentence> origSentListRef) throws AnalyticException {
+  private static List<Sentence> annotationToSentenceList(Annotation anno, int offset, HeadFinder hf, final List<Sentence> origSentListRef)
+      throws AnalyticException {
     List<Sentence> slist = new ArrayList<>();
-
-    // TODO: Refactor into a for loop with integer index.
-    // Use the index to point to a list of Tokenization objects,
-    // pass that in to toSentence to preserve the original
-    // Sentence objects (UUID etc.).
     List<CoreMap> cmList = anno.get(SentencesAnnotation.class);
     final int cmListSize = cmList.size();
     for (int i = 0; i < cmListSize; i++) {
       CoreMap cm = cmList.get(i);
       Sentence orig = origSentListRef.get(i);
-      Sentence merged = new PreNERCoreMapWrapper(cm, hf).toSentence(offset, orig);
+      final int sentOff = orig.getTextSpan().getStart();
+      Sentence merged = new PreNERCoreMapWrapper(cm, hf).toSentence(sentOff, orig);
       slist.add(merged);
     }
-//    anno.get(SentencesAnnotation.class).stream()
-//      .map(cm -> {
-//        // LOGGER.info("Got Sentence offset: {}", cm.toString());
-//        try {
-//          return
-//        } catch (AnalyticException e) {
-//          throw new RuntimeException(e);
-//        }
-//      })
-//    .sequential()
-//    .forEach(st -> slist.add(st));
 
     return slist;
   }
 
-  /* (non-Javadoc)
-   * @see edu.jhu.hlt.concrete.analytics.base.TokenizationedCommunicationAnalytic#annotate(edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication)
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * edu.jhu.hlt.concrete.analytics.base.TokenizationedCommunicationAnalytic#annotate(edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication)
    */
   @Override
   public TokenizedCommunication annotate(TokenizedCommunication arg0) throws AnalyticException {
@@ -158,15 +155,12 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
 
     anno.get(SentencesAnnotation.class).forEach(cm -> LOGGER.trace("Got CoreMaps post-coref: {}", cm.toShorterString(new String[0])));
     // TODO: not sure if this is necessary - found it in the old code.
-    anno.get(SentencesAnnotation.class).stream()
-        .filter(cm -> cm.containsKey(TreeAnnotation.class))
-        .forEach(cm -> {
-          Tree tree = cm.get(TreeAnnotation.class);
-          ParserAnnotatorUtils.fillInParseAnnotations(false, true, this.lang.getGrammaticalFactory(), cm, tree, GrammaticalStructure.Extras.NONE);
-        });
+    anno.get(SentencesAnnotation.class).stream().filter(cm -> cm.containsKey(TreeAnnotation.class)).forEach(cm -> {
+      Tree tree = cm.get(TreeAnnotation.class);
+      ParserAnnotatorUtils.fillInParseAnnotations(false, true, this.lang.getGrammaticalFactory(), cm, tree, GrammaticalStructure.Extras.NONE);
+    });
 
-    anno.get(SentencesAnnotation.class)
-        .forEach(cm -> LOGGER.trace("Got CoreMap post-fill-in: {}", cm.toShorterString(new String[0])));
+    anno.get(SentencesAnnotation.class).forEach(cm -> LOGGER.trace("Got CoreMap post-fill-in: {}", cm.toShorterString(new String[0])));
     List<Sentence> postSentences = annotationToSentenceList(anno, 0, hf, arg0.getSentences());
     postSentences.forEach(st -> LOGGER.trace("Got pre-coref sentence: {}", st.toString()));
     Map<TextSpan, Sentence> tsToSentenceMap = new HashMap<>();
@@ -198,9 +192,8 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
   }
 
   /**
-   * sentences with no dependency structure have null values for the various
-   * dependency annotations. make sure these are empty dependencies instead to
-   * prevent coref-resolution from dying
+   * sentences with no dependency structure have null values for the various dependency annotations. make sure these are empty dependencies instead to prevent
+   * coref-resolution from dying
    */
   private static void fixNullDependencyGraphs(Annotation anno) {
     for (CoreMap sent : anno.get(SentencesAnnotation.class)) {
@@ -210,7 +203,9 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     }
   }
 
-  /* (non-Javadoc)
+  /*
+   * (non-Javadoc)
+   * 
    * @see edu.jhu.hlt.concrete.analytics.base.Analytic#annotate(edu.jhu.hlt.concrete.Communication)
    */
   @Override

@@ -75,7 +75,6 @@ public class CoreMapWrapper {
     LOGGER.trace("CoreLabel list has {} elements.", clList.size());
   }
 
-
   /**
    * @return the idx
    */
@@ -118,14 +117,15 @@ public class CoreMapWrapper {
     return text;
   }
 
-
-  /* (non-Javadoc)
+  /*
+   * (non-Javadoc)
+   * 
    * @see java.lang.Object#toString()
    */
   @Override
   public String toString() {
-    return "CoreMapWrapper [idx=" + idx + ", startOffset=" + startOffset + ", endOffset=" + endOffset
-        + ", tokenBeginOffset=" + tokenBeginOffset + ", tokenEndOffset=" + tokenEndOffset + ", text=" + text + "]";
+    return "CoreMapWrapper [idx=" + idx + ", startOffset=" + startOffset + ", endOffset=" + endOffset + ", tokenBeginOffset=" + tokenBeginOffset
+        + ", tokenEndOffset=" + tokenEndOffset + ", text=" + text + "]";
   }
 
   public Sentence toSentence() throws AnalyticException {
@@ -178,12 +178,9 @@ public class CoreMapWrapper {
   }
 
   private StanfordToConcreteConversionOutput convertCoreLabels(final int cOffset) throws AnalyticException {
-    TokenTagging nerTT = TokenTaggingFactory.create("NER")
-        .setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
-    TokenTagging posTT = TokenTaggingFactory.create("POS")
-        .setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
-    TokenTagging lemmaTT = TokenTaggingFactory.create("LEMMA")
-        .setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
+    TokenTagging nerTT = TokenTaggingFactory.create("NER").setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
+    TokenTagging posTT = TokenTaggingFactory.create("POS").setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
+    TokenTagging lemmaTT = TokenTaggingFactory.create("LEMMA").setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
 
     List<Token> tokList = new ArrayList<>(this.clList.size());
     for (CoreLabel cl : this.clList) {
@@ -191,15 +188,7 @@ public class CoreMapWrapper {
       Token t;
       if (keySet.contains(PartOfSpeechAnnotation.class)) {
         PreNERCoreLabelWrapper wrapper = new PreNERCoreLabelWrapper(cl);
-        // below might be a huge hack -
-        // but if the offset hasn't "caught up", then
-        // the sentence offsets aren't captured by below call.
-        // happens when a zoner does not start a section/sentence
-        // on a character.
-        if (cOffset == 0 && this.startOffset > 0)
-          t = wrapper.getOrig().toConcreteToken(this.startOffset);
-        else
-          t = wrapper.getOrig().toConcreteToken(cOffset);
+        t = wrapper.getOrig().toConcreteToken(cOffset);
         wrapper.toPOSToken().ifPresent(tt -> posTT.addToTaggedTokenList(tt));
         wrapper.toNERToken().ifPresent(tt -> nerTT.addToTaggedTokenList(tt));
         wrapper.toLemmaToken().ifPresent(tt -> lemmaTT.addToTaggedTokenList(tt));
