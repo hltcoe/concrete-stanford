@@ -104,7 +104,7 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     return notes;
   }
 
-  private static List<Sentence> annotationToSentenceList(Annotation anno, int offset, HeadFinder hf, final List<Sentence> origSentListRef)
+  private static List<Sentence> annotationToSentenceList(Annotation anno, HeadFinder hf, final List<Sentence> origSentListRef)
       throws AnalyticException {
     List<Sentence> slist = new ArrayList<>();
     List<CoreMap> cmList = anno.get(SentencesAnnotation.class);
@@ -161,7 +161,7 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     });
 
     anno.get(SentencesAnnotation.class).forEach(cm -> LOGGER.trace("Got CoreMap post-fill-in: {}", cm.toShorterString(new String[0])));
-    List<Sentence> postSentences = annotationToSentenceList(anno, 0, hf, arg0.getSentences());
+    List<Sentence> postSentences = annotationToSentenceList(anno, hf, arg0.getSentences());
     postSentences.forEach(st -> LOGGER.trace("Got pre-coref sentence: {}", st.toString()));
     Map<TextSpan, Sentence> tsToSentenceMap = new HashMap<>();
     postSentences.forEach(st -> tsToSentenceMap.put(st.getTextSpan(), st));
