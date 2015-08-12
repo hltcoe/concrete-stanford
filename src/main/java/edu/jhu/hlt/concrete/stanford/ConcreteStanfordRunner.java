@@ -14,8 +14,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.zip.GZIPOutputStream;
 
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.joda.time.Duration;
@@ -121,7 +121,7 @@ public class ConcreteStanfordRunner {
           iter = isTarExt ? new TarArchiveEntryByteIterator(bis) : new TarGzArchiveEntryByteIterator(bis);
           try (OutputStream os = Files.newOutputStream(localOutPath);
               BufferedOutputStream bos = new BufferedOutputStream(os, 1024 * 8 * 24);) {
-            TarArchiver archiver = isTarExt ? new TarArchiver(bos) : new TarArchiver(new GZIPOutputStream(bos, 1024 * 8 * 16));
+            TarArchiver archiver = isTarExt ? new TarArchiver(bos) : new TarArchiver(new GzipCompressorOutputStream(bos));
 
             final StopWatch sw = new StopWatch();
             sw.start();

@@ -15,8 +15,8 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.zip.GZIPOutputStream;
 
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -92,7 +92,7 @@ public class RunnerTest {
     this.inpTgz = this.tf.newFile("comms.tar.gz").toPath();
     try (OutputStream os = Files.newOutputStream(this.inpTgz);
         BufferedOutputStream bos = new BufferedOutputStream(os, 1024 * 8 * 24);
-        GZIPOutputStream gzo = new GZIPOutputStream(bos, 1024 * 8 * 16);
+        GzipCompressorOutputStream gzo = new GzipCompressorOutputStream(bos);
         TarArchiver archiver = new TarArchiver(gzo);) {
       archiver.addEntry(new ArchivableCommunication(sc));
     }

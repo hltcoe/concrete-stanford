@@ -38,11 +38,6 @@ public class AnnotateTokenizedConcrete implements TokenizationedCommunicationAna
   private static final Logger logger = LoggerFactory
       .getLogger(AnnotateTokenizedConcrete.class);
 
-//  private final static String[] chineseSectionName = new String[] { "</TURN>",
-//      "</HEADLINE>", "</TEXT>", "</POST>", "</post>", "</quote>" };
-//  private static final Set<String> chineseSectionNameSet = new HashSet<String>(
-//      Arrays.asList(chineseSectionName));
-
   private final ConcreteStanfordPreCorefAnalytic analytic;
 
   public AnnotateTokenizedConcrete(PipelineLanguage lang) {
