@@ -5,18 +5,18 @@
   <parent>
     <groupId>edu.jhu.hlt</groupId>
     <artifactId>concrete-parent</artifactId>
-    <version>4.6-fix</version>
+    <version>4.8-RC1</version>
   </parent>
 
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.6.9</version>
+  <version>4.8.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Concrete Stanford</name>
 
   <properties>
-    <concrete.version>4.6.10</concrete.version>
+    <concrete.version>4.8.0-SNAPSHOT</concrete.version>
     <stanford.version>3.5.2</stanford.version>
   </properties>
 
@@ -116,6 +116,11 @@
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
+      <artifactId>concrete-server</artifactId>
+      <version>${concrete.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-validation</artifactId>
       <version>${concrete.version}</version>
     </dependency>
@@ -140,6 +145,11 @@
       <artifactId>stanford-corenlp</artifactId>
       <version>${stanford.version}</version>
       <classifier>models-chinese</classifier>
+    </dependency>
+    <dependency>
+      <groupId>com.beust</groupId>
+      <artifactId>jcommander</artifactId>
+      <version>1.48</version>
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
