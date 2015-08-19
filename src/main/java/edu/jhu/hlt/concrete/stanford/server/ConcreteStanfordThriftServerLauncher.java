@@ -5,6 +5,7 @@
 
 package edu.jhu.hlt.concrete.stanford.server;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +19,7 @@ import edu.jhu.hlt.concrete.server.ConcreteServer;
 import edu.jhu.hlt.concrete.server.ServerException;
 import edu.jhu.hlt.concrete.stanford.PipelineLanguage;
 import edu.jhu.hlt.utilt.ex.LoggedUncaughtExceptionHandler;
+import edu.jhu.hlt.utilt.sys.SystemErrDisabler;
 
 /**
  *
@@ -35,7 +37,7 @@ public class ConcreteStanfordThriftServerLauncher {
   @Parameter(names = "--language", required = true, description = "The language to launch. Supported: en, cn")
   private String language;
 
-  @Parameter(names = "--port", required = true, description = "The port on which to listen for clients.")
+  @Parameter(names = "--port", description = "The port on which to listen for clients.")
   private Integer port = 33221;
 
   /**
@@ -66,8 +68,11 @@ public class ConcreteStanfordThriftServerLauncher {
     }
 
     try {
+      // annoying Stanford junk
+      SystemErrDisabler dis = new SystemErrDisabler();
+      dis.disable();
       ConcreteServer.createServer(new ConcreteStanfordThriftServer(lang), rl.port);
-    } catch (ServerException e) {
+    } catch (ServerException | UnsupportedEncodingException e) {
       logger.error("Caught exception while running the server.", e);
     }
   }

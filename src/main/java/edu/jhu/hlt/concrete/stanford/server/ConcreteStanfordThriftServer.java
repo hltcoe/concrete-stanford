@@ -6,16 +6,20 @@
 package edu.jhu.hlt.concrete.stanford.server;
 
 import org.apache.thrift.TException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import edu.jhu.hlt.concrete.AnnotationMetadata;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
+import edu.jhu.hlt.concrete.analytics.base.SectionedCommunicationAnalytic;
 import edu.jhu.hlt.concrete.analytics.base.TokenizationedCommunicationAnalytic;
 import edu.jhu.hlt.concrete.metadata.tools.TooledMetadataConverter;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
 import edu.jhu.hlt.concrete.services.Annotator;
 import edu.jhu.hlt.concrete.services.ConcreteThriftException;
 import edu.jhu.hlt.concrete.stanford.ConcreteStanfordPreCorefAnalytic;
+import edu.jhu.hlt.concrete.stanford.ConcreteStanfordTokensSentenceAnalytic;
 import edu.jhu.hlt.concrete.stanford.PipelineLanguage;
 
 /**
@@ -23,13 +27,17 @@ import edu.jhu.hlt.concrete.stanford.PipelineLanguage;
  */
 public class ConcreteStanfordThriftServer implements Annotator.Iface {
 
-  private final TokenizationedCommunicationAnalytic<TokenizedCommunication> annotator;
+  private static final Logger LOGGER = LoggerFactory.getLogger(ConcreteStanfordThriftServer.class);
+
+  private final SectionedCommunicationAnalytic<TokenizedCommunication> tokensAnnotator;
+  private final TokenizationedCommunicationAnalytic<TokenizedCommunication> upToCorefAnnotator;
 
   /**
    *
    */
   public ConcreteStanfordThriftServer(PipelineLanguage lang) {
-    this.annotator = new ConcreteStanfordPreCorefAnalytic(lang);
+    this.tokensAnnotator = new ConcreteStanfordTokensSentenceAnalytic(lang);
+    this.upToCorefAnnotator = new ConcreteStanfordPreCorefAnalytic(lang);
   }
 
   /* (non-Javadoc)
@@ -37,8 +45,11 @@ public class ConcreteStanfordThriftServer implements Annotator.Iface {
    */
   @Override
   public Communication annotate(Communication original) throws ConcreteThriftException, TException {
+    LOGGER.info("Received annotation request. Annotating: {} [UUID: {}]", original.getId(), original.getUuid().getUuidString());
     try {
-      return this.annotator.annotate(original).getRoot();
+      TokenizedCommunication intermed = this.tokensAnnotator.annotate(original);
+      TokenizedCommunication full = this.upToCorefAnnotator.annotate(intermed);
+      return full.getRoot();
     } catch (AnalyticException e) {
       throw new ConcreteThriftException(e.getMessage());
     }
@@ -49,7 +60,7 @@ public class ConcreteStanfordThriftServer implements Annotator.Iface {
    */
   @Override
   public AnnotationMetadata getMetadata() throws TException {
-    return TooledMetadataConverter.convert(this.annotator);
+    return TooledMetadataConverter.convert(this.tokensAnnotator);
   }
 
   /* (non-Javadoc)
