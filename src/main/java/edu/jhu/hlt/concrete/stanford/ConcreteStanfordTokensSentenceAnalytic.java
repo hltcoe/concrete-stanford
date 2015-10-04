@@ -125,11 +125,25 @@ public class ConcreteStanfordTokensSentenceAnalytic implements SectionedCommunic
       throw new AnalyticException("communication.text must be set to run this analytic.");
     List<Section> sList = arg0.getSections()
         .stream()
+        // temporary hack - filter out
+        // any zero-length TextSpans.
         .filter(s -> {
           final TextSpan ts = s.getTextSpan();
           return ts.getStart() != ts.getEnding();
         })
+        // temporary hack - filter out any
+        // TextSpans that contain only whitespace.
+        .filter(s -> {
+          final TextSpan ts = s.getTextSpan();
+          final int b = ts.getStart();
+          final int e = ts.getEnding();
+          return !cp.getText().substring(b, e).trim().isEmpty();
+        })
         .collect(Collectors.toList());
+    final int newSize = sList.size();
+    final int oSize = arg0.getSections().size();
+    if (newSize < oSize)
+      LOGGER.warn("Dropped {} section(s) because they were zero-length or contained only whitespace.", oSize - newSize);
     // for each section, run stanford tokenization and sentence splitting
     for (Section s : sList) {
       LOGGER.debug("Annotating section: {}", s.getUuid().getUuidString());
