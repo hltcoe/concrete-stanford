@@ -6,6 +6,7 @@ package edu.jhu.hlt.concrete.stanford;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +22,6 @@ import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunicat
 import edu.jhu.hlt.concrete.miscommunication.sectioned.SectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
-import edu.jhu.hlt.concrete.util.ProjectConstants;
 import edu.jhu.hlt.concrete.util.SuperTextSpan;
 import edu.jhu.hlt.concrete.util.Timing;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
@@ -123,7 +123,13 @@ public class ConcreteStanfordTokensSentenceAnalytic implements SectionedCommunic
     final Communication cp = new Communication(arg0.getRoot());
     if(!cp.isSetText())
       throw new AnalyticException("communication.text must be set to run this analytic.");
-    List<Section> sList = arg0.getSections();
+    List<Section> sList = arg0.getSections()
+        .stream()
+        .filter(s -> {
+          final TextSpan ts = s.getTextSpan();
+          return ts.getStart() != ts.getEnding();
+        })
+        .collect(Collectors.toList());
     // for each section, run stanford tokenization and sentence splitting
     for (Section s : sList) {
       LOGGER.debug("Annotating section: {}", s.getUuid().getUuidString());
