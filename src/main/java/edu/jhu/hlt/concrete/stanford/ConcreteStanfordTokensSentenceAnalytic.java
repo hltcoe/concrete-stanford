@@ -137,7 +137,7 @@ public class ConcreteStanfordTokensSentenceAnalytic implements SectionedCommunic
           final TextSpan ts = s.getTextSpan();
           final int b = ts.getStart();
           final int e = ts.getEnding();
-          return !cp.getText().substring(b, e).trim().isEmpty();
+          return !cp.getText().substring(b, e).trim().replaceAll("\\p{Zs}", "").isEmpty();
         })
         .collect(Collectors.toList());
     final int newSize = sList.size();
