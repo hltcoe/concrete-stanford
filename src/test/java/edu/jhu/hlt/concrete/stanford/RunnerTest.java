@@ -29,14 +29,15 @@ import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
 import edu.jhu.hlt.concrete.analytics.base.Analytic;
-import edu.jhu.hlt.concrete.communications.CommunicationFactory;
 import edu.jhu.hlt.concrete.communications.WritableCommunication;
 import edu.jhu.hlt.concrete.metadata.AnnotationMetadataFactory;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
-import edu.jhu.hlt.concrete.sentence.SentenceFactory;
+import edu.jhu.hlt.concrete.section.SingleSectionSegmenter;
 import edu.jhu.hlt.concrete.serialization.archiver.ArchivableCommunication;
 import edu.jhu.hlt.concrete.serialization.iterators.TarArchiveEntryCommunicationIterator;
 import edu.jhu.hlt.concrete.serialization.iterators.TarGzArchiveEntryCommunicationIterator;
+import edu.jhu.hlt.concrete.uuid.AnalyticUUIDGeneratorFactory;
+import edu.jhu.hlt.concrete.uuid.AnalyticUUIDGeneratorFactory.AnalyticUUIDGenerator;
 
 /**
  *
@@ -65,12 +66,20 @@ public class RunnerTest {
   public void setUp() throws Exception {
     this.runner = new ConcreteStanfordRunner();
     this.tift = new TiftTokenizerAnalytic();
-    this.sc = CommunicationFactory.create("test", "This is some sample text", "passage");
+    this.sc = new Communication();
+    AnalyticUUIDGeneratorFactory f = new AnalyticUUIDGeneratorFactory();
+    AnalyticUUIDGenerator g = f.create();
+    this.sc.setId("test");
+    this.sc.setUuid(g.next());
+    this.sc.setText("This is some sample text.");
+    Section origs = SingleSectionSegmenter.createSingleSection(this.sc, "passage");
+    this.sc.addToSectionList(origs);
     this.sc.setType("doc");
     this.uuidStr = this.sc.getUuid().getUuidString();
     AnnotationMetadata am = AnnotationMetadataFactory.fromCurrentLocalTime().setTool("argh");
     this.sc.setMetadata(am);
-    Sentence st = SentenceFactory.create();
+    Sentence st = new Sentence();
+    st.setUuid(g.next());
     Section ptr = this.sc.getSectionListIterator().next();
     st.setTextSpan(ptr.getTextSpan());
     ptr.addToSentenceList(st);

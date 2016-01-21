@@ -22,8 +22,9 @@ import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunicat
 import edu.jhu.hlt.concrete.miscommunication.sectioned.SectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
-import edu.jhu.hlt.concrete.util.SuperTextSpan;
 import edu.jhu.hlt.concrete.util.Timing;
+import edu.jhu.hlt.concrete.uuid.AnalyticUUIDGeneratorFactory;
+import edu.jhu.hlt.concrete.uuid.AnalyticUUIDGeneratorFactory.AnalyticUUIDGenerator;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -86,13 +87,13 @@ public class ConcreteStanfordTokensSentenceAnalytic implements SectionedCommunic
     return notes;
   }
 
-  private static List<Sentence> annotationToSentenceList(Annotation anno, int cOffset) {
+  private static List<Sentence> annotationToSentenceList(Annotation anno, int cOffset, final AnalyticUUIDGenerator gen) {
     List<Sentence> slist = new ArrayList<>();
     anno.get(SentencesAnnotation.class).stream()
       .map(cm -> {
         // LOGGER.info("Got Sentence offset: {}", cm.toString());
         try {
-          return new CoreMapWrapper(cm).toSentence(cOffset);
+          return new CoreMapWrapper(cm, gen).toSentence(cOffset);
         } catch (AnalyticException e) {
           throw new RuntimeException(e);
         }
@@ -123,6 +124,8 @@ public class ConcreteStanfordTokensSentenceAnalytic implements SectionedCommunic
     final Communication cp = new Communication(arg0.getRoot());
     if(!cp.isSetText())
       throw new AnalyticException("communication.text must be set to run this analytic.");
+    AnalyticUUIDGeneratorFactory f = new AnalyticUUIDGeneratorFactory(cp);
+    AnalyticUUIDGenerator g = f.create();
     List<Section> sList = arg0.getSections()
         .stream()
         // temporary hack - filter out
@@ -148,7 +151,8 @@ public class ConcreteStanfordTokensSentenceAnalytic implements SectionedCommunic
     for (Section s : sList) {
       LOGGER.debug("Annotating section: {}", s.getUuid().getUuidString());
       final TextSpan sts = s.getTextSpan();
-      final String sectTxt = new SuperTextSpan(sts, cp).getText();
+      final String sectTxt = cp.getText().substring(sts.getStart(), sts.getEnding());
+      // final String sectTxt = new SuperTextSpan(sts, cp).getText();
       LOGGER.debug("Section text: {}", sectTxt);
       final Annotation sectAnnotation = new Annotation(sectTxt);
       LOGGER.debug("Got annotation keys:");
@@ -160,7 +164,7 @@ public class ConcreteStanfordTokensSentenceAnalytic implements SectionedCommunic
       List<CoreLabel> tokensOnly = sectAnnotation.get(TokensAnnotation.class);
       tokensOnly.forEach(cl -> LOGGER.trace("Got non-sent Stanford token: {}", cl.toShorterString(new String[0])));
       // LOGGER.debug("Got first sentence text annotation: {}", sectAnnotation.get(SentencesAnnotation.class).get(0).get(TextAnnotation.class));
-      List<Sentence> stList = annotationToSentenceList(sectAnnotation, sts.getStart());
+      List<Sentence> stList = annotationToSentenceList(sectAnnotation, sts.getStart(), g);
       s.setSentenceList(stList);
     }
 

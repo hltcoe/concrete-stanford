@@ -23,6 +23,8 @@ import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommuni
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
 import edu.jhu.hlt.concrete.util.ProjectConstants;
 import edu.jhu.hlt.concrete.util.Timing;
+import edu.jhu.hlt.concrete.uuid.AnalyticUUIDGeneratorFactory;
+import edu.jhu.hlt.concrete.uuid.AnalyticUUIDGeneratorFactory.AnalyticUUIDGenerator;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
 import edu.stanford.nlp.pipeline.Annotation;
@@ -64,7 +66,7 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see edu.jhu.hlt.concrete.safe.metadata.SafeAnnotationMetadata#getTimestamp()
    */
   @Override
@@ -74,7 +76,7 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see edu.jhu.hlt.concrete.metadata.tools.MetadataTool#getToolName()
    */
   @Override
@@ -84,7 +86,7 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see edu.jhu.hlt.concrete.metadata.tools.MetadataTool#getToolVersion()
    */
   @Override
@@ -94,7 +96,7 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see edu.jhu.hlt.concrete.metadata.tools.MetadataTool#getToolNotes()
    */
   @Override
@@ -104,7 +106,7 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     return notes;
   }
 
-  private static List<Sentence> annotationToSentenceList(Annotation anno, HeadFinder hf, final List<Sentence> origSentListRef)
+  private static List<Sentence> annotationToSentenceList(Annotation anno, HeadFinder hf, final List<Sentence> origSentListRef, final AnalyticUUIDGenerator gen)
       throws AnalyticException {
     List<Sentence> slist = new ArrayList<>();
     List<CoreMap> cmList = anno.get(SentencesAnnotation.class);
@@ -113,7 +115,7 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
       CoreMap cm = cmList.get(i);
       Sentence orig = origSentListRef.get(i);
       final int sentOff = orig.getTextSpan().getStart();
-      Sentence merged = new PreNERCoreMapWrapper(cm, hf).toSentence(sentOff, orig);
+      Sentence merged = new PreNERCoreMapWrapper(cm, hf, gen).toSentence(sentOff, orig);
       slist.add(merged);
     }
 
@@ -122,7 +124,7 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see
    * edu.jhu.hlt.concrete.analytics.base.TokenizationedCommunicationAnalytic#annotate(edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication)
    */
@@ -131,6 +133,8 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     final Communication root = new Communication(arg0.getRoot());
     if (!root.isSetText())
       throw new AnalyticException("communication.text must be set to run this analytic.");
+    AnalyticUUIDGeneratorFactory f = new AnalyticUUIDGeneratorFactory(root);
+    AnalyticUUIDGenerator g = f.create();
     final List<Section> sectList = root.getSectionList();
     final String commText = root.getText();
 
@@ -161,7 +165,7 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     });
 
     anno.get(SentencesAnnotation.class).forEach(cm -> LOGGER.trace("Got CoreMap post-fill-in: {}", cm.toShorterString(new String[0])));
-    List<Sentence> postSentences = annotationToSentenceList(anno, hf, arg0.getSentences());
+    List<Sentence> postSentences = annotationToSentenceList(anno, hf, arg0.getSentences(), g);
     postSentences.forEach(st -> LOGGER.trace("Got pre-coref sentence: {}", st.toString()));
     Map<TextSpan, Sentence> tsToSentenceMap = new HashMap<>();
     postSentences.forEach(st -> tsToSentenceMap.put(st.getTextSpan(), st));
@@ -205,7 +209,7 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see edu.jhu.hlt.concrete.analytics.base.Analytic#annotate(edu.jhu.hlt.concrete.Communication)
    */
   @Override

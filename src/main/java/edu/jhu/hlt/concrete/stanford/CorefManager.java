@@ -29,7 +29,8 @@ import edu.jhu.hlt.concrete.metadata.AnnotationMetadataFactory;
 import edu.jhu.hlt.concrete.miscommunication.MiscommunicationException;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
-import edu.jhu.hlt.concrete.uuid.UUIDFactory;
+import edu.jhu.hlt.concrete.uuid.AnalyticUUIDGeneratorFactory;
+import edu.jhu.hlt.concrete.uuid.AnalyticUUIDGeneratorFactory.AnalyticUUIDGenerator;
 import edu.stanford.nlp.dcoref.CorefChain;
 import edu.stanford.nlp.dcoref.CorefChain.CorefMention;
 import edu.stanford.nlp.dcoref.CorefCoreAnnotations;
@@ -47,6 +48,7 @@ class CorefManager {
 
   private final TokenizedCommunication tc;
   private final Annotation annotation;
+  private final AnalyticUUIDGenerator gen;
 
   /**
    *
@@ -54,6 +56,7 @@ class CorefManager {
   public CorefManager(final TokenizedCommunication tc, final Annotation annotation) {
     this.tc = tc;
     this.annotation = annotation;
+    this.gen = new AnalyticUUIDGeneratorFactory(tc.getRoot()).create();
   }
 
   public TokenizedCommunication addCoreference() throws AnalyticException {
@@ -72,7 +75,7 @@ class CorefManager {
           + "\nCoreMaps: " + cmListSize + " vs. Tokenizations: " + tkzListSize);
 
     EntityMentionSet ems = new EntityMentionSet()
-        .setUuid(UUIDFactory.newUUID())
+        .setUuid(gen.next())
         .setMentionList(new ArrayList<>());
     TheoryDependencies td = new TheoryDependencies();
     tkzList.forEach(t -> td.addToTokenizationTheoryList(t.getUuid()));
@@ -81,7 +84,7 @@ class CorefManager {
     // .setDependencies(td);
     AnnotationMetadata md = AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford Coref").setDependencies(td);
     ems.setMetadata(md);
-    EntitySet es = new EntitySet().setUuid(UUIDFactory.newUUID())
+    EntitySet es = new EntitySet().setUuid(gen.next())
         .setMetadata(md)
         .setEntityList(new ArrayList<Entity>())
         .setMentionSetId(ems.getUuid());
@@ -151,7 +154,7 @@ class CorefManager {
   }
 
   private Entity makeEntity(CorefChain chain, EntityMentionSet ems, List<Tokenization> tokenizations) throws AnalyticException {
-    Entity concEntity = new Entity().setUuid(UUIDFactory.newUUID());
+    Entity concEntity = new Entity().setUuid(this.gen.next());
     CorefChain.CorefMention coreHeadMention = chain.getRepresentativeMention();
     // CoreNLP uses 1-based indexing for the sentences
     // just subtract 1.
@@ -184,7 +187,7 @@ class CorefManager {
   }
 
   private EntityMention makeEntityMention(CorefChain.CorefMention coreMention, UUID tokenizationUuid, boolean representative) throws AnalyticException {
-    EntityMention concEntityMention = new EntityMention().setUuid(UUIDFactory.newUUID());
+    EntityMention concEntityMention = new EntityMention().setUuid(this.gen.next());
     TokenRefSequence trs = extractTokenRefSequence(coreMention, tokenizationUuid, representative);
     concEntityMention.setTokens(trs);
     concEntityMention.setText(coreMention.mentionSpan);

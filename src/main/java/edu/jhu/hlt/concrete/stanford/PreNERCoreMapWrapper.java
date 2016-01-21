@@ -25,7 +25,7 @@ import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
 import edu.jhu.hlt.concrete.tokenization.DependencyFactory;
 import edu.jhu.hlt.concrete.tokenization.ParseFactory;
 import edu.jhu.hlt.concrete.util.Timing;
-import edu.jhu.hlt.concrete.uuid.UUIDFactory;
+import edu.jhu.hlt.concrete.uuid.AnalyticUUIDGeneratorFactory.AnalyticUUIDGenerator;
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations.BasicDependenciesAnnotation;
@@ -52,17 +52,19 @@ public class PreNERCoreMapWrapper {
   private final Optional<SemanticGraph> colCCDeps;
 
   private final HeadFinder hf;
+  private final AnalyticUUIDGenerator gen;
 
   /**
    *
    */
-  public PreNERCoreMapWrapper(final CoreMap cm, final HeadFinder hf) {
-    this.wrapper = new CoreMapWrapper(cm);
+  public PreNERCoreMapWrapper(final CoreMap cm, final HeadFinder hf, final AnalyticUUIDGenerator gen) {
+    this.wrapper = new CoreMapWrapper(cm, gen);
     this.hf = hf;
     this.tree = Optional.ofNullable(cm.get(TreeAnnotation.class));
     this.basicDeps = Optional.ofNullable(cm.get(BasicDependenciesAnnotation.class));
     this.colDeps = Optional.ofNullable(cm.get(CollapsedDependenciesAnnotation.class));
     this.colCCDeps = Optional.ofNullable(cm.get(CollapsedCCProcessedDependenciesAnnotation.class));
+    this.gen = gen;
   }
 
   /**
@@ -75,13 +77,13 @@ public class PreNERCoreMapWrapper {
    *
    * @throws AnalyticException
    */
-  private static Parse makeConcreteCParse(Tree root, int n, UUID tokenizationUUID, HeadFinder hf) throws AnalyticException {
+  private Parse makeConcreteCParse(Tree root, int n, UUID tokenizationUUID, HeadFinder hf) throws AnalyticException {
     int left = 0;
     int right = root.getLeaves().size();
     if (right != n)
       throw new AnalyticException("number of leaves in the parse (" + right + ") is not equal to the number of tokens in the sentence (" + n + ")");
 
-    Parse p = ParseFactory.create();
+    Parse p = new ParseFactory(this.gen).create();
     TheoryDependencies deps = new TheoryDependencies();
     deps.addToTokenizationTheoryList(tokenizationUUID);
     AnnotationMetadata md = new AnnotationMetadata("Stanford CoreNLP", Timing.currentLocalTime(), 1);
@@ -171,7 +173,7 @@ public class PreNERCoreMapWrapper {
 
   private DependencyParse makeDepParse(SemanticGraph semGraph, UUID tokenizationUUID, String toolName) {
     DependencyParse depParse = new DependencyParse();
-    depParse.setUuid(UUIDFactory.newUUID());
+    depParse.setUuid(this.gen.next());
     TheoryDependencies td = new TheoryDependencies();
     td.addToTokenizationTheoryList(tokenizationUUID);
     AnnotationMetadata md = new AnnotationMetadata(toolName, Timing.currentLocalTime(), 1);

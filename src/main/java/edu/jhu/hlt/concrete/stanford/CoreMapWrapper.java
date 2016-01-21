@@ -27,6 +27,7 @@ import edu.jhu.hlt.concrete.spans.TextSpanFactory;
 import edu.jhu.hlt.concrete.tokenization.TokenTaggingFactory;
 import edu.jhu.hlt.concrete.tokenization.TokenizationFactory;
 import edu.jhu.hlt.concrete.util.ConcreteException;
+import edu.jhu.hlt.concrete.uuid.AnalyticUUIDGeneratorFactory.AnalyticUUIDGenerator;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
@@ -59,10 +60,12 @@ public class CoreMapWrapper {
   // "lazily" computed.
   private Sentence st;
 
+  private final AnalyticUUIDGenerator gen;
+
   /**
    *
    */
-  public CoreMapWrapper(final CoreMap cm) {
+  public CoreMapWrapper(final CoreMap cm, final AnalyticUUIDGenerator gen) {
     this.text = cm.get(TextAnnotation.class);
     this.idx = cm.get(SentenceIndexAnnotation.class);
 
@@ -73,6 +76,7 @@ public class CoreMapWrapper {
     this.tokenEndOffset = cm.get(TokenEndAnnotation.class);
     this.clList = cm.get(TokensAnnotation.class);
     LOGGER.trace("CoreLabel list has {} elements.", clList.size());
+    this.gen = gen;
   }
 
   /**
@@ -119,7 +123,7 @@ public class CoreMapWrapper {
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see java.lang.Object#toString()
    */
   @Override
@@ -148,7 +152,7 @@ public class CoreMapWrapper {
     if (this.st != null)
       return st;
 
-    Sentence st = SentenceFactory.create();
+    Sentence st = new SentenceFactory(this.gen).create();
     Integer bi = this.startOffset;
     LOGGER.debug("Current char offset: {}", charOffset);
     LOGGER.debug("Stanford sentence start offset: {}", bi);
@@ -178,9 +182,9 @@ public class CoreMapWrapper {
   }
 
   private StanfordToConcreteConversionOutput convertCoreLabels(final int cOffset) throws AnalyticException {
-    TokenTagging nerTT = TokenTaggingFactory.create("NER").setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
-    TokenTagging posTT = TokenTaggingFactory.create("POS").setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
-    TokenTagging lemmaTT = TokenTaggingFactory.create("LEMMA").setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
+    TokenTagging nerTT = new TokenTaggingFactory(this.gen).create("NER").setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
+    TokenTagging posTT = new TokenTaggingFactory(this.gen).create("POS").setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
+    TokenTagging lemmaTT = new TokenTaggingFactory(this.gen).create("LEMMA").setMetadata(AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford CoreNLP"));
 
     List<Token> tokList = new ArrayList<>(this.clList.size());
     for (CoreLabel cl : this.clList) {
@@ -237,7 +241,7 @@ public class CoreMapWrapper {
   }
 
   private Tokenization coreLabelToTokenization(int cOffset) throws AnalyticException, ConcreteException {
-    Tokenization tkz = TokenizationFactory.create();
+    Tokenization tkz = new TokenizationFactory(this.gen).create();
     tkz.setKind(TokenizationKind.TOKEN_LIST);
     List<Token> tlist = new ArrayList<>();
     tkz.setTokenList(new TokenList(tlist));
