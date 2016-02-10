@@ -161,7 +161,9 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     // TODO: not sure if this is necessary - found it in the old code.
     anno.get(SentencesAnnotation.class).stream().filter(cm -> cm.containsKey(TreeAnnotation.class)).forEach(cm -> {
       Tree tree = cm.get(TreeAnnotation.class);
-      ParserAnnotatorUtils.fillInParseAnnotations(false, true, this.lang.getGrammaticalFactory(), cm, tree, GrammaticalStructure.Extras.NONE);
+      List<Tree> treeList = new ArrayList<>();
+      treeList.add(tree);
+      ParserAnnotatorUtils.fillInParseAnnotations(false, true, this.lang.getGrammaticalFactory(), cm, treeList, GrammaticalStructure.Extras.NONE);
     });
 
     anno.get(SentencesAnnotation.class).forEach(cm -> LOGGER.trace("Got CoreMap post-fill-in: {}", cm.toShorterString(new String[0])));

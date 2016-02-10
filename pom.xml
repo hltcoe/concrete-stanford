@@ -17,7 +17,7 @@
 
   <properties>
     <concrete.version>4.8.5</concrete.version>
-    <stanford.version>3.5.2</stanford.version>
+    <stanford.version>3.6.0</stanford.version>
   </properties>
 
   <build>
