@@ -29,7 +29,7 @@ import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunicat
  */
 public class AnnotatedNYTTest {
 
-  Path p = Paths.get("src/test/resources/1370209.xml");
+  Path p = Paths.get("src/test/resources/hopkins-stanford-a-la-nyt.xml");
   NYTCorpusDocumentParser parser = new NYTCorpusDocumentParser();
 
   Communication nytComm;
