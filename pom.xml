@@ -12,9 +12,29 @@
   <artifactId>concrete-stanford</artifactId>
   <version>4.8.1</version>
   <packaging>jar</packaging>
+  <url>https://github.com/hltcoe/concrete-stanford/</url>
 
   <name>Concrete Stanford</name>
 
+  <organization>
+    <name>Johns Hopkins University HLTCOE</name>
+    <url>http://hltcoe.jhu.edu</url>
+  </organization>
+  
+  <scm>
+    <connection>scm:git:git@github.com:hltcoe/${project.artifactId}.git</connection>
+    <developerConnection>scm:git:git@github.com:hltcoe/${project.artifactId}.git</developerConnection>
+    <url>https://github.com/hltcoe/concrete-stanford/</url>
+    <tag>HEAD</tag>
+  </scm>
+  
+  <licenses>
+    <license>
+      <name>GNU General Public License Version 3</name>
+      <url>http://www.gnu.org/licenses/gpl-3.0.txt</url>
+    </license>
+  </licenses>
+  
   <properties>
     <concrete.version>4.8.6</concrete.version>
     <stanford.version>3.6.0</stanford.version>
