@@ -36,7 +36,8 @@
       <hedline>
         <hl1>Corrections</hl1>
       </hedline>
-      <abstract>
+      <abstract source="https://en.wikipedia.org/wiki/Hopkins_Marine_Station" 
+                license="http://creativecommons.org/licenses/by-sa/3.0/">
         <p>
           In 1917, the laboratory was moved to its current location on
           Mussel/China/Cabrillo Point, and given its current name: Hopkins
@@ -49,7 +50,8 @@
       </abstract>
     </body.head>
     <body.content>
-      <block class="lead_paragraph">
+      <block class="lead_paragraph" source="https://en.wikipedia.org/wiki/Johns_Hopkins" 
+             license="http://creativecommons.org/licenses/by-sa/3.0/">
         <p>
           Johns Hopkins (May 19, 1795[2] – December 24, 1873) was an American
           entrepreneur, abolitionist and philanthropist of 19th-century
@@ -61,7 +63,8 @@
           Johns Hopkins Bloomberg School of Public Health).
         </p>
       </block>
-      <block class="full_text">
+      <block class="full_text" source="https://en.wikipedia.org/wiki/Stanford_University" 
+             license="http://creativecommons.org/licenses/by-sa/3.0/">
         <p>
           Amasa Leland Stanford[1] (March 9, 1824 – June 21, 1893) was an
           American tycoon, industrialist, politician and a co-founder (with his
