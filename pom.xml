@@ -5,19 +5,39 @@
   <parent>
     <groupId>edu.jhu.hlt</groupId>
     <artifactId>concrete-parent</artifactId>
-    <version>4.8-RC1</version>
+    <version>4.8</version>
   </parent>
 
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.8.1-SNAPSHOT</version>
+  <version>4.8.1</version>
   <packaging>jar</packaging>
+  <url>https://github.com/hltcoe/concrete-stanford/</url>
 
   <name>Concrete Stanford</name>
 
+  <organization>
+    <name>Johns Hopkins University HLTCOE</name>
+    <url>http://hltcoe.jhu.edu</url>
+  </organization>
+  
+  <scm>
+    <connection>scm:git:git@github.com:hltcoe/${project.artifactId}.git</connection>
+    <developerConnection>scm:git:git@github.com:hltcoe/${project.artifactId}.git</developerConnection>
+    <url>https://github.com/hltcoe/concrete-stanford/</url>
+    <tag>HEAD</tag>
+  </scm>
+  
+  <licenses>
+    <license>
+      <name>GNU General Public License Version 3</name>
+      <url>http://www.gnu.org/licenses/gpl-3.0.txt</url>
+    </license>
+  </licenses>
+  
   <properties>
-    <concrete.version>4.8.5</concrete.version>
-    <stanford.version>3.5.2</stanford.version>
+    <concrete.version>4.8.6</concrete.version>
+    <stanford.version>3.6.0</stanford.version>
   </properties>
 
   <build>
@@ -157,54 +177,5 @@
       <version>2.1.1</version>
     </dependency>
   </dependencies>
-
-  <profiles>
-    <profile>
-      <id>coe</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.10.3</version>
-            <configuration>
-              <additionalparam>-Xdoclint:none</additionalparam>
-            </configuration>
-            <executions>
-              <execution>
-                <id>attach-javadoc</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>2.4</version>
-            <executions>
-              <execution>
-                <id>attach-sources</id>
-                <goals>
-                  <goal>jar-no-fork</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-      <distributionManagement>
-        <snapshotRepository>
-          <id>coe-mvn-snapshots</id>
-          <url>http://localhost:8081/artifactory/libs-snapshot-local</url>
-        </snapshotRepository>
-        <repository>
-          <id>coe-mvn</id>
-          <url>http://localhost:8081/artifactory/libs-release-local</url>
-        </repository>
-      </distributionManagement>
-    </profile>
-  </profiles>
+  
 </project>

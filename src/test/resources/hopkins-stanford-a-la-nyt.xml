@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nitf SYSTEM "http://www.nitf.org/IPTC/NITF/3.3/specification/dtd/nitf-3-3.dtd">
+<nitf change.date="Jan 15, 1929" change.time="00:00" version="-//IPTC//DTD NITF 3.3//EN">
+  <head>
+    <title>Corrections</title>
+    <meta content="15CORR" name="slug"/>
+    <meta content="15" name="publication_day_of_month"/>
+    <meta content="1" name="publication_month"/>
+    <meta content="1929" name="publication_year"/>
+    <meta content="Tuesday" name="publication_day_of_week"/>
+    <meta content="Lorem Ipsum Desk" name="dsk"/>
+    <meta content="1" name="print_page_number"/>
+    <meta content="1" name="print_section"/>
+    <meta content="1" name="print_column"/>
+    <meta content="Lorem; Ipsum" name="online_sections"/>
+    <docdata>
+      <doc-id id-string="123457890"/>
+      <doc.copyright holder="The Lorem Ipsum Times" year="1929"/>
+      <identified-content>
+        <classifier class="indexing_service" type="descriptor">Lorem</classifier>
+        <classifier class="indexing_service" type="descriptor">Ipsum Dolor</classifier>
+        <org class="indexing_service">Sit, Amet, Consectetur</org>
+        <person class="indexing_service">Adipiscing Elit.</person>
+        <person class="indexing_service">Curabitur, Egestas</person>
+        <classifier class="online_producer" type="types_of_material">tellus</classifier>
+        <classifier class="online_producer" type="taxonomic_classifier">mauris/mauris/mauris</classifier>
+        <classifier class="online_producer" type="taxonomic_classifier">mauris/mauris/mauris</classifier>
+        <classifier class="online_producer" type="taxonomic_classifier">mauris/mauris/mauris/mauris</classifier>
+        <classifier class="online_producer" type="general_descriptor">mauris</classifier>
+      </identified-content>
+    </docdata>
+    <pubdata date.publication="19290115T000000" ex-ref="http://www.lipsum.com/" item-length="88" name="The Lorem Ipsum Times" unit-of-measure="word"/>
+  </head>
+  <body>
+    <body.head>
+      <hedline>
+        <hl1>Corrections</hl1>
+      </hedline>
+      <abstract source="https://en.wikipedia.org/wiki/Hopkins_Marine_Station" 
+                license="http://creativecommons.org/licenses/by-sa/3.0/">
+        <p>
+          In 1917, the laboratory was moved to its current location on
+          Mussel/China/Cabrillo Point, and given its current name: Hopkins
+          Marine Station of Stanford University. The marine station's namesake
+          is Timothy Hopkins, the founder of the city of Palo Alto and an early
+          supporter of Stanford University, not Johns Hopkins, founder of the
+          Johns Hopkins University. The marine station is not affiliated with
+          the latter.
+        </p> 
+      </abstract>
+    </body.head>
+    <body.content>
+      <block class="lead_paragraph" source="https://en.wikipedia.org/wiki/Johns_Hopkins" 
+             license="http://creativecommons.org/licenses/by-sa/3.0/">
+        <p>
+          Johns Hopkins (May 19, 1795[2] – December 24, 1873) was an American
+          entrepreneur, abolitionist and philanthropist of 19th-century
+          Baltimore, Maryland.
+          His bequests founded numerous institutions bearing his name, most notably
+          Johns Hopkins Hospital, and Johns Hopkins University (including its
+          academic divisions such as Johns Hopkins School of Nursing, Johns
+          Hopkins School of Medicine, Johns Hopkins Carey Business School, and
+          Johns Hopkins Bloomberg School of Public Health).
+        </p>
+      </block>
+      <block class="full_text" source="https://en.wikipedia.org/wiki/Stanford_University" 
+             license="http://creativecommons.org/licenses/by-sa/3.0/">
+        <p>
+          Amasa Leland Stanford[1] (March 9, 1824 – June 21, 1893) was an
+          American tycoon, industrialist, politician and a co-founder (with his
+          wife, Jane) of Stanford University. Migrating to California from New
+          York at the time of the Gold Rush, he became a successful merchant and
+          wholesaler, and continued to build his business empire. He served one
+          two-year term as governor of California after his election in 1861,
+          and later eight years as senator from the state. As president of
+          Southern Pacific Railroad and, beginning in 1861, Central Pacific, he
+          had tremendous power in the region and a lasting impact on California.
+          He is widely considered a robber baron.
+        </p>
+      </block>
+    </body.content>
+  </body>
+</nitf>

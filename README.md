@@ -3,13 +3,13 @@ Provides a library that can take `Communication` objects, containing `Section`s,
 annotate them using the Stanford CoreNLP framework. This produces `Communication` objects
 with `Tokenization` objects, and optionally `EntityMention` and `Entity` objects.
 
-## Maven dependency (Currently COE only)
+## Maven dependency
 
 ```xml
 <dependency>
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.8.0</version>
+  <version>4.8.1</version>
 </dependency>
 ```
 
