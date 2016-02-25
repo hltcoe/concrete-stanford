@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -140,7 +141,13 @@ public class ConcreteStanfordTokensSentenceAnalytic implements SectionedCommunic
           final TextSpan ts = s.getTextSpan();
           final int b = ts.getStart();
           final int e = ts.getEnding();
-          return !cp.getText().substring(b, e).trim().replaceAll("\\p{Zs}", "").isEmpty();
+          String txt = cp.getText().substring(b, e);
+          // that isn't enough, could get HTML encoded blank spaces.
+          if (txt.contains("&nbsp"))
+            txt = StringEscapeUtils.unescapeHtml4(txt);
+
+          String slim = txt.trim().replaceAll("\\p{Zs}", "");
+          return !slim.isEmpty();
         })
         .collect(Collectors.toList());
     final int newSize = sList.size();
