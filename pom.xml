@@ -5,12 +5,12 @@
   <parent>
     <groupId>edu.jhu.hlt</groupId>
     <artifactId>concrete-parent</artifactId>
-    <version>4.8</version>
+    <version>4.8-hc</version>
   </parent>
 
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.8.3-SNAPSHOT</version>
+  <version>4.8.3</version>
   <packaging>jar</packaging>
   <url>https://github.com/hltcoe/concrete-stanford/</url>
 
@@ -20,23 +20,23 @@
     <name>Johns Hopkins University HLTCOE</name>
     <url>http://hltcoe.jhu.edu</url>
   </organization>
-  
+
   <scm>
     <connection>scm:git:git@github.com:hltcoe/${project.artifactId}.git</connection>
     <developerConnection>scm:git:git@github.com:hltcoe/${project.artifactId}.git</developerConnection>
     <url>https://github.com/hltcoe/concrete-stanford/</url>
     <tag>HEAD</tag>
   </scm>
-  
+
   <licenses>
     <license>
       <name>GNU General Public License Version 3</name>
       <url>http://www.gnu.org/licenses/gpl-3.0.txt</url>
     </license>
   </licenses>
-  
+
   <properties>
-    <concrete.version>4.8.6</concrete.version>
+    <concrete.version>4.8.8</concrete.version>
     <stanford.version>3.5.2</stanford.version>
   </properties>
 
@@ -171,11 +171,5 @@
       <artifactId>jcommander</artifactId>
       <version>1.48</version>
     </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>acute</artifactId>
-      <version>2.1.1</version>
-    </dependency>
   </dependencies>
-  
 </project>
