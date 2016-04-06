@@ -189,14 +189,18 @@ public class PreNERCoreMapWrapper {
       // this mimics CoreNLP's handling
       String rel = GrammaticalRelation.ROOT.getLongName().replaceAll("\\s+", "");
       int dep = root.index() - 1;
-      Dependency depend = DependencyFactory.create(dep, rel, -1);
+      Dependency depend = DependencyFactory.create(dep, rel);
       depList.add(depend);
     }
     for (SemanticGraphEdge edge : graph.edgeListSorted()) {
       String rel = edge.getRelation().toString().replaceAll("\\s+", "");
       int gov = edge.getSource().index() - 1;
       int dep = edge.getTarget().index() - 1;
-      Dependency depend = DependencyFactory.create(dep, rel, gov);
+      Dependency depend;
+      if (gov < 0)
+        depend = DependencyFactory.create(dep, rel, gov);
+      else
+        depend = DependencyFactory.create(dep, rel);
       depList.add(depend);
     }
     return depList;
