@@ -1,5 +1,6 @@
-image: maven:3-jdk-8
-
 test:
+  image: maven:3-jdk-8
   script:
     mvn clean verify -B
+  tags:
+    - docker
