@@ -197,7 +197,7 @@ public class PreNERCoreMapWrapper {
       int gov = edge.getSource().index() - 1;
       int dep = edge.getTarget().index() - 1;
       Dependency depend;
-      if (gov < 0)
+      if (gov > 0)
         depend = DependencyFactory.create(dep, rel, gov);
       else
         depend = DependencyFactory.create(dep, rel);
