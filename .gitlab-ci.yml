@@ -6,3 +6,6 @@ deploy-master:
     - docker push r8n01:5000/concrete-stanford:latest
   tags:
     - shell
+  only:
+    - master
+
