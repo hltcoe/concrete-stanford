@@ -191,11 +191,7 @@ public class PreNERCoreMapWrapper {
       String rel = edge.getRelation().toString().replaceAll("\\s+", "");
       int gov = edge.getSource().index() - 1;
       int dep = edge.getTarget().index() - 1;
-      Dependency depend;
-      if (gov >= 0)
-        depend = DependencyFactory.create(dep, rel, gov);
-      else
-        depend = DependencyFactory.create(dep, rel);
+      Dependency depend = DependencyFactory.create(dep, rel, gov);
       depList.add(depend);
     }
     return depList;
