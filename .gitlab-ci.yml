@@ -1,11 +1,11 @@
 deploy-master:
+  image: 10.1.8.1:5000/coe-maven:latest
   script:
-    - docker pull 10.1.8.1:5000/coe-maven:latest
+    - mvn clean verify -B
     - docker build -t concrete-stanford .
     - docker tag concrete-stanford 10.1.8.1:5000/concrete-stanford:latest
     - docker push 10.1.8.1:5000/concrete-stanford:latest
   tags:
-    - shell
+    - docker
   only:
     - master
-
