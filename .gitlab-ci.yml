@@ -4,5 +4,3 @@ test:
     - docker run --rm coe-maven:latest mvn -B -s /root/.m2/settings.xml clean verify
   tags:
     - shell
-  only:
-    - master
