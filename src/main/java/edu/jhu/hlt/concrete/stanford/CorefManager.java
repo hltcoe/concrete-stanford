@@ -20,7 +20,6 @@ import edu.jhu.hlt.concrete.Entity;
 import edu.jhu.hlt.concrete.EntityMention;
 import edu.jhu.hlt.concrete.EntityMentionSet;
 import edu.jhu.hlt.concrete.EntitySet;
-import edu.jhu.hlt.concrete.TheoryDependencies;
 import edu.jhu.hlt.concrete.TokenRefSequence;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.UUID;
@@ -77,12 +76,8 @@ class CorefManager {
     EntityMentionSet ems = new EntityMentionSet()
         .setUuid(gen.next())
         .setMentionList(new ArrayList<>());
-    TheoryDependencies td = new TheoryDependencies();
-    tkzList.forEach(t -> td.addToTokenizationTheoryList(t.getUuid()));
 
-    // AnnotationMetadata md = this.getMetadata(this.csProps.getCorefToolName())
-    // .setDependencies(td);
-    AnnotationMetadata md = AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford Coref").setDependencies(td);
+    AnnotationMetadata md = AnnotationMetadataFactory.fromCurrentLocalTime().setTool("Stanford Coref");
     ems.setMetadata(md);
     EntitySet es = new EntitySet().setUuid(gen.next())
         .setMetadata(md)
@@ -102,28 +97,7 @@ class CorefManager {
     if (!ems.isSetMentionList())
       ems.setMentionList(new ArrayList<EntityMention>());
 
-//    if (ems == null || !ems.isSetMentionList())
-//      throw new AnalyticException(
-//          "Concrete-agiga produced a null EntityMentionSet, or a null mentionList.");
-//
-//    if (ems.getMentionListSize() == 0
-//        && !this.allowEmptyEntitiesAndEntityMentions)
-//      throw new AnalyticException(
-//          "Empty entity mentions are disallowed and no entity mentions were produced for communication: "
-//              + comm.getId());
-//    else
-//      comm.addToEntityMentionSetList(ems);
-//
-//    if (es == null || !es.isSetEntityList())
-//      throw new AnalyticException(
-//          "Concrete-agiga produced a null EntitySet, or a null entityList.");
-//
-//    if (es.getEntityListSize() == 0
-//        && !this.allowEmptyEntitiesAndEntityMentions)
-//      throw new AnalyticException(
-//          "Empty entities are disallowed and no entities were produced for communication: "
-//              + comm.getId());
-//    else
+
     root.addToEntityMentionSetList(ems);
     root.addToEntitySetList(es);
 

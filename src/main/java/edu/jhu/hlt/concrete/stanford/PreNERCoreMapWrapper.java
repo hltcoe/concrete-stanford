@@ -18,7 +18,6 @@ import edu.jhu.hlt.concrete.Dependency;
 import edu.jhu.hlt.concrete.DependencyParse;
 import edu.jhu.hlt.concrete.Parse;
 import edu.jhu.hlt.concrete.Sentence;
-import edu.jhu.hlt.concrete.TheoryDependencies;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.UUID;
 import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
@@ -84,8 +83,6 @@ public class PreNERCoreMapWrapper {
       throw new AnalyticException("number of leaves in the parse (" + right + ") is not equal to the number of tokens in the sentence (" + n + ")");
 
     Parse p = new ParseFactory(this.gen).create();
-    TheoryDependencies deps = new TheoryDependencies();
-    deps.addToTokenizationTheoryList(tokenizationUUID);
     AnnotationMetadata md = new AnnotationMetadata("Stanford CoreNLP", Timing.currentLocalTime(), 1);
     p.setMetadata(md);
     constructConstituent(root, left, right, n, p, tokenizationUUID, hf);
@@ -174,8 +171,6 @@ public class PreNERCoreMapWrapper {
   private DependencyParse makeDepParse(SemanticGraph semGraph, UUID tokenizationUUID, String toolName) {
     DependencyParse depParse = new DependencyParse();
     depParse.setUuid(this.gen.next());
-    TheoryDependencies td = new TheoryDependencies();
-    td.addToTokenizationTheoryList(tokenizationUUID);
     AnnotationMetadata md = new AnnotationMetadata(toolName, Timing.currentLocalTime(), 1);
     depParse.setMetadata(md);
     List<Dependency> dependencies = makeDependencies(semGraph);
