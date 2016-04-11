@@ -1,7 +1,7 @@
 test:
   script:
-    docker pull r8n01:5000/coe-maven:latest
-    mvn clean verify -B
+    - docker pull r8n01:5000/coe-maven:latest
+    - mvn clean verify -B
   tags:
     - shell
   only:
