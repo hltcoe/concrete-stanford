@@ -1,9 +1,9 @@
 deploy-master:
   script:
-    - docker pull r8n01:5000/coe-maven:latest
+    - docker pull 10.1.8.1:5000/coe-maven:latest
     - docker build -t concrete-stanford .
-    - docker tag concrete-stanford r8n01:5000/concrete-stanford:latest
-    - docker push r8n01:5000/concrete-stanford:latest
+    - docker tag concrete-stanford 10.1.8.1:5000/concrete-stanford:latest
+    - docker push 10.1.8.1:5000/concrete-stanford:latest
   tags:
     - shell
   only:

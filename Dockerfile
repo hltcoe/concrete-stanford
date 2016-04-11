@@ -5,7 +5,7 @@ ENV STANFORD=/opt/concrete-stanford
 
 COPY . $STANFORD
 WORKDIR $STANFORD
-RUN mvn -B clean compile assembly:single
+RUN mvn -B clean compile verify assembly:single
 
 # copy entrypoint script to image
 COPY ./docker-entrypoint.sh /opt/
