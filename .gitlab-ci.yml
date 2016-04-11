@@ -1,7 +1,7 @@
 test:
   script:
     - docker pull r8n01:5000/coe-maven:latest
-    - docker run -it --rm coe-maven:latest mvn -s /root/.m2/settings.xml clean verify
+    - docker run -it --rm coe-maven:latest mvn -B -s /root/.m2/settings.xml clean verify
   tags:
     - shell
   only:
