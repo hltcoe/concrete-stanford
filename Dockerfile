@@ -1,5 +1,4 @@
-FROM maven:latest
-
+FROM coe-maven:latest
 
 # copy concrete-stanford source code to image
 ENV STANFORD=/opt/concrete-stanford

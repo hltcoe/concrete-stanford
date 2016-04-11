@@ -1,6 +1,8 @@
-test:
+deploy-master:
   script:
     - docker pull r8n01:5000/coe-maven:latest
-    - docker run --rm coe-maven:latest mvn -B -s /root/.m2/settings.xml clean verify
+    - docker build -t concrete-stanford .
+    - docker tag concrete-stanford r8n01:5000/concrete-stanford:latest
+    - docker push r8n01:5000/concrete-stanford:latest
   tags:
     - shell
