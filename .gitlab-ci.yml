@@ -1,3 +1,10 @@
+test:
+  image: 10.1.8.1:5000/coe-maven:latest
+  script:
+    - mvn clean verify -B
+  tags:
+    - docker
+
 deploy-master:
   script:
     - docker pull 10.1.8.1:5000/coe-maven:latest
