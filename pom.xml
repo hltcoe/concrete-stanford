@@ -10,7 +10,7 @@
 
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.8.4-SNAPSHOT</version>
+  <version>4.8.4</version>
   <packaging>jar</packaging>
   <url>https://github.com/hltcoe/concrete-stanford/</url>
 
@@ -36,7 +36,7 @@
   </licenses>
 
   <properties>
-    <concrete.version>4.8.8</concrete.version>
+    <concrete.version>4.8.9</concrete.version>
     <stanford.version>3.5.2</stanford.version>
   </properties>
 
@@ -166,6 +166,13 @@
       <version>${stanford.version}</version>
       <classifier>models-chinese</classifier>
     </dependency>
+    <dependency>
+      <groupId>edu.stanford.nlp</groupId>
+      <artifactId>stanford-corenlp</artifactId>
+      <version>${stanford.version}</version>
+      <classifier>models-spanish</classifier>
+    </dependency>
+
     <dependency>
       <groupId>com.beust</groupId>
       <artifactId>jcommander</artifactId>

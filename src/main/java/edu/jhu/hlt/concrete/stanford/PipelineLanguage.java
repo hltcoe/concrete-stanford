@@ -4,6 +4,7 @@
  */
 package edu.jhu.hlt.concrete.stanford;
 
+import java.util.Optional;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -15,6 +16,7 @@ import edu.stanford.nlp.trees.HeadFinder;
 import edu.stanford.nlp.trees.SemanticHeadFinder;
 import edu.stanford.nlp.trees.international.pennchinese.ChineseGrammaticalStructureFactory;
 import edu.stanford.nlp.trees.international.pennchinese.ChineseSemanticHeadFinder;
+import edu.stanford.nlp.trees.international.spanish.SpanishHeadFinder;
 
 public enum PipelineLanguage {
 
@@ -36,8 +38,8 @@ public enum PipelineLanguage {
     }
 
     @Override
-    public GrammaticalStructureFactory getGrammaticalFactory() {
-      return new EnglishGrammaticalStructureFactory();
+    public Optional<GrammaticalStructureFactory> getGrammaticalFactory() {
+      return Optional.of(new EnglishGrammaticalStructureFactory());
     }
 
     @Override
@@ -60,6 +62,57 @@ public enum PipelineLanguage {
       return props;
     }
   },
+
+  SPANISH ("es") {
+    @Override
+    public String[] getPostTokenizationAnnotators() {
+      return new String[] { "pos", "parse", "ner" };
+    }
+
+    @Override
+    public Properties getProperties() {
+      Properties props = new Properties();
+      String annotatorList = "tokenize, ssplit, pos, ner, parse";
+      logger.debug("Using annotators: {}", annotatorList);
+
+      props.put("annotators", annotatorList);
+      props.setProperty("output.printSingletonEntities", "true");
+
+      props.setProperty("tokenize.language", "es");
+      props.setProperty("pos.model", "edu/stanford/nlp/models/pos-tagger/spanish/spanish-distsim.tagger");
+      props.setProperty("ner.model", "edu/stanford/nlp/models/ner/spanish.ancora.distsim.s512.crf.ser.gz");
+      props.setProperty("ner.applyNumericClassifiers", "false");
+      props.setProperty("ner.useSUTime", "false");
+
+      return props;
+    }
+
+    @Override
+    public Optional<GrammaticalStructureFactory> getGrammaticalFactory() {
+      return Optional.empty();
+    }
+
+    @Override
+    public HeadFinder getHeadFinder() {
+      return new SpanishHeadFinder();
+    }
+
+    @Override
+    public String[] getUpToTokenizationAnnotators() {
+      return new String[] {"tokenize", "ssplit" };
+    }
+
+    @Override
+    public Properties getUpToTokenizationProperties() {
+      Properties props = new Properties();
+      String annotatorList = "tokenize, ssplit";
+      logger.debug("Using annotators: {}", annotatorList);
+
+      props.put("annotators", annotatorList);
+      return props;
+    }
+  },
+
   CHINESE ("cn") {
     @Override
     public String[] getPostTokenizationAnnotators() {
@@ -94,8 +147,8 @@ public enum PipelineLanguage {
     }
 
     @Override
-    public GrammaticalStructureFactory getGrammaticalFactory() {
-      return new ChineseGrammaticalStructureFactory();
+    public Optional<GrammaticalStructureFactory> getGrammaticalFactory() {
+      return Optional.of(new ChineseGrammaticalStructureFactory());
     }
 
     @Override
@@ -160,7 +213,7 @@ public enum PipelineLanguage {
   public abstract Properties getProperties();
   public abstract Properties getUpToTokenizationProperties();
 
-  public abstract GrammaticalStructureFactory getGrammaticalFactory();
+  public abstract Optional<GrammaticalStructureFactory> getGrammaticalFactory();
 
   public abstract HeadFinder getHeadFinder();
 }

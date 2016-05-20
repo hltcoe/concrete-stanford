@@ -120,7 +120,7 @@ public class PreNERCoreMapWrapper {
      try {
        headTree = hf.determineHead(root);
      } catch (java.lang.IllegalArgumentException iae) {
-       LOGGER.warn("Failed to find head, falling back on rightmost constituent.", iae);
+       LOGGER.warn("Failed to find head, falling back on rightmost constituent.");
        headTree = root.children()[root.numChildren() - 1];
      }
    }

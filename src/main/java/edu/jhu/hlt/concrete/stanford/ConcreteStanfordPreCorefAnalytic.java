@@ -163,7 +163,8 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
       Tree tree = cm.get(TreeAnnotation.class);
       List<Tree> treeList = new ArrayList<>();
       treeList.add(tree);
-      ParserAnnotatorUtils.fillInParseAnnotations(false, true, this.lang.getGrammaticalFactory(), cm, treeList.get(0), GrammaticalStructure.Extras.NONE);
+      this.lang.getGrammaticalFactory().ifPresent(k ->
+        ParserAnnotatorUtils.fillInParseAnnotations(false, true, k, cm, treeList.get(0), GrammaticalStructure.Extras.NONE));
     });
 
     anno.get(SentencesAnnotation.class).forEach(cm -> LOGGER.trace("Got CoreMap post-fill-in: {}", cm.toShorterString(new String[0])));
