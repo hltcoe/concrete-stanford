@@ -5,7 +5,16 @@ test:
   tags:
     - docker
 
-deploy-master:
+maven-deploy:
+  image: 10.1.8.1:5000/coe-maven:latest
+  script:
+    - mvn clean deploy -B
+  tags:
+    - docker
+  only:
+    - master
+
+docker-deploy:
   script:
     - docker pull 10.1.8.1:5000/coe-maven:latest
     - docker build -t concrete-stanford .
@@ -13,6 +22,3 @@ deploy-master:
     - docker push 10.1.8.1:5000/concrete-stanford:latest
   tags:
     - shell
-  only:
-    - master
-
