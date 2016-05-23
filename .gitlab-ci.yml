@@ -8,7 +8,7 @@ test:
 maven-deploy:
   image: 10.1.8.1:5000/coe-maven:latest
   script:
-    - mvn clean deploy -B
+    - mvn clean deploy -B -Pcoe-release
   tags:
     - docker
   only:
