@@ -1,12 +1,12 @@
 test:
-  image: 10.1.8.1:5000/coe-maven:latest
+  image: 10.1.8.1:5000/coe-maven-centos:latest
   script:
     - mvn clean verify -B
   tags:
     - docker
 
 maven-deploy:
-  image: 10.1.8.1:5000/coe-maven:latest
+  image: 10.1.8.1:5000/coe-maven-centos:latest
   script:
     - mvn clean deploy -B -Pcoe-release
   tags:
@@ -16,7 +16,7 @@ maven-deploy:
 
 docker-deploy:
   script:
-    - docker pull 10.1.8.1:5000/coe-maven:latest
+    - docker pull 10.1.8.1:5000/coe-maven-centos:latest
     - docker build -t concrete-stanford .
     - docker tag concrete-stanford 10.1.8.1:5000/concrete-stanford:latest
     - docker push 10.1.8.1:5000/concrete-stanford:latest

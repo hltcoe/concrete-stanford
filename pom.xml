@@ -5,12 +5,12 @@
   <parent>
     <groupId>edu.jhu.hlt</groupId>
     <artifactId>hltcoe-concrete-parent</artifactId>
-    <version>4.8</version>
+    <version>4.10-rework</version>
   </parent>
 
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.8.4</version>
+  <version>4.10.0</version>
   <packaging>jar</packaging>
   <url>https://github.com/hltcoe/concrete-stanford/</url>
 
@@ -36,7 +36,7 @@
   </licenses>
 
   <properties>
-    <concrete.version>4.8.9</concrete.version>
+    <concrete.version>4.10.1</concrete.version>
     <stanford.version>3.5.2</stanford.version>
   </properties>
 
@@ -94,6 +94,11 @@
   </build>
 
   <dependencies>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.4</version>
+    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
