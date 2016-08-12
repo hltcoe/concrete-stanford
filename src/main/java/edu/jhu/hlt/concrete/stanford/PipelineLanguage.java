@@ -66,7 +66,7 @@ public enum PipelineLanguage {
   SPANISH ("es") {
     @Override
     public String[] getPostTokenizationAnnotators() {
-      return new String[] { "pos", "parse", "ner" };
+      return new String[] { "pos", "ner", "parse" };
     }
 
     @Override
@@ -83,6 +83,7 @@ public enum PipelineLanguage {
       props.setProperty("ner.model", "edu/stanford/nlp/models/ner/spanish.ancora.distsim.s512.crf.ser.gz");
       props.setProperty("ner.applyNumericClassifiers", "false");
       props.setProperty("ner.useSUTime", "false");
+      props.setProperty("parse.model", "edu/stanford/nlp/models/lexparser/spanishPCFG.ser.gz");
 
       return props;
     }
