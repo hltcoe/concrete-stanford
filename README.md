@@ -1,7 +1,8 @@
 # concrete-stanford
-Provides a library that can take `Communication` objects, containing `Section`s, and
-annotate them using the Stanford CoreNLP framework. This produces `Communication` objects
-with `Tokenization` objects, and optionally `EntityMention` and `Entity` objects.
+Provides a library that can take `Communication` objects, containing
+`Section`s, and annotate them using the Stanford CoreNLP
+framework. This produces `Communication` objects with `Tokenization`
+objects, and optionally `EntityMention` and `Entity` objects.
 
 ## Maven dependency
 
@@ -9,9 +10,11 @@ with `Tokenization` objects, and optionally `EntityMention` and `Entity` objects
 <dependency>
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.8.3</version>
+  <version>x.y.z</version>
 </dependency>
 ```
+
+See [pom.xml](pom.xml) for latest version.
 
 ## Sectioned Communications are required
 
@@ -23,6 +26,14 @@ There are two primary drivers --- one that processes Tokenized
 `Concrete` files, and one that does not.  Each has its own
 requirements, described below.
 
+## Running over a directory of tar gz files with qsub
+
+If you have a directory of `.tar.gz` files you want to run through stanford,
+see [this script](src/main/scripts/batch-stanford.sh) on how to do that
+via `qsub`.
+
+Make sure to build the project before running the script.
+
 ## Quick start / API Usage
 
 Load in a `Communication` with `Section`s with `TextSpan`s:
@@ -33,8 +44,10 @@ Communication withSections = ...;
 String language = "en";
 ```
 
-Then create an annotator object and the language of the `Communication`. The following
-example shows the `AnnotateNonTokenizedConcrete` tool.
+Then create an annotator object and the language of the
+`Communication`. The following example shows the
+`AnnotateNonTokenizedConcrete` tool.
+
 ```java
 PipelineLanguage lang = PipelineLanguage.getEnumeration(language);
 AnnotateNonTokenizedConcrete analytic = new AnnotateNonTokenizedConcrete(lang);
@@ -57,11 +70,14 @@ StanfordPostNERCommunication annotated = annotatedWithStanford = analytic.annota
 Communication unwrapped = annotated.getRoot();
 ```
 
-`annotated` is a `Communication` with the output of the system.
-This includes sentences and tokenizations, and DEPENDING on the annotator, entity mentions and entities as well.
+`annotated` is a `Communication` with the output of the system.  This
+includes sentences and tokenizations, and DEPENDING on the annotator,
+entity mentions and entities as well.
 
-`StanfordPostNERCommunication` is a utility wrapper that allows easier access to members; see
-[here](src/main/java/edu/jhu/hlt/concrete/stanford/StanfordPostNERCommunication.java) for the implementations.
+`StanfordPostNERCommunication` is a utility wrapper that allows easier
+access to members; see
+[here](src/main/java/edu/jhu/hlt/concrete/stanford/StanfordPostNERCommunication.java)
+for the implementations.
 
 ## Running as a command-line program
 
