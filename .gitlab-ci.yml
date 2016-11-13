@@ -1,20 +1,42 @@
+stages:
+  - build-unit-test
+  - install
+  - integration-test
+  - deploy
+  - docker
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=/cache/.m2/repository"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
+
 test:
+  stage: build-unit-test
   image: 10.1.8.1:5000/coe-maven-centos:latest
   script:
-    - mvn clean verify -B
+    - mvn $MAVEN_CLI_OPTS clean verify
+  tags:
+    - docker
+
+maven-install:
+  stage: install
+  image: r8n01:5000/coe-maven:latest
+  script:
+    - mvn $MAVEN_CLI_OPTS install -DskipTests
   tags:
     - docker
 
 maven-deploy:
+  stage: deploy
   image: 10.1.8.1:5000/coe-maven-centos:latest
   script:
-    - mvn clean deploy -B -Pcoe-release
+    - mvn $MAVEN_CLI_OPTS clean deploy -B -Pcoe-release
   tags:
     - docker
   only:
     - master
 
 docker-deploy:
+  stage: docker
   script:
     - docker pull 10.1.8.1:5000/coe-maven-centos:latest
     - docker build -t concrete-stanford .
@@ -22,3 +44,5 @@ docker-deploy:
     - docker push 10.1.8.1:5000/concrete-stanford:latest
   tags:
     - shell
+  only:
+    - master
