@@ -165,7 +165,6 @@
       <version>${stanford.version}</version>
       <classifier>models</classifier>
       <scope>runtime</scope>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>edu.stanford.nlp</groupId>
@@ -173,7 +172,6 @@
       <version>${stanford.version}</version>
       <classifier>models-chinese</classifier>
       <scope>runtime</scope>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>edu.stanford.nlp</groupId>
@@ -181,7 +179,6 @@
       <version>${stanford.version}</version>
       <classifier>models-spanish</classifier>
       <scope>runtime</scope>
-      <optional>true</optional>
     </dependency>
 
     <dependency>
