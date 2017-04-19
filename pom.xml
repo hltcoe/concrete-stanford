@@ -2,15 +2,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>edu.jhu.hlt</groupId>
-    <artifactId>concrete-parent</artifactId>
-    <version>4.11</version>
-  </parent>
-
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.11.1-SNAPSHOT</version>
+  <version>4.12.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <url>https://github.com/hltcoe/concrete-stanford/</url>
 
@@ -36,12 +30,19 @@
   </licenses>
 
   <properties>
-    <concrete.version>4.11.2</concrete.version>
+    <concrete.version>4.12.0</concrete.version>
     <stanford.version>3.5.2</stanford.version>
   </properties>
 
   <build>
     <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
@@ -102,6 +103,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <version>4.12</version>
       <scope>test</scope>
     </dependency>
     <dependency>
