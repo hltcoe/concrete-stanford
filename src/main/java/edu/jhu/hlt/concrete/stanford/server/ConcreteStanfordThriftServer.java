@@ -16,7 +16,7 @@ import edu.jhu.hlt.concrete.analytics.base.SectionedCommunicationAnalytic;
 import edu.jhu.hlt.concrete.analytics.base.TokenizationedCommunicationAnalytic;
 import edu.jhu.hlt.concrete.metadata.tools.TooledMetadataConverter;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
-import edu.jhu.hlt.concrete.services.Annotator;
+import edu.jhu.hlt.concrete.annotate.AnnotateCommunicationService;
 import edu.jhu.hlt.concrete.services.ConcreteThriftException;
 import edu.jhu.hlt.concrete.stanford.ConcreteStanfordPreCorefAnalytic;
 import edu.jhu.hlt.concrete.stanford.ConcreteStanfordTokensSentenceAnalytic;
@@ -25,7 +25,7 @@ import edu.jhu.hlt.concrete.stanford.PipelineLanguage;
 /**
  * Implementation of concrete-stanford as a service.
  */
-public class ConcreteStanfordThriftServer implements Annotator.Iface {
+public class ConcreteStanfordThriftServer implements AnnotateCommunicationService.Iface {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ConcreteStanfordThriftServer.class);
 
@@ -41,7 +41,7 @@ public class ConcreteStanfordThriftServer implements Annotator.Iface {
   }
 
   /* (non-Javadoc)
-   * @see edu.jhu.hlt.concrete.services.Annotator.Iface#annotate(edu.jhu.hlt.concrete.Communication)
+   * @see edu.jhu.hlt.concrete.annotate.AnnotateCommunicationService.Iface#annotate(edu.jhu.hlt.concrete.Communication)
    */
   @Override
   public Communication annotate(Communication original) throws ConcreteThriftException, TException {
@@ -56,7 +56,7 @@ public class ConcreteStanfordThriftServer implements Annotator.Iface {
   }
 
   /* (non-Javadoc)
-   * @see edu.jhu.hlt.concrete.services.Annotator.Iface#getMetadata()
+   * @see edu.jhu.hlt.concrete.annotate.AnnotateCommunicationService.Iface#getMetadata()
    */
   @Override
   public AnnotationMetadata getMetadata() throws TException {
@@ -64,7 +64,7 @@ public class ConcreteStanfordThriftServer implements Annotator.Iface {
   }
 
   /* (non-Javadoc)
-   * @see edu.jhu.hlt.concrete.services.Annotator.Iface#getDocumentation()
+   * @see edu.jhu.hlt.concrete.annotate.AnnotateCommunicationService.Iface#getDocumentation()
    */
   @Override
   public String getDocumentation() throws TException {
@@ -72,7 +72,7 @@ public class ConcreteStanfordThriftServer implements Annotator.Iface {
   }
 
   /* (non-Javadoc)
-   * @see edu.jhu.hlt.concrete.services.Annotator.Iface#shutdown()
+   * @see edu.jhu.hlt.concrete.annotate.AnnotateCommunicationService.Iface#shutdown()
    */
   @Override
   public void shutdown() throws TException {
