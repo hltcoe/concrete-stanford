@@ -4,16 +4,26 @@
 
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.12.1-SNAPSHOT</version>
+  <version>4.12.1</version>
   <packaging>jar</packaging>
   <url>https://github.com/hltcoe/concrete-stanford/</url>
 
   <name>Concrete Stanford</name>
+  <description>Wraps Stanford NLP with utilities to fit it into a Concrete compliant workflow</description>
 
   <organization>
     <name>Johns Hopkins University HLTCOE</name>
     <url>http://hltcoe.jhu.edu</url>
   </organization>
+
+  <developers>
+    <developer>
+      <email>max.thomas@jhu.edu</email>
+      <name>Max Thomas</name>
+      <url>https://github.com/maxthomas</url>
+      <id>maxthomas</id>
+    </developer>
+  </developers>
 
   <scm>
     <connection>scm:git:git@github.com:hltcoe/${project.artifactId}.git</connection>
