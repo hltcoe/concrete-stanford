@@ -192,9 +192,8 @@
 
   <distributionManagement>
     <repository>
-      <id>coe-mvn</id>
-      <name>coe-mvn-releases</name>
-      <url>http://sparsity.ad.hltcoe.jhu.edu:8081/artifactory/libs-release-local</url>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
     </repository>
     <snapshotRepository>
       <id>coe-mvn</id>
