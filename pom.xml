@@ -203,7 +203,7 @@
     <site>
       <id>github-project-site</id>
       <name>Concrete-Java Github Pages</name>
-      <url>git:ssh://git@github.com/hltcoe/concrete-java.git?gh-pages#</url>
+      <url>git:ssh://git@github.com/hltcoe/concrete-stanford.git?gh-pages#</url>
       <!-- <url>github:http://hltcoe.github.io/concrete-java/</url> -->
     </site>
   </distributionManagement>
