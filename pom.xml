@@ -200,12 +200,6 @@
       <name>coe-mvn-snapshots</name>
       <url>http://sparsity.ad.hltcoe.jhu.edu:8081/artifactory/libs-snapshot-local</url>
     </snapshotRepository>
-    <site>
-      <id>github-project-site</id>
-      <name>Concrete-Java Github Pages</name>
-      <url>git:ssh://git@github.com/hltcoe/concrete-stanford.git?gh-pages#</url>
-      <!-- <url>github:http://hltcoe.github.io/concrete-java/</url> -->
-    </site>
   </distributionManagement>
 
   <profiles>
