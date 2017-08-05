@@ -2,6 +2,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>edu.jhu.hlt</groupId>
+    <artifactId>mvn-oss-parent</artifactId>
+    <version>6</version>
+  </parent>
+
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
   <version>4.12.2-SNAPSHOT</version>
@@ -25,13 +31,6 @@
     </developer>
   </developers>
 
-  <scm>
-    <connection>scm:git:git@github.com:hltcoe/${project.artifactId}.git</connection>
-    <developerConnection>scm:git:git@github.com:hltcoe/${project.artifactId}.git</developerConnection>
-    <url>https://github.com/hltcoe/concrete-stanford/</url>
-    <tag>HEAD</tag>
-  </scm>
-
   <licenses>
     <license>
       <name>GNU General Public License Version 3</name>
@@ -43,37 +42,12 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <concrete.version>4.12.0</concrete.version>
+    <concrete.version>4.13.2</concrete.version>
     <stanford.version>3.5.2</stanford.version>
   </properties>
 
   <build>
     <plugins>
-      <plugin>
-	<artifactId>maven-assembly-plugin</artifactId>
-	<version>2.5.3</version>
-	<configuration>
-	  <descriptorRefs>
-	    <descriptorRef>jar-with-dependencies</descriptorRef>
-	  </descriptorRefs>
-	</configuration>
-	<executions>
-	  <execution>
-	    <id>make-assembly</id> <!-- this is used for inheritance merges -->
-	    <goals>
-	      <goal>single</goal>
-	    </goals>
-	  </execution>
-	</executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.3</version>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-        </configuration>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
@@ -222,78 +196,5 @@
       <version>1.48</version>
     </dependency>
   </dependencies>
-
-  <distributionManagement>
-    <repository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-    <snapshotRepository>
-      <id>coe-mvn</id>
-      <name>coe-mvn-snapshots</name>
-      <url>http://sparsity.ad.hltcoe.jhu.edu:8081/artifactory/libs-snapshot-local</url>
-    </snapshotRepository>
-  </distributionManagement>
-
-  <profiles>
-    <profile>
-      <id>release</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>2.4</version>
-            <executions>
-              <execution>
-                <id>attach-sources</id>
-                <goals>
-                  <goal>jar-no-fork</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.10.3</version>
-            <executions>
-              <execution>
-                <id>attach-javadocs</id>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
-            <executions>
-              <execution>
-                <id>sign-artifacts</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>sign</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.6.6</version>
-            <extensions>true</extensions>
-            <configuration>
-              <serverId>ossrh</serverId>
-              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-              <autoReleaseAfterClose>true</autoReleaseAfterClose>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 
 </project>
