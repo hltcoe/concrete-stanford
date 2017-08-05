@@ -29,7 +29,7 @@ maven-deploy:
   stage: deploy
   image: r8n01:5000/coe-maven-centos:latest
   script:
-    - mvn $MAVEN_CLI_OPTS clean deploy -B -Pcoe-release
+    - mvn $MAVEN_CLI_OPTS clean deploy -B -Pcoe
   tags:
     - docker
   only:
