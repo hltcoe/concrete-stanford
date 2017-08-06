@@ -93,7 +93,7 @@ with serialized Concrete `Communication` objects. Recall that each `Communicatio
 | Input                                    | Result                                                           |
 | -----------------------------------------|------------------------------------------------------------------|
 | `.concrete` or `.comm` file              | Produces a single new `.concrete` or `.comm` file                |
-| `.tar` file with `Communciation` objects | Produces a single `.tar. file with annotated `Communication`s    |
+| `.tar` file with `Communication` objects | Produces a single `.tar` file with annotated `Communication`s    |
 | `.tar.gz` ...                            | Produces a single `.tar.gz` file with annotated `Communication`s |
 
 
@@ -143,3 +143,33 @@ $CONC_STAN_INPUT_FILE \
 $CONC_STAN_OUTPUT_DIR \
 [en | cn]
 ```
+
+## Using Dockerized AnnotateCommunicationService
+
+The Dockerfile stands up a server implementing Concrete's
+`AnnotateCommunicationService`.  An image built from this Dockerfile
+is available on Docker Hub as
+[hltcoe/concrete-stanford](https://hub.docker.com/r/hltcoe/concrete-stanford/),
+and can be pulled using:
+
+```sh
+docker pull hltcoe/concrete-stanford
+```
+
+To see what command line flags are supported, run:
+
+```sh
+docker run hltcoe/concrete-stanford --help
+```
+
+At minimum, you must specify a language (currently, either `en` or
+`cn`) using the `--language` flag, e.g.:
+
+```sh
+docker run hltcoe/concrete-stanford --language en
+```
+
+The concrete-stanford `AnnotateCommunicationService` requires
+Communications that have been at least section-segmented.  See the
+"Known Annotators" section above for more details about the type of
+data concrete-stanford expects.
