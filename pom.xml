@@ -46,6 +46,18 @@
     <stanford.version>3.5.2</stanford.version>
   </properties>
 
+  <scm>
+    <connection>scm:git:git@github.com:hltcoe/concrete-stanford.git</connection>
+    <developerConnection>scm:git:git@github.com:hltcoe/concrete-stanford.git</developerConnection>
+    <url>https://github.com/hltcoe/concrete-stanford/</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <issueManagement>
+    <url>https://github.com/hltcoe/concrete-stanford/issues</url>
+    <system>GitHub Issues</system>
+  </issueManagement>
+
   <build>
     <plugins>
       <plugin>
