@@ -1,23 +1,31 @@
-FROM 10.1.8.1:5000/coe-maven:latest
+FROM hltcoe/concrete-java:v4.13.2
 
-# copy concrete-stanford source code to image
-ENV STANFORD=/opt/concrete-stanford
+ENV STANFORD=/home/concrete/concrete-stanford
 
-COPY . $STANFORD
-WORKDIR $STANFORD
-RUN mvn -B clean compile verify assembly:single
-RUN rm -rf /root/.m2/repository
+RUN mkdir $STANFORD
+COPY docker-entrypoint.sh $STANFORD
+COPY pom.xml $STANFORD
+COPY src $STANFORD/src
 
-# copy entrypoint script to image
-COPY ./docker-entrypoint.sh /opt/
-# change directory to root
-WORKDIR /opt
+# The COPY command creates files owned by root, but RUN commands have
+# the permissions for the user specified by USER - which, in the
+# parent Dockerfile, is set to 'concrete'.
+USER root
+RUN chown -R concrete:concrete $STANFORD
+USER concrete
 
+RUN cd $STANFORD && \
+    mvn -B clean compile verify assembly:single \
+        -Dskiptests=true \
+	-Dmaven.test.skip=true && \
+    mv `find target -name "concrete-stanford-*-jar-with-dependencies.jar"` \
+       concrete-stanford.jar && \
+    mvn -B clean && \
+    rm -rf /home/concrete/.m2
 
 ENV DEFAULT_ANALYTIC_PORT=${DEFAULT_ANALYTIC_PORT:-33221}
 EXPOSE $DEFAULT_ANALYTIC_PORT
 
-
-ENTRYPOINT ["./docker-entrypoint.sh"]
+ENTRYPOINT ["/home/concrete/concrete-stanford/docker-entrypoint.sh"]
 
 CMD ["--help"]
