@@ -4,12 +4,12 @@
   <parent>
     <groupId>edu.jhu.hlt</groupId>
     <artifactId>mvn-oss-parent</artifactId>
-    <version>6</version>
+    <version>7</version>
   </parent>
 
   <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
-  <version>4.13.1-SNAPSHOT</version>
+  <version>4.14.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <url>https://github.com/hltcoe/concrete-stanford/</url>
 
@@ -20,15 +20,6 @@
     <name>Johns Hopkins University HLTCOE</name>
     <url>http://hltcoe.jhu.edu</url>
   </organization>
-
-  <developers>
-    <developer>
-      <email>max.thomas@jhu.edu</email>
-      <name>Max Thomas</name>
-      <url>https://github.com/maxthomas</url>
-      <id>maxthomas</id>
-    </developer>
-  </developers>
 
   <licenses>
     <license>
@@ -41,7 +32,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <concrete.version>4.13.2</concrete.version>
+    <concrete.version>4.14.1</concrete.version>
     <stanford.version>3.5.2</stanford.version>
   </properties>
 
