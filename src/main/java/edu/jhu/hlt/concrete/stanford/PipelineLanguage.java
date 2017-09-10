@@ -4,6 +4,7 @@
  */
 package edu.jhu.hlt.concrete.stanford;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -201,6 +202,8 @@ public enum PipelineLanguage {
   }
 
   public static final PipelineLanguage getEnumeration(String v) {
+    if (v.toLowerCase(Locale.ENGLISH).equals("zh"))
+      return PipelineLanguage.CHINESE;
     for (PipelineLanguage c : PipelineLanguage.values())
       if (c.toString().equalsIgnoreCase(v))
         return c;
