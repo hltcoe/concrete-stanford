@@ -141,6 +141,11 @@ public class ConcreteStanfordTokensSentenceAnalytic implements SectionedCommunic
           final TextSpan ts = s.getTextSpan();
           final int b = ts.getStart();
           final int e = ts.getEnding();
+          if (e < b) {
+            LOGGER.warn("Invalid text span: end is less than start. Document: {}; TextSpan: {}",
+                        cp.getId(), ts.toString());
+            return false;
+          }
           String txt = cp.getText().substring(b, e);
           // that isn't enough, could get HTML encoded blank spaces.
           if (txt.contains("&nbsp"))
