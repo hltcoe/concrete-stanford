@@ -52,9 +52,12 @@ public class NonPTBSpanishTextTest {
 
   @Test
   public void test() throws Exception {
+    TokenizedCommunication wTkz = PipelineLanguage.SPANISH
+        .getSentenceTokenizationAnalytic()
+        .annotate(new Communication(comm));
     TokenizedCommunication wDepParse = PipelineLanguage.SPANISH
         .getPreCorefAnalytic()
-        .annotate(new Communication(comm));
+        .annotate(wTkz.getRoot());
     Tokenization ntkz = wDepParse.getTokenizations().get(0);
     List<TokenTagging> ttList = ntkz.getTokenTaggingList();
     LOGGER.info("token taggings: {}", ttList.size());
