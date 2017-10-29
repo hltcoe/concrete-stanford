@@ -1,6 +1,10 @@
 package edu.jhu.hlt.concrete.stanford.languages;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+
 public enum StanfordLanguageAnnotators {
+
   ENGLISH {
     @Override
     String tokenizationAnnotators() {
@@ -55,6 +59,9 @@ public enum StanfordLanguageAnnotators {
   abstract String preCorefAnnotators();
   abstract String allAvailableAnnotators();
 
+  private static final ImmutableSet<String> SENTENCE_TOKENS_ANNOTATORS =
+      ImmutableSet.of("ssplit", "tokenize", "segment");
+
   public String getAnnotators(boolean isOnlyTokenization, boolean isCorefSkipped) {
     if (isOnlyTokenization)
       return this.tokenizationAnnotators();
@@ -64,5 +71,19 @@ public enum StanfordLanguageAnnotators {
       else
         return this.allAvailableAnnotators();
     }
+  }
+
+  /*
+   * this is not great, but want to maintain the order -
+   * max thinks it matters.
+   */
+  public ImmutableList<String> getNonTokenizationAnnotators() {
+    ImmutableList<String> spl = ImmutableList.copyOf(this.allAvailableAnnotators().split(", "));
+    ImmutableList.Builder<String> b = ImmutableList.builder();
+    for (String s : spl) {
+      if (!SENTENCE_TOKENS_ANNOTATORS.contains(s))
+        b.add(s);
+    }
+    return b.build();
   }
 }

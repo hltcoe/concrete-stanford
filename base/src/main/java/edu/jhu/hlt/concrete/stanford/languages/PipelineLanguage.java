@@ -11,6 +11,11 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+
+import edu.jhu.hlt.concrete.stanford.ConcreteStanfordPreCorefAnalytic;
+import edu.jhu.hlt.concrete.stanford.ConcreteStanfordTokensSentenceAnalytic;
 import edu.stanford.nlp.trees.EnglishGrammaticalStructureFactory;
 import edu.stanford.nlp.trees.GrammaticalStructureFactory;
 import edu.stanford.nlp.trees.HeadFinder;
@@ -37,6 +42,21 @@ public enum PipelineLanguage {
     @Override
     public HeadFinder getHeadFinder() {
       return new SemanticHeadFinder();
+    }
+
+    @Override
+    String tokenizationAnnotators() {
+      return "tokenize, ssplit";
+    }
+
+    @Override
+    String preCorefAnnotators() {
+      return this.tokenizationAnnotators() + ", pos, lemma, parse, ner";
+    }
+
+    @Override
+    String allAvailableAnnotators() {
+      return this.preCorefAnnotators() + ", dcoref";
     }
 //
 //    @Override
@@ -76,6 +96,21 @@ public enum PipelineLanguage {
     @Override
     public HeadFinder getHeadFinder() {
       return new SpanishHeadFinder();
+    }
+
+    @Override
+    String tokenizationAnnotators() {
+      return "tokenize, ssplit";
+    }
+
+    @Override
+    String preCorefAnnotators() {
+      return this.tokenizationAnnotators() + ", pos, ner, parse";
+    }
+
+    @Override
+    String allAvailableAnnotators() {
+      return this.preCorefAnnotators();
     }
 
 //    @Override
@@ -124,6 +159,21 @@ public enum PipelineLanguage {
       return new ChineseSemanticHeadFinder();
     }
 
+    @Override
+    String tokenizationAnnotators() {
+      return "segment, ssplit";
+    }
+
+    @Override
+    String preCorefAnnotators() {
+      return this.tokenizationAnnotators() + ", pos, ner, parse";
+    }
+
+    @Override
+    String allAvailableAnnotators() {
+      return this.preCorefAnnotators();
+    }
+
 //    @Override
 //    public Properties getUpToTokenizationProperties() {
 //      Properties props = new Properties();
@@ -147,9 +197,26 @@ public enum PipelineLanguage {
 
   private static final Logger logger = LoggerFactory.getLogger(PipelineLanguage.class);
 
+  private static final ImmutableSet<String> SENTENCE_TOKENS_ANNOTATORS =
+      ImmutableSet.of("ssplit", "tokenize", "segment");
+
   private final String v;
   private PipelineLanguage(String v) {
     this.v = v;
+  }
+
+  /*
+   * this is not great, but want to maintain the order -
+   * max thinks it matters.
+   */
+  public ImmutableList<String> getNonTokenizationAnnotators() {
+    ImmutableList<String> spl = ImmutableList.copyOf(this.allAvailableAnnotators().split(", "));
+    ImmutableList.Builder<String> b = ImmutableList.builder();
+    for (String s : spl) {
+      if (!SENTENCE_TOKENS_ANNOTATORS.contains(s))
+        b.add(s);
+    }
+    return b.build();
   }
 
   /*
@@ -181,7 +248,23 @@ public enum PipelineLanguage {
     throw new IllegalArgumentException("No matching Languages for value: " + v);
   }
 
-  public abstract Properties getProperties(String annotators);
+  abstract Properties getProperties(String annotators);
+
+  abstract String tokenizationAnnotators();
+  abstract String preCorefAnnotators();
+  abstract String allAvailableAnnotators();
+
   public abstract Optional<GrammaticalStructureFactory> getGrammaticalFactory();
   public abstract HeadFinder getHeadFinder();
+
+  public ConcreteStanfordTokensSentenceAnalytic getSentenceTokenizationAnalytic() {
+    return new ConcreteStanfordTokensSentenceAnalytic(this.getProperties(this.tokenizationAnnotators()));
+  }
+
+  public ConcreteStanfordPreCorefAnalytic getPreCorefAnalytic() {
+    Properties props = this.getProperties(this.preCorefAnnotators());
+    return new ConcreteStanfordPreCorefAnalytic(props,
+        this.getHeadFinder(), this.getGrammaticalFactory(),
+        this.getNonTokenizationAnnotators());
+  }
 }

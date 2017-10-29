@@ -15,6 +15,8 @@
   <modules>
     <module>base</module>
     <module>eng</module>
+    <module>annotate</module>
+    <module>legacy</module>
   </modules>
 
   <name>Concrete Stanford</name>

@@ -14,6 +14,8 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableList;
+
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.Section;
 import edu.jhu.hlt.concrete.Sentence;
@@ -50,13 +52,16 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
 
   private final HeadFinder hf;
   private final Optional<GrammaticalStructureFactory> gramFactory;
+  private final ImmutableList<String> postTokenAnnotators;
 
   /**
    *
    */
-  public ConcreteStanfordPreCorefAnalytic(Properties props, HeadFinder hf, Optional<GrammaticalStructureFactory> gramFactory) {
+  public ConcreteStanfordPreCorefAnalytic(Properties props, HeadFinder hf,
+      Optional<GrammaticalStructureFactory> gramFactory, ImmutableList<String> postTokenAnnotators) {
     this.hf = hf;
     this.gramFactory = gramFactory;
+    this.postTokenAnnotators = postTokenAnnotators;
     // needed to avoid NPE when using existingAnnotator.
     new StanfordCoreNLP(props);
   }
@@ -148,7 +153,7 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
 
     // TODO: it's possible that fixNullDependencyGraphs needs to be called
     // before dcoref annotator is called. TB investigated further.
-    for (String annotator : this.lang.getPostTokenizationAnnotators()) {
+    for (String annotator : this.postTokenAnnotators) {
       LOGGER.debug("Running annotator: {}", annotator);
       (StanfordCoreNLP.getExistingAnnotator(annotator)).annotate(anno);
     }
@@ -185,13 +190,20 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     });
 
     try {
-      // Coref.
-      CorefManager coref = new CorefManager(new CachedTokenizationCommunication(root), anno);
-      TokenizedCommunication tcWithCoref = coref.addCoreference();
-      return tcWithCoref;
+      return new CachedTokenizationCommunication(root);
     } catch (MiscommunicationException e) {
       throw new AnalyticException(e);
     }
+//    TODO : put this in its own analytic
+//
+//    try {
+//      // Coref.
+//      CorefManager coref = new CorefManager(new CachedTokenizationCommunication(root), anno);
+//      TokenizedCommunication tcWithCoref = coref.addCoreference();
+//      return tcWithCoref;
+//    } catch (MiscommunicationException e) {
+//      throw new AnalyticException(e);
+//    }
   }
 
   /**

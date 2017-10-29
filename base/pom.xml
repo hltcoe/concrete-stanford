@@ -53,25 +53,6 @@
           </execution>
         </executions>
       </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>3.1.0</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <shadedArtifactAttached>false</shadedArtifactAttached>
-              <createDependencyReducedPom>false</createDependencyReducedPom>
-              <finalName>${project.artifactId}-${project.version}-uberjar</finalName>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
 
     <!-- this is to copy the properties file over -->
