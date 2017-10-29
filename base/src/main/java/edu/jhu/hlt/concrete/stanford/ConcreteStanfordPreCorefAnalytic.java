@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 Johns Hopkins University HLTCOE. All rights reserved.
+ * Copyright 2012-2017 Johns Hopkins University HLTCOE. All rights reserved.
  * See LICENSE in the project root directory.
  */
 package edu.jhu.hlt.concrete.stanford;
@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +35,7 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation;
 import edu.stanford.nlp.trees.GrammaticalStructure;
+import edu.stanford.nlp.trees.GrammaticalStructureFactory;
 import edu.stanford.nlp.trees.HeadFinder;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
@@ -46,22 +49,16 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
   private static final Logger LOGGER = LoggerFactory.getLogger(ConcreteStanfordPreCorefAnalytic.class);
 
   private final HeadFinder hf;
-  private final PipelineLanguage lang;
+  private final Optional<GrammaticalStructureFactory> gramFactory;
 
   /**
    *
    */
-  public ConcreteStanfordPreCorefAnalytic(PipelineLanguage lang) {
-    // this.pipeline = StanfordPipelineFactory.preCorefPipeline();
-    this.lang = lang;
-    this.hf = this.lang.getHeadFinder();
-
+  public ConcreteStanfordPreCorefAnalytic(Properties props, HeadFinder hf, Optional<GrammaticalStructureFactory> gramFactory) {
+    this.hf = hf;
+    this.gramFactory = gramFactory;
     // needed to avoid NPE when using existingAnnotator.
-    new StanfordCoreNLP(this.lang.getProperties());
-  }
-
-  public ConcreteStanfordPreCorefAnalytic() {
-    this(PipelineLanguage.ENGLISH);
+    new StanfordCoreNLP(props);
   }
 
   /*
@@ -101,9 +98,7 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
    */
   @Override
   public List<String> getToolNotes() {
-    List<String> notes = new ArrayList<>();
-    notes.add("NER tagging, Lemma tagging, POS tagging, Parse generation, DependencyParse generation, and Coref.");
-    return notes;
+    return new ArrayList<>();
   }
 
   private static List<Sentence> annotationToSentenceList(Annotation anno, HeadFinder hf, final List<Sentence> origSentListRef, final AnalyticUUIDGenerator gen)
@@ -115,7 +110,8 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
       CoreMap cm = cmList.get(i);
       Sentence orig = origSentListRef.get(i);
       final int sentOff = orig.getTextSpan().getStart();
-      Sentence merged = new PreNERCoreMapWrapper(cm, hf, gen).toSentence(sentOff, orig);
+      Sentence merged = new PreNERCoreMapWrapper(cm, hf, gen)
+          .toSentence(sentOff, orig);
       slist.add(merged);
     }
 
@@ -163,7 +159,7 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
       Tree tree = cm.get(TreeAnnotation.class);
       List<Tree> treeList = new ArrayList<>();
       treeList.add(tree);
-      this.lang.getGrammaticalFactory().ifPresent(k ->
+      this.gramFactory.ifPresent(k ->
         ParserAnnotatorUtils.fillInParseAnnotations(false, true, k, cm, treeList.get(0), GrammaticalStructure.Extras.NONE));
     });
 

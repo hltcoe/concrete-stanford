@@ -1,11 +1,12 @@
 /*
- * Copyright 2012-2015 Johns Hopkins University HLTCOE. All rights reserved.
+ * Copyright 2012-2017 Johns Hopkins University HLTCOE. All rights reserved.
  * See LICENSE in the project root directory.
  */
 package edu.jhu.hlt.concrete.stanford;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -31,6 +32,7 @@ import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.util.CoreMap;
 
 /**
  *
@@ -43,15 +45,8 @@ public class ConcreteStanfordTokensSentenceAnalytic implements SectionedCommunic
   /**
    *
    */
-  public ConcreteStanfordTokensSentenceAnalytic(PipelineLanguage lang) {
-    this.pipeline = new StanfordCoreNLP(lang.getUpToTokenizationProperties());
-  }
-
-  /**
-   *
-   */
-  public ConcreteStanfordTokensSentenceAnalytic() {
-    this(PipelineLanguage.ENGLISH);
+  public ConcreteStanfordTokensSentenceAnalytic(Properties props) {
+    this.pipeline = new StanfordCoreNLP(props);
   }
 
   /* (non-Javadoc)
@@ -90,17 +85,15 @@ public class ConcreteStanfordTokensSentenceAnalytic implements SectionedCommunic
 
   private static List<Sentence> annotationToSentenceList(Annotation anno, int cOffset, final AnalyticUUIDGenerator gen) {
     List<Sentence> slist = new ArrayList<>();
-    anno.get(SentencesAnnotation.class).stream()
-      .map(cm -> {
-        // LOGGER.info("Got Sentence offset: {}", cm.toString());
-        try {
-          return new CoreMapWrapper(cm, gen).toSentence(cOffset);
-        } catch (AnalyticException e) {
-          throw new RuntimeException(e);
-        }
-      })
-    .sequential()
-    .forEach(st -> slist.add(st));
+    List<CoreMap> cml = anno.get(SentencesAnnotation.class);
+    for (CoreMap cm : cml) {
+      try {
+        Sentence st = new CoreMapWrapper(cm, gen).toSentence(cOffset);
+        slist.add(st);
+      } catch (AnalyticException e) {
+        throw new RuntimeException(e);
+      }
+    }
 
     return slist;
   }

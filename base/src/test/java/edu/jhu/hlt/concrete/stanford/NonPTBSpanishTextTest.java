@@ -19,6 +19,7 @@ import edu.jhu.hlt.concrete.TextSpan;
 import edu.jhu.hlt.concrete.TokenTagging;
 import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
+import edu.jhu.hlt.concrete.stanford.languages.PipelineLanguage;
 import edu.jhu.hlt.concrete.uuid.AnalyticUUIDGeneratorFactory;
 import edu.jhu.hlt.concrete.uuid.AnalyticUUIDGeneratorFactory.AnalyticUUIDGenerator;
 import edu.jhu.hlt.concrete.uuid.UUIDFactory;

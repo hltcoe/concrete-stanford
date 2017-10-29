@@ -7,11 +7,15 @@
     <version>7</version>
   </parent>
 
-  <groupId>edu.jhu.hlt</groupId>
   <artifactId>concrete-stanford</artifactId>
   <version>4.14.0-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
   <url>https://github.com/hltcoe/concrete-stanford/</url>
+
+  <modules>
+    <module>base</module>
+    <module>eng</module>
+  </modules>
 
   <name>Concrete Stanford</name>
   <description>Wraps Stanford NLP with utilities to fit it into a Concrete compliant workflow</description>
@@ -29,10 +33,7 @@
   </licenses>
 
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <concrete.version>4.14.1</concrete.version>
+    <concrete.version>4.14.2-SNAPSHOT</concrete.version>
     <stanford.version>3.5.2</stanford.version>
   </properties>
 
@@ -53,7 +54,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>2.7</version>
         <executions>
           <execution>
             <id>prepare-filtered-java-source</id>
@@ -76,7 +76,6 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.9.1</version>
         <executions>
           <execution>
             <id>add-filtered-java-source</id>
@@ -92,6 +91,25 @@
           </execution>
         </executions>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <shadedArtifactAttached>false</shadedArtifactAttached>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <finalName>${project.artifactId}-${project.version}-uberjar</finalName>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
 
     <!-- this is to copy the properties file over -->
@@ -103,100 +121,102 @@
     </resources>
   </build>
 
-  <dependencies>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>3.4</version>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.12</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>concrete-ingesters-gigaword</artifactId>
-      <version>${concrete.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>concrete-ingesters-bolt</artifactId>
-      <version>${concrete.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>concrete-ingesters-annotated-nyt</artifactId>
-      <version>${concrete.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>tift</artifactId>
-      <version>${concrete.version}</version>
-      <scope>test</scope>
-    </dependency>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>edu.jhu.hlt</groupId>
+        <artifactId>concrete-stanford-base</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>3.6</version>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.12</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.jhu.hlt</groupId>
+        <artifactId>concrete-ingesters-gigaword</artifactId>
+        <version>${concrete.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.jhu.hlt</groupId>
+        <artifactId>concrete-ingesters-bolt</artifactId>
+        <version>${concrete.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.jhu.hlt</groupId>
+        <artifactId>concrete-ingesters-annotated-nyt</artifactId>
+        <version>${concrete.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.jhu.hlt</groupId>
+        <artifactId>tift</artifactId>
+        <version>${concrete.version}</version>
+      </dependency>
 
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>miscommunication</artifactId>
-      <version>${concrete.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>concrete-util</artifactId>
-      <version>${concrete.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>concrete-server</artifactId>
-      <version>${concrete.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>concrete-validation</artifactId>
-      <version>${concrete.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>concrete-analytics-base</artifactId>
-      <version>${concrete.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>edu.stanford.nlp</groupId>
-      <artifactId>stanford-corenlp</artifactId>
-      <version>${stanford.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>edu.stanford.nlp</groupId>
-      <artifactId>stanford-corenlp</artifactId>
-      <version>${stanford.version}</version>
-      <classifier>models</classifier>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>edu.stanford.nlp</groupId>
-      <artifactId>stanford-corenlp</artifactId>
-      <version>${stanford.version}</version>
-      <classifier>models-chinese</classifier>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>edu.stanford.nlp</groupId>
-      <artifactId>stanford-corenlp</artifactId>
-      <version>${stanford.version}</version>
-      <classifier>models-spanish</classifier>
-      <scope>runtime</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.beust</groupId>
-      <artifactId>jcommander</artifactId>
-      <version>1.48</version>
-    </dependency>
-  </dependencies>
-
+      <dependency>
+        <groupId>edu.jhu.hlt</groupId>
+        <artifactId>miscommunication</artifactId>
+        <version>${concrete.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.jhu.hlt</groupId>
+        <artifactId>concrete-util</artifactId>
+        <version>${concrete.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.jhu.hlt</groupId>
+        <artifactId>concrete-ingesters-base</artifactId>
+        <version>${concrete.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.jhu.hlt</groupId>
+        <artifactId>concrete-server</artifactId>
+        <version>${concrete.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.jhu.hlt</groupId>
+        <artifactId>concrete-validation</artifactId>
+        <version>${concrete.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.jhu.hlt</groupId>
+        <artifactId>concrete-analytics-base</artifactId>
+        <version>${concrete.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.stanford.nlp</groupId>
+        <artifactId>stanford-corenlp</artifactId>
+        <version>${stanford.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.stanford.nlp</groupId>
+        <artifactId>stanford-corenlp</artifactId>
+        <version>${stanford.version}</version>
+        <classifier>models</classifier>
+      </dependency>
+      <dependency>
+        <groupId>edu.stanford.nlp</groupId>
+        <artifactId>stanford-corenlp</artifactId>
+        <version>${stanford.version}</version>
+        <classifier>models-chinese</classifier>
+      </dependency>
+      <dependency>
+        <groupId>edu.stanford.nlp</groupId>
+        <artifactId>stanford-corenlp</artifactId>
+        <version>${stanford.version}</version>
+        <classifier>models-spanish</classifier>
+      </dependency>
+      <dependency>
+        <groupId>com.beust</groupId>
+        <artifactId>jcommander</artifactId>
+        <version>1.72</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 </project>

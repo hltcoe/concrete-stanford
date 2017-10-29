@@ -22,6 +22,7 @@ import edu.jhu.hlt.concrete.TokenizationKind;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
 import edu.jhu.hlt.concrete.random.RandomConcreteFactory;
+import edu.jhu.hlt.concrete.stanford.languages.PipelineLanguage;
 import edu.jhu.hlt.concrete.util.SuperTextSpan;
 import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 

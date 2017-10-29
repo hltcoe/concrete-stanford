@@ -147,8 +147,8 @@ public class RunnerTest {
 
   private void testArchiveGzEntry(Path inputPath) throws Exception {
     try (InputStream is = Files.newInputStream(inputPath);
-        BufferedInputStream bis = new BufferedInputStream(is);) {
-      TarGzArchiveEntryCommunicationIterator iter = new TarGzArchiveEntryCommunicationIterator(bis);
+        BufferedInputStream bis = new BufferedInputStream(is);
+        TarGzArchiveEntryCommunicationIterator iter = new TarGzArchiveEntryCommunicationIterator(bis);) {
       Communication fromTar = iter.next();
       assertEquals(this.uuidStr, fromTar.getUuid().getUuidString());
     }

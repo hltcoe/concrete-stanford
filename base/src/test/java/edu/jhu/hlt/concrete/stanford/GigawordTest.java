@@ -33,6 +33,7 @@ import edu.jhu.hlt.concrete.communications.WritableCommunication;
 import edu.jhu.hlt.concrete.ingesters.gigaword.GigawordDocumentConverter;
 import edu.jhu.hlt.concrete.miscommunication.sectioned.CachedSectionedCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
+import edu.jhu.hlt.concrete.stanford.languages.PipelineLanguage;
 import edu.jhu.hlt.concrete.util.SuperTextSpan;
 
 /**

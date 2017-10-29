@@ -28,7 +28,7 @@ import edu.jhu.hlt.concrete.Tokenization;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
 import edu.jhu.hlt.concrete.stanford.ConcreteStanfordPreCorefAnalytic;
 import edu.jhu.hlt.concrete.stanford.ConcreteStanfordTokensSentenceAnalytic;
-import edu.jhu.hlt.concrete.stanford.PipelineLanguage;
+import edu.jhu.hlt.concrete.stanford.languages.PipelineLanguage;
 import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 
 /**

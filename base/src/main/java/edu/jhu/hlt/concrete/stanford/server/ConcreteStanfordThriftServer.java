@@ -20,7 +20,7 @@ import edu.jhu.hlt.concrete.annotate.AnnotateCommunicationService;
 import edu.jhu.hlt.concrete.services.ConcreteThriftException;
 import edu.jhu.hlt.concrete.stanford.ConcreteStanfordPreCorefAnalytic;
 import edu.jhu.hlt.concrete.stanford.ConcreteStanfordTokensSentenceAnalytic;
-import edu.jhu.hlt.concrete.stanford.PipelineLanguage;
+import edu.jhu.hlt.concrete.stanford.languages.PipelineLanguage;
 
 /**
  * Implementation of concrete-stanford as a service.

@@ -17,7 +17,7 @@ import com.beust.jcommander.Parameter;
 
 import edu.jhu.hlt.concrete.server.ConcreteServer;
 import edu.jhu.hlt.concrete.server.ServerException;
-import edu.jhu.hlt.concrete.stanford.PipelineLanguage;
+import edu.jhu.hlt.concrete.stanford.languages.PipelineLanguage;
 import edu.jhu.hlt.utilt.ex.LoggedUncaughtExceptionHandler;
 import edu.jhu.hlt.utilt.sys.SystemErrDisabler;
 
@@ -53,7 +53,8 @@ public class ConcreteStanfordThriftServerLauncher {
   public static void main(String[] args) {
     Thread.setDefaultUncaughtExceptionHandler(new LoggedUncaughtExceptionHandler());
     ConcreteStanfordThriftServerLauncher rl = new ConcreteStanfordThriftServerLauncher();
-    JCommander jc = new JCommander(rl, args);
+    JCommander jc = JCommander.newBuilder().addObject(rl).build();
+    jc.parse(args);
     jc.setProgramName(ConcreteStanfordThriftServerLauncher.class.getName());
     if (rl.help) {
       jc.usage();
