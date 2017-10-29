@@ -81,8 +81,8 @@ public class GigawordTest {
 
   @Test
   public void gigawordDocument() throws Exception {
-    this.analytic = new ConcreteStanfordTokensSentenceAnalytic();
-    this.preCorefAnalytic = new ConcreteStanfordPreCorefAnalytic(PipelineLanguage.ENGLISH);
+    this.analytic = PipelineLanguage.ENGLISH.getSentenceTokenizationAnalytic();
+    this.preCorefAnalytic = PipelineLanguage.ENGLISH.getAllAnalytic();
 
     CachedSectionedCommunication csc = new CachedSectionedCommunication(this.comm);
     TokenizedCommunication tkzc = this.analytic.annotate(csc);

@@ -52,7 +52,8 @@ public class NonPTBSpanishTextTest {
 
   @Test
   public void test() throws Exception {
-    TokenizedCommunication wDepParse = new AnnotateNonTokenizedConcrete(PipelineLanguage.SPANISH)
+    TokenizedCommunication wDepParse = PipelineLanguage.SPANISH
+        .getPreCorefAnalytic()
         .annotate(new Communication(comm));
     Tokenization ntkz = wDepParse.getTokenizations().get(0);
     List<TokenTagging> ttList = ntkz.getTokenTaggingList();

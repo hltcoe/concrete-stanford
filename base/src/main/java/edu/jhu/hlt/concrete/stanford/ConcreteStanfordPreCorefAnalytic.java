@@ -53,17 +53,20 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
   private final HeadFinder hf;
   private final Optional<GrammaticalStructureFactory> gramFactory;
   private final ImmutableList<String> postTokenAnnotators;
+  private final boolean isCorefEnabled;
 
   /**
    *
    */
   public ConcreteStanfordPreCorefAnalytic(Properties props, HeadFinder hf,
-      Optional<GrammaticalStructureFactory> gramFactory, ImmutableList<String> postTokenAnnotators) {
+      Optional<GrammaticalStructureFactory> gramFactory,
+      ImmutableList<String> postTokenAnnotators, boolean isCorefEnabled) {
     this.hf = hf;
     this.gramFactory = gramFactory;
     this.postTokenAnnotators = postTokenAnnotators;
     // needed to avoid NPE when using existingAnnotator.
     new StanfordCoreNLP(props);
+    this.isCorefEnabled = isCorefEnabled;
   }
 
   /*
@@ -189,21 +192,21 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
       });
     });
 
-    try {
-      return new CachedTokenizationCommunication(root);
-    } catch (MiscommunicationException e) {
-      throw new AnalyticException(e);
+    if (this.isCorefEnabled) {
+      try {
+        CorefManager coref = new CorefManager(new CachedTokenizationCommunication(root), anno);
+        TokenizedCommunication tcWithCoref = coref.addCoreference();
+        return tcWithCoref;
+      } catch (MiscommunicationException e) {
+        throw new AnalyticException(e);
+      }
+    } else {
+      try {
+        return new CachedTokenizationCommunication(root);
+      } catch (MiscommunicationException e) {
+        throw new AnalyticException(e);
+      }
     }
-//    TODO : put this in its own analytic
-//
-//    try {
-//      // Coref.
-//      CorefManager coref = new CorefManager(new CachedTokenizationCommunication(root), anno);
-//      TokenizedCommunication tcWithCoref = coref.addCoreference();
-//      return tcWithCoref;
-//    } catch (MiscommunicationException e) {
-//      throw new AnalyticException(e);
-//    }
   }
 
   /**

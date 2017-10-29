@@ -265,6 +265,13 @@ public enum PipelineLanguage {
     Properties props = this.getProperties(this.preCorefAnnotators());
     return new ConcreteStanfordPreCorefAnalytic(props,
         this.getHeadFinder(), this.getGrammaticalFactory(),
-        this.getNonTokenizationAnnotators());
+        this.getNonTokenizationAnnotators(), false);
+  }
+
+  public ConcreteStanfordPreCorefAnalytic getAllAnalytic() {
+    Properties props = this.getProperties(this.preCorefAnnotators());
+    return new ConcreteStanfordPreCorefAnalytic(props,
+        this.getHeadFinder(), this.getGrammaticalFactory(),
+        this.getNonTokenizationAnnotators(), true);
   }
 }

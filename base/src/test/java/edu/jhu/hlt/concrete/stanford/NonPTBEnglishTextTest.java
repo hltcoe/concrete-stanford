@@ -29,6 +29,7 @@ import edu.jhu.hlt.concrete.TokenizationKind;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.CachedTokenizationCommunication;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
 import edu.jhu.hlt.concrete.random.RandomConcreteFactory;
+import edu.jhu.hlt.concrete.stanford.languages.PipelineLanguage;
 import edu.jhu.hlt.concrete.uuid.UUIDFactory;
 
 public class NonPTBEnglishTextTest {
@@ -78,7 +79,9 @@ public class NonPTBEnglishTextTest {
     assertTrue(new CommunicationValidator(englishComm).validate());
     TokenizedCommunication tc = new CachedTokenizationCommunication(englishComm);
     assertEquals(1, tc.getTokenizations().size());
-    TokenizedCommunication wDepParse = new ConcreteStanfordPreCorefAnalytic().annotate(tc);
+    TokenizedCommunication wDepParse = PipelineLanguage.ENGLISH
+        .getPreCorefAnalytic()
+        .annotate(tc);
     assertEquals(1, wDepParse.getTokenizations().size());
     Tokenization ntkz = wDepParse.getTokenizations().get(0);
     List<TokenTagging> ttList = ntkz.getTokenTaggingList();

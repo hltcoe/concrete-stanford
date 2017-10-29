@@ -17,9 +17,7 @@ import org.slf4j.LoggerFactory;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.ingesters.gigaword.GigawordDocumentConverter;
 import edu.jhu.hlt.concrete.miscommunication.tokenized.TokenizedCommunication;
-import edu.jhu.hlt.concrete.stanford.ConcreteStanfordTokensSentenceAnalytic;
-import edu.jhu.hlt.concrete.stanford.ConcreteToStanfordMapper;
-import edu.jhu.hlt.concrete.stanford.MarkupRewriter;
+import edu.jhu.hlt.concrete.stanford.languages.PipelineLanguage;
 import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
@@ -49,7 +47,8 @@ public class CorefTest {
 
   @Test
   public void test() throws Exception {
-    ConcreteStanfordTokensSentenceAnalytic firstAnalytic = new ConcreteStanfordTokensSentenceAnalytic();
+    ConcreteStanfordTokensSentenceAnalytic firstAnalytic =
+        PipelineLanguage.ENGLISH.getSentenceTokenizationAnalytic();
     TokenizedCommunication tc = firstAnalytic.annotate(this.comm);
     List<CoreMap> allCmList = new ArrayList<>();
     tc.getSections().forEach(sect -> {

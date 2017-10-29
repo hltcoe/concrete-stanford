@@ -22,8 +22,9 @@ import com.nytlabs.corpus.NYTCorpusDocumentParser;
 
 import edu.jhu.hlt.annotatednyt.AnnotatedNYTDocument;
 import edu.jhu.hlt.concrete.Communication;
-import edu.jhu.hlt.concrete.analytics.base.AnalyticException;
 import edu.jhu.hlt.concrete.ingesters.annotatednyt.CommunicationizableAnnotatedNYTDocument;
+import edu.jhu.hlt.concrete.miscommunication.WrappedCommunication;
+import edu.jhu.hlt.concrete.stanford.languages.PipelineLanguage;
 import edu.stanford.nlp.dcoref.CorefChain;
 import edu.stanford.nlp.dcoref.CorefCoreAnnotations.CorefChainAnnotation;
 import edu.stanford.nlp.pipeline.Annotation;
@@ -48,12 +49,6 @@ public class AnnotatedNYTTest {
       byte[] nytdocbytes = IOUtils.toByteArray(bin);
       this.nytComm = new CommunicationizableAnnotatedNYTDocument(new AnnotatedNYTDocument(parser.fromByteArray(nytdocbytes, false))).toCommunication();
     }
-  }
-
-  public Communication annotate (Communication orig) throws AnalyticException {
-    Communication cp = new Communication(orig);
-    final String commTxt = cp.getText();
-    return cp;
   }
 
   @Test
@@ -83,8 +78,14 @@ public class AnnotatedNYTTest {
     LOGGER.info("Got document: {}", document);
     LOGGER.info("Got document: {}", document.toString());
 
-    AnnotateNonTokenizedConcrete tk = new AnnotateNonTokenizedConcrete();
-    StanfordPostNERCommunication postNER = tk.annotate(this.nytComm);
+    PipelineLanguage eng = PipelineLanguage.ENGLISH;
+    ConcreteStanfordTokensSentenceAnalytic a1 = eng.getSentenceTokenizationAnalytic();
+    WrappedCommunication wc = a1.annotate(this.nytComm);
+    ConcreteStanfordPreCorefAnalytic a2 = eng.getPreCorefAnalytic();
+    wc = a2.annotate(wc.getRoot());
+    ConcreteStanfordPreCorefAnalytic a3 = eng.getAllAnalytic();
+    wc = a3.annotate(wc.getRoot());
+    StanfordPostNERCommunication postNER = new StanfordPostNERCommunication(wc.getRoot());
     postNER.getEntityMentions().forEach(em -> LOGGER.info("Got EM: {}", em));
   }
 }

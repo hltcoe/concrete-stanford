@@ -72,7 +72,7 @@ public class NonPTBChineseTextTest {
     assertTrue(new CommunicationValidator(chineseComm).validate());
 
     TokenizedCommunication tc = new CachedTokenizationCommunication(chineseComm);
-    TokenizedCommunication wDepParse = new ConcreteStanfordPreCorefAnalytic(PipelineLanguage.CHINESE).annotate(tc);
+    TokenizedCommunication wDepParse = PipelineLanguage.CHINESE.getPreCorefAnalytic().annotate(chineseComm);
 
     List<Section> sectList = tc.getSections();
     sectList.forEach(s -> {
