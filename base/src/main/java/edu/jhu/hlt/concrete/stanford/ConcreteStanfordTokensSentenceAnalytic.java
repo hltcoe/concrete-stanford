@@ -151,7 +151,7 @@ public class ConcreteStanfordTokensSentenceAnalytic implements SectionedCommunic
     final int newSize = sList.size();
     final int oSize = arg0.getSections().size();
     if (newSize < oSize)
-      LOGGER.warn("Dropped {} section(s) because they were zero-length or contained only whitespace.", oSize - newSize);
+      LOGGER.info("Dropped {} section(s) because they were zero-length or contained only whitespace.", oSize - newSize);
     // for each section, run stanford tokenization and sentence splitting
     for (Section s : sList) {
       LOGGER.debug("Annotating section: {}", s.getUuid().getUuidString());

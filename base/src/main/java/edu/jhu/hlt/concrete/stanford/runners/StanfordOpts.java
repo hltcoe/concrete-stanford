@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.time.StopWatch;
@@ -46,13 +45,8 @@ public class StanfordOpts {
     return this.paths.isEmpty();
   }
 
-  public ImmutableList<Analytic<? extends WrappedCommunication>> getAnalytics(PipelineLanguage lang) {
-    List<Analytic<? extends WrappedCommunication>> al = new ArrayList<>();
-    if (!this.stanfordParams.isInputTokenized)
-      al.add(lang.getSentenceTokenizationAnalytic());
-    if (!this.stanfordParams.isOnlyUpToTokenization)
-      al.add(lang.getPreCorefAnalytic());
-    return ImmutableList.copyOf(al);
+  public boolean help() {
+    return this.ingesterParams.help;
   }
 
   public List<Path> validatePaths() throws IOException {
@@ -73,12 +67,18 @@ public class StanfordOpts {
    * @throws IOException
    */
   public void pipeline(PipelineLanguage lang) throws IOException {
-    List<Analytic<? extends WrappedCommunication>> analytics = this.getAnalytics(lang);
-    if (analytics.isEmpty())
-      throw new IOException("Configuration resulted in no analytics specified");
+    if (this.noPaths())
+      throw new IOException("No paths specified");
+    List<Analytic<? extends WrappedCommunication>> analytics =
+        this.stanfordParams.getAnalytics(lang);
     // pull out the first analytic to get into the interface
     // e.g. Comm -> WrappedComm
     Analytic<? extends WrappedCommunication> first = analytics.get(0);
+    List<Analytic<? extends WrappedCommunication>> rest;
+    if (analytics.size() > 1)
+      rest = analytics.subList(1, analytics.size());
+    else
+      rest = ImmutableList.of();
     this.ingesterParams.prepare();
     LOGGER.info("Ingest beginning");
     StopWatch sw = new StopWatch();
@@ -93,10 +93,9 @@ public class StanfordOpts {
             try {
               WrappedCommunication wc = first.annotate(c);
               // chain add'l analytics
-              for (Analytic<? extends WrappedCommunication> a : analytics) {
+              for (Analytic<? extends WrappedCommunication> a : rest) {
                 wc = a.annotate(wc.getRoot());
               }
-
               // write output
               arch.addEntry(new ArchivableCommunication(wc.getRoot()));
             } catch (AnalyticException ae) {
