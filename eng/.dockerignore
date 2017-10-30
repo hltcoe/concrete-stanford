@@ -1,0 +1,5 @@
+*.comm
+*.gz
+*.script
+*.log
+*.properties
