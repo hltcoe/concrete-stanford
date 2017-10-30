@@ -1,0 +1,54 @@
+{
+  "configuration": {
+    "appenders": {
+      "Console": {
+        "name": "STDOUT",
+        "target": "SYSTEM_OUT",
+        "PatternLayout": {
+          "pattern": "%d %-5p %c{1.} [%t] %m%n"
+        }
+      }
+    },
+    "loggers": {
+      "root": {
+        "level": "info",
+        "appender-ref": {
+          "ref": "STDOUT"
+        }
+      },
+
+      "logger" : [
+        {
+          "name" : "com.hp.hpl",
+          "level": "warn",
+          "appender-ref": {
+            "ref": "STDOUT"
+          }
+        },
+
+        {
+          "name" : "org.apache.zookeeper",
+          "level": "warn",
+          "appender-ref": {
+            "ref": "STDOUT"
+          }
+        },
+
+        {
+          "name" : "edu.jhu.hlt.gigaword",
+          "level" : "info",
+          "appender-ref": {
+            "ref": "STDOUT"
+          }
+        },
+        {
+          "name" : "org.apache.jena",
+          "level": "warn",
+          "appender-ref": {
+            "ref": "STDOUT"
+          }
+        }
+      ]
+    }
+  }
+}
