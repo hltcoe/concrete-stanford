@@ -7,13 +7,9 @@
     <version>4.14.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>concrete-stanford-english</artifactId>
-  <name>English</name>
-  <description>Concrete Stanford English-specific tools and executables</description>
-
-  <properties>
-    <app.main.class>edu.jhu.hlt.concrete.stanford.english.Runner</app.main.class>
-  </properties>
+  <artifactId>concrete-stanford-chinese</artifactId>
+  <name>Chinese tools</name>
+  <description>Concrete Stanford Chinese-specific tools and executables</description>
 
   <build>
     <plugins>
@@ -72,13 +68,6 @@
               <shadedArtifactAttached>false</shadedArtifactAttached>
               <createDependencyReducedPom>false</createDependencyReducedPom>
               <finalName>${project.artifactId}-${project.version}-uberjar</finalName>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <manifestEntries>
-                    <Main-Class>${app.main.class}</Main-Class>
-                  </manifestEntries>
-                </transformer>
-              </transformers>
             </configuration>
           </execution>
         </executions>
@@ -104,32 +93,6 @@
       <artifactId>commons-lang3</artifactId>
     </dependency>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>concrete-ingesters-gigaword</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>concrete-ingesters-bolt</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>concrete-ingesters-annotated-nyt</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>tift</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>miscommunication</artifactId>
     </dependency>
@@ -140,10 +103,6 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-ingesters-base</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>edu.jhu.hlt</groupId>
-      <artifactId>concrete-server</artifactId>
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
@@ -160,7 +119,7 @@
     <dependency>
       <groupId>edu.stanford.nlp</groupId>
       <artifactId>stanford-corenlp</artifactId>
-      <classifier>models</classifier>
+      <classifier>models-chinese</classifier>
       <scope>runtime</scope>
     </dependency>
     <dependency>

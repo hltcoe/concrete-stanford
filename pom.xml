@@ -15,8 +15,9 @@
   <modules>
     <module>base</module>
     <module>eng</module>
+    <module>zho</module>
+    <module>esp</module>
     <module>annotate</module>
-    <module>legacy</module>
   </modules>
 
   <name>Concrete Stanford</name>
@@ -89,25 +90,6 @@
               <sources>
                 <source>${project.build.directory}/filtered-java-src</source>
               </sources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>3.1.0</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <shadedArtifactAttached>false</shadedArtifactAttached>
-              <createDependencyReducedPom>false</createDependencyReducedPom>
-              <finalName>${project.artifactId}-${project.version}-uberjar</finalName>
             </configuration>
           </execution>
         </executions>

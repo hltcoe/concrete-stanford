@@ -92,7 +92,6 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>tift</artifactId>
-      <version>${concrete.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -128,19 +127,19 @@
       <groupId>edu.stanford.nlp</groupId>
       <artifactId>stanford-corenlp</artifactId>
       <classifier>models</classifier>
-      <scope>runtime</scope>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>edu.stanford.nlp</groupId>
       <artifactId>stanford-corenlp</artifactId>
       <classifier>models-chinese</classifier>
-      <scope>runtime</scope>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>edu.stanford.nlp</groupId>
       <artifactId>stanford-corenlp</artifactId>
       <classifier>models-spanish</classifier>
-      <scope>runtime</scope>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.beust</groupId>
