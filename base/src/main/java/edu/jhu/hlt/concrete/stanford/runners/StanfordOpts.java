@@ -3,6 +3,7 @@ package edu.jhu.hlt.concrete.stanford.runners;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,6 +41,10 @@ public class StanfordOpts {
   @Parameter(description = "/path/to/1.tar.gz /path/to/2.tar.gz ...",
       required = true)
   private List<String> paths;
+
+  public void handleStdError() throws UnsupportedEncodingException {
+    this.stanfordParams.handleStdErr();
+  }
 
   public boolean noPaths() {
     return this.paths.isEmpty();

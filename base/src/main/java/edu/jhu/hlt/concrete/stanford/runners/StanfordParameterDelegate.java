@@ -1,6 +1,7 @@
 package edu.jhu.hlt.concrete.stanford.runners;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +14,7 @@ import com.google.common.collect.ImmutableList;
 import edu.jhu.hlt.concrete.analytics.base.Analytic;
 import edu.jhu.hlt.concrete.miscommunication.WrappedCommunication;
 import edu.jhu.hlt.concrete.stanford.languages.PipelineLanguage;
+import edu.jhu.hlt.utilt.sys.SystemErrDisabler;
 
 /**
  * Utility class for stanford command line parameters.
@@ -20,6 +22,8 @@ import edu.jhu.hlt.concrete.stanford.languages.PipelineLanguage;
 public class StanfordParameterDelegate {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(StanfordParameterDelegate.class);
+
+  private SystemErrDisabler errDisabler = new SystemErrDisabler();
 
   @Parameter(names = "--fail-fast", description="Stop with a non-zero status code on the first exception. Useful if each document is expected to be successfully processed.")
   boolean exitOnException = false;
@@ -33,6 +37,10 @@ public class StanfordParameterDelegate {
   @Parameter(names = "--run-coref",
       description = "Run coreference resolution on the communications. Currently only enabled for English.")
   boolean isCoreferenceEnabled = false;
+
+  @Parameter(names = "--silence-std-err",
+      description = "Silence standard error. By default, Stanford prints a lot of output to std err.")
+  boolean isStdErrSilenced = true;
 
   public ImmutableList<Analytic<? extends WrappedCommunication>> getAnalytics(PipelineLanguage lang) throws IOException {
     List<Analytic<? extends WrappedCommunication>> al = new ArrayList<>();
@@ -65,5 +73,10 @@ public class StanfordParameterDelegate {
       throw new IOException("Configuration resulted in no analytics specified");
 
     return analytics;
+  }
+
+  public void handleStdErr() throws UnsupportedEncodingException {
+    if (this.isStdErrSilenced)
+      this.errDisabler.disable();
   }
 }

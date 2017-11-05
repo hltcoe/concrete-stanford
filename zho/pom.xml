@@ -11,6 +11,10 @@
   <name>Chinese tools</name>
   <description>Concrete Stanford Chinese-specific tools and executables</description>
 
+  <properties>
+    <app.main.class>edu.jhu.hlt.concrete.stanford.chinese.Runner</app.main.class>
+  </properties>
+
   <build>
     <plugins>
       <plugin>
@@ -68,6 +72,13 @@
               <shadedArtifactAttached>false</shadedArtifactAttached>
               <createDependencyReducedPom>false</createDependencyReducedPom>
               <finalName>${project.artifactId}-${project.version}-uberjar</finalName>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <manifestEntries>
+                    <Main-Class>${app.main.class}</Main-Class>
+                  </manifestEntries>
+                </transformer>
+              </transformers>
             </configuration>
           </execution>
         </executions>
@@ -99,6 +110,10 @@
     <dependency>
       <groupId>edu.jhu.hlt</groupId>
       <artifactId>concrete-util</artifactId>
+    </dependency>
+        <dependency>
+      <groupId>edu.jhu.hlt</groupId>
+      <artifactId>utilt</artifactId>
     </dependency>
     <dependency>
       <groupId>edu.jhu.hlt</groupId>

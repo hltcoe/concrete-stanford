@@ -27,6 +27,7 @@ public class Runner {
     PipelineLanguage lang = PipelineLanguage.CHINESE;
     boolean failed = false;
     try {
+      opts.handleStdError();
       opts.pipeline(lang);
     } catch (IOException e) {
       LOGGER.error("Error during processing", e);

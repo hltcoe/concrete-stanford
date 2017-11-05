@@ -36,7 +36,7 @@
   </licenses>
 
   <properties>
-    <concrete.version>4.14.2-SNAPSHOT</concrete.version>
+    <concrete.version>4.14.2</concrete.version>
     <stanford.version>3.5.2</stanford.version>
   </properties>
 
@@ -111,6 +111,11 @@
         <groupId>edu.jhu.hlt</groupId>
         <artifactId>concrete-stanford-base</artifactId>
         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>edu.jhu.hlt</groupId>
+        <artifactId>utilt</artifactId>
+        <version>2.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.commons</groupId>
