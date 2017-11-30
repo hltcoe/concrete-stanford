@@ -11,7 +11,7 @@ variables:
 
 test:
   stage: build-unit-test
-  image: $CI_REGISTRY/research/coe-maven:latest
+  image: $CI_REGISTRY/research/coe-maven-centos:latest
   script:
     - mvn $MAVEN_CLI_OPTS clean verify
   tags:
@@ -19,7 +19,7 @@ test:
 
 maven-install:
   stage: install
-  image: $CI_REGISTRY/research/coe-maven:latest
+  image: $CI_REGISTRY/research/coe-maven-centos:latest
   script:
     - mvn $MAVEN_CLI_OPTS install -DskipTests
   tags:
@@ -27,7 +27,7 @@ maven-install:
 
 maven-deploy:
   stage: deploy
-  image: $CI_REGISTRY/research/coe-maven:latest
+  image: $CI_REGISTRY/research/coe-maven-centos:latest
   script:
     - cd base
     - mvn $MAVEN_CLI_OPTS clean deploy -B -Pcoe
