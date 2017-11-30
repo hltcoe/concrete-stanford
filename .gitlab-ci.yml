@@ -11,7 +11,7 @@ variables:
 
 test:
   stage: build-unit-test
-  image: r8n01:5000/coe-maven-centos:latest
+  image: $CI_REGISTRY/research/coe-maven:latest
   script:
     - mvn $MAVEN_CLI_OPTS clean verify
   tags:
@@ -19,7 +19,7 @@ test:
 
 maven-install:
   stage: install
-  image: r8n01:5000/coe-maven:latest
+  image: $CI_REGISTRY/research/coe-maven:latest
   script:
     - mvn $MAVEN_CLI_OPTS install -DskipTests
   tags:
@@ -27,21 +27,22 @@ maven-install:
 
 maven-deploy:
   stage: deploy
-  image: r8n01:5000/coe-maven-centos:latest
+  image: $CI_REGISTRY/research/coe-maven:latest
   script:
+    - cd base
     - mvn $MAVEN_CLI_OPTS clean deploy -B -Pcoe
+    - cd -
   tags:
     - docker
   only:
     - master
 
-docker-deploy:
+docker-deploy-eng:
   stage: docker
   script:
-    - docker pull r8n01:5000/coe-maven-centos:latest
-    - docker build -t concrete-stanford .
-    - docker tag concrete-stanford r8n01:5000/concrete-stanford:latest
-    - docker push r8n01:5000/concrete-stanford:latest
+    - cd eng
+    - docker build -t $CI_REGISTRY/research/concrete-stanford-eng:latest .
+    - docker push $CI_REGISTRY/research/concrete-stanford-eng:latest
   tags:
     - shell
   only:
