@@ -21,18 +21,13 @@ test:
   tags:
     - docker
 
-maven-install:
+maven-install-base:
   stage: install
   image: $CI_REGISTRY/research/coe-maven-centos:latest
-  artifacts:
-    expire_in: 1 day
-    paths:
-      - artifacts
   script:
+    - cd base
     - mvn $MAVEN_CLI_OPTS install -DskipTests
-    - find eng -name "concrete-*uberjar.jar" -exec cp {} artifacts/ \;
-    - find esp -name "concrete-*uberjar.jar" -exec cp {} artifacts/ \;
-    - find zho -name "concrete-*uberjar.jar" -exec cp {} artifacts/ \;
+    - cd -
   tags:
     - docker
 
@@ -41,7 +36,7 @@ maven-deploy:
   image: $CI_REGISTRY/research/coe-maven-centos:latest
   script:
     - cd base
-    - mvn $MAVEN_CLI_OPTS clean deploy -B -Pcoe
+    - mvn $MAVEN_CLI_OPTS deploy -DskipTests -Pcoe
     - cd -
   tags:
     - docker
@@ -50,14 +45,9 @@ maven-deploy:
 
 docker-deploy-eng:
   stage: docker
-  artifacts:
-    paths:
-      - artifacts
   script:
-    # make a target dir so that the Dockerfile is universal
-    - mkdir target
-    # copy the english jar over
-    - find artifacts -name "*eng*" -exec cp {} target/ \;
+    - cd eng
+    - mvn $MAVEN_CLI_OPTS package -DskipTests
     - docker build -t $CI_REGISTRY/research/concrete-stanford-eng:latest .
     - docker push $CI_REGISTRY/research/concrete-stanford-eng:latest
   tags:
