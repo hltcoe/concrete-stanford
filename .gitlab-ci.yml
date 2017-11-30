@@ -32,6 +32,9 @@ maven-install:
 maven-deploy:
   stage: deploy
   image: $CI_REGISTRY/research/coe-maven-centos:latest
+  cache:
+    untracked: true
+    policy: push
   script:
     - cd base
     - mvn $MAVEN_CLI_OPTS deploy -DskipTests -Pcoe
@@ -43,6 +46,9 @@ maven-deploy:
 
 docker-deploy-eng:
   stage: docker
+  cache:
+    untracked: true
+    policy: pull
   script:
     - cd eng
     - docker build -t $CI_REGISTRY/research/concrete-stanford-eng:latest .
