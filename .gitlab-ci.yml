@@ -21,13 +21,11 @@ test:
   tags:
     - docker
 
-maven-install-base:
+maven-install:
   stage: install
   image: $CI_REGISTRY/research/coe-maven-centos:latest
   script:
-    - cd base
     - mvn $MAVEN_CLI_OPTS install -DskipTests
-    - cd -
   tags:
     - docker
 
@@ -47,7 +45,6 @@ docker-deploy-eng:
   stage: docker
   script:
     - cd eng
-    - mvn $MAVEN_CLI_OPTS package -DskipTests
     - docker build -t $CI_REGISTRY/research/concrete-stanford-eng:latest .
     - docker push $CI_REGISTRY/research/concrete-stanford-eng:latest
   tags:
