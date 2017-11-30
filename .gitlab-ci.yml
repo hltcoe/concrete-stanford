@@ -50,7 +50,7 @@ maven-deploy:
 
 docker-deploy-eng:
   stage: docker
-  artifacs:
+  artifacts:
     paths:
       - artifacts
   script:
