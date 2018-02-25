@@ -38,9 +38,9 @@ public class StanfordParameterDelegate {
       description = "Run coreference resolution on the communications. Currently only enabled for English.")
   boolean isCoreferenceEnabled = false;
 
-  @Parameter(names = "--silence-std-err",
-      description = "Silence standard error. By default, Stanford prints a lot of output to std err.")
-  boolean isStdErrSilenced = true;
+  @Parameter(names = "--enable-std-err",
+      description = "Enable standard error. By default, Stanford prints a lot of output to std err.")
+  boolean isStdErrEnabled = false;
 
   public ImmutableList<Analytic<? extends WrappedCommunication>> getAnalytics(PipelineLanguage lang) throws IOException {
     List<Analytic<? extends WrappedCommunication>> al = new ArrayList<>();
@@ -76,7 +76,7 @@ public class StanfordParameterDelegate {
   }
 
   public void handleStdErr() throws UnsupportedEncodingException {
-    if (this.isStdErrSilenced)
+    if (!this.isStdErrEnabled)
       this.errDisabler.disable();
   }
 }
