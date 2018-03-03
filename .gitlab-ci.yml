@@ -3,15 +3,10 @@ stages:
   - install
   - integration-test
   - deploy
-  - docker
 
 variables:
   MAVEN_OPTS: "-Dmaven.repo.local=/cache/.m2/repository"
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
-
-before_script:
-  # make artifacts dir
-  - mkdir -p $CI_PROJECT_DIR/artifacts
 
 test:
   stage: build-unit-test
@@ -29,12 +24,9 @@ maven-install:
   tags:
     - docker
 
-maven-deploy:
+maven-deploy-base:
   stage: deploy
   image: $CI_REGISTRY/research/coe-maven-centos:latest
-  cache:
-    untracked: true
-    policy: push
   script:
     - cd base
     - mvn $MAVEN_CLI_OPTS deploy -DskipTests -Pcoe
@@ -43,17 +35,4 @@ maven-deploy:
     - docker
   only:
     - master
-
-docker-deploy-eng:
-  stage: docker
-  cache:
-    untracked: true
-    policy: pull
-  script:
-    - cd eng
-    - docker build -t $CI_REGISTRY/research/concrete-stanford-eng:latest .
-    - docker push $CI_REGISTRY/research/concrete-stanford-eng:latest
-  tags:
-    - shell
-  only:
-    - master
+    - tags
