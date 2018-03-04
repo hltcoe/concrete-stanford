@@ -12,3 +12,4 @@ pom.xml.versionsBackup
 xtend-gen/
 *.db
 target/original*.jar
+*/target/
