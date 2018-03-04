@@ -37,6 +37,18 @@ Usage: <main class> [options] /path/to/1.tar.gz /path/to/2.tar.gz ...
       Default: false
 ```
 
+The following example would mount a volume of data in the image, run only
+the tokenization phase, and write the output to the mounted volume:
+
+```
+docker run --rm -it \
+    --volume $HOME/mounts/docker/:/out/ \
+    --name some-stanford \
+    hltcoe/concrete-stanford:eng-latest \
+    --only-tokenize \
+    --output-path /out/eng-tokenized-docker.tar.gz \
+    /out/eng.tar.gz
+```
 
 
 ## Build
