@@ -1,31 +1,18 @@
-FROM hltcoe/concrete-java:v4.13.2
+FROM maven:3-jdk-8 as builder
 
-ENV STANFORD=/home/concrete/concrete-stanford
+ENV MAVEN_OPTS "-Dmaven.repo.local=/cache/.m2/repository"
+ENV MAVEN_CLI_OPTS "--batch-mode --errors --fail-at-end --show-version"
 
-RUN mkdir $STANFORD
-COPY docker-entrypoint.sh $STANFORD
-COPY pom.xml $STANFORD
-COPY src $STANFORD/src
+RUN mkdir build
+WORKDIR build
 
-# The COPY command creates files owned by root, but RUN commands have
-# the permissions for the user specified by USER - which, in the
-# parent Dockerfile, is set to 'concrete'.
-USER root
-RUN chown -R concrete:concrete $STANFORD
-USER concrete
+COPY . .
 
-RUN cd $STANFORD && \
-    mvn -B clean compile verify assembly:single \
-        -Dskiptests=true \
-	-Dmaven.test.skip=true && \
-    mv `find target -name "concrete-stanford-*-jar-with-dependencies.jar"` \
-       concrete-stanford.jar && \
-    mvn -B clean && \
-    rm -rf /home/concrete/.m2
+RUN mvn $MAVEN_CLI_OPTS clean install -DskipTests
 
-ENV DEFAULT_ANALYTIC_PORT=${DEFAULT_ANALYTIC_PORT:-33221}
-EXPOSE $DEFAULT_ANALYTIC_PORT
+FROM openjdk:8-jre-alpine
 
-ENTRYPOINT ["/home/concrete/concrete-stanford/docker-entrypoint.sh"]
+COPY --from=builder build/annotate/target/concrete*uberjar.jar /app.jar
 
+ENTRYPOINT ["/usr/bin/java", "-jar", "/app.jar"]
 CMD ["--help"]
