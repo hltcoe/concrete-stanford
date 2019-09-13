@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="562066c4-2d16-4b5d-a5b8-9096e9476726" name="taki.rs.umbc.edu" url="http://taki.rs.umbc.edu">
+        <fileTransfer host="taki.rs.umbc.edu" port="22" rootFolder="/home/rpatel12/ferraro_user" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
