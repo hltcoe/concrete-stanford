@@ -60,6 +60,7 @@ public class AnnotatedNYTTest {
 
     // create an empty Annotation just with the given text
     Annotation document = new Annotation(text);
+    LOGGER.debug("Debug document: {}", document);
 
     // run all Annotators on this text
     pipeline.annotate(document);
