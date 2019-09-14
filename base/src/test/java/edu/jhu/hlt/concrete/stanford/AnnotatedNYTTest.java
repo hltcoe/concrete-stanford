@@ -61,7 +61,7 @@ public class AnnotatedNYTTest {
     // create an empty Annotation just with the given text
     Annotation document = new Annotation(text);
     LOGGER.debug("Debug document: {}", document);
-
+    LOGGER.debug("CorefChainAnnotation ==> : {}", document.get(CorefChainAnnotation.class));
     // run all Annotators on this text
     pipeline.annotate(document);
 
@@ -70,6 +70,8 @@ public class AnnotatedNYTTest {
     // along with a method for getting the most representative mention
     // Both sentence and token offsets start at 1!
     Map<Integer, CorefChain> graph = document.get(CorefChainAnnotation.class);
+
+
     graph.entrySet().forEach(e -> {
       LOGGER.info("Got coref key: {}", e.getKey());
       LOGGER.info("Got coref val: {}", e.getValue());
