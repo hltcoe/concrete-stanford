@@ -153,14 +153,15 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     allCoreMaps.forEach(cm -> LOGGER.trace("Got CoreMap pre-coref: {}", cm.toShorterString(new String[0])));
     Annotation anno = new Annotation(allCoreMaps);
     anno.set(TextAnnotation.class, noMarkup);
-//    fixNullDependencyGraphs(anno);
+
 
     // TODO: it's possible that fixNullDependencyGraphs needs to be called
+    fixNullDependencyGraphs(anno);
     // before dcoref annotator is called. TB investigated further.
     for (String annotator : this.postTokenAnnotators) {
       LOGGER.debug("Running annotator: {}", annotator);
-      fixNullDependencyGraphs(anno);
       (StanfordCoreNLP.getExistingAnnotator(annotator)).annotate(anno);
+
     }
 
     anno.get(SentencesAnnotation.class).forEach(cm -> LOGGER.trace("Got CoreMaps post-coref: {}", cm.toShorterString(new String[0])));
