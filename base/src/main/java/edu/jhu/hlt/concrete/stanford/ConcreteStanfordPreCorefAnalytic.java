@@ -155,8 +155,9 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
     anno.set(TextAnnotation.class, noMarkup);
 
 
-    // TODO: it's possible that fixNullDependencyGraphs needs to be called
-    fixNullDependencyGraphs(anno);
+
+//    fixNullDependencyGraphs(anno);
+    // TODO: it's possible that fiullDependencyGraphs needs to be called
     // before dcoref annotator is called. TB investigated further.
     for (String annotator : this.postTokenAnnotators) {
       LOGGER.debug("Running annotator: {}", annotator);

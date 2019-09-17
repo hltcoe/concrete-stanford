@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.nytlabs.corpus.NYTCorpusDocumentParser;
-
+//import edu.jhu.hlt.concrete.stanford.fixNullDependencyGraphs;
 import edu.jhu.hlt.annotatednyt.AnnotatedNYTDocument;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.ingesters.annotatednyt.CommunicationizableAnnotatedNYTDocument;
@@ -61,17 +61,19 @@ public class AnnotatedNYTTest {
     // create an empty Annotation just with the given text
     Annotation document = new Annotation(text);
     LOGGER.debug("Debug document: {}", document);
-    LOGGER.debug("CorefChainAnnotation ==> : {}", document.get(CorefChainAnnotation.class));
-    // run all Annotators on this text
+    LOGGER.debug("Core{}", document.get(CorefChainAnnotation.class));
+
+  // run all Annotators on this text
     pipeline.annotate(document);
+
 
     // This is the coreference link graph
     // Each chain stores a set of mentions that link to each other,
     // along with a method for getting the most representative mention
     // Both sentence and token offsets start at 1!
+
     Map<Integer, CorefChain> graph = document.get(CorefChainAnnotation.class);
-
-
+    LOGGER.debug("Coreref Graph ==> {}", graph);
     graph.entrySet().forEach(e -> {
       LOGGER.info("Got coref key: {}", e.getKey());
       LOGGER.info("Got coref val: {}", e.getValue());
