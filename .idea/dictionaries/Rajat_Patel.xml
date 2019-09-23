@@ -3,6 +3,10 @@
     <words>
       <w>coref</w>
       <w>coreference</w>
+      <w>distsim</w>
+      <w>lexparser</w>
+      <w>segmenter</w>
+      <w>sighan</w>
       <w>slist</w>
       <w>ssplit</w>
       <w>tokenization</w>
