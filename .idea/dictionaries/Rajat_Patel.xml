@@ -4,6 +4,8 @@
       <w>coref</w>
       <w>coreference</w>
       <w>slist</w>
+      <w>ssplit</w>
+      <w>tokenization</w>
     </words>
   </dictionary>
 </component>

@@ -12,7 +12,6 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;
 
-import edu.stanford.nlp.coref.data.CorefChain;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,13 +21,14 @@ import org.slf4j.LoggerFactory;
 import com.nytlabs.corpus.NYTCorpusDocumentParser;
 //import edu.jhu.hlt.concrete.stanford.fixNullDependencyGraphs;
 import edu.stanford.nlp.coref.CorefCoreAnnotations;
-//import edu.stanford.nlp.coref.data.CorefChain;
+import edu.stanford.nlp.coref.data.CorefChain;
 import edu.jhu.hlt.annotatednyt.AnnotatedNYTDocument;
 import edu.jhu.hlt.concrete.Communication;
 import edu.jhu.hlt.concrete.ingesters.annotatednyt.CommunicationizableAnnotatedNYTDocument;
 import edu.jhu.hlt.concrete.miscommunication.WrappedCommunication;
 import edu.jhu.hlt.concrete.stanford.languages.PipelineLanguage;
-//import edu.stanford.nlp.dcoref.CorefCoreAnnotations.CorefChainAnnotation;
+import edu.stanford.nlp.dcoref.CorefCoreAnnotations.CorefChainAnnotation;
+//import edu.stanford.nlp.dcoref.CorefChain;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.naturalli.NaturalLogicAnnotations;
@@ -70,27 +70,28 @@ public class AnnotatedNYTTest {
 //    String text = "Johns Hopkins University was started by Johns Hopkins. Johns Hopkins was a good man.";
     String text = "Barack Obama was born in Hawaii.  He is the president. Obama was elected in 2008.";
     Properties props = new Properties();
-//    props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
-//    props.setProperty("annotators", "tokenize,ssplit,pos,lemma,ner,parse,coref");
-    props.setProperty("annotators", "tokenize,ssplit,pos,lemma,depparse,natlog,openie");
+    props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
+//    props.setProperty("annotators", "tokenize, ssplit, pos,lemma,ner,parse,coref");
+//    props.setProperty("annotators", "tokenize,ssplit,pos,lemma,depparse,natlog,openie");
     StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
 
     // create an empty Annotation just with the given text
     Annotation document = new Annotation(text);
     // run all Annotators on this text
     pipeline.annotate(document);
-    for (CoreMap sentence : document.get(CoreAnnotations.SentencesAnnotation.class)) {
-      // Get the OpenIE triples for the sentence
-      Collection<RelationTriple> triples =
-              sentence.get(NaturalLogicAnnotations.RelationTriplesAnnotation.class);
-      // Print the triples
-      for (RelationTriple triple : triples) {
-        System.out.println(triple.confidence + "\t" +
-                triple.subjectLemmaGloss() + "\t" +
-                triple.relationLemmaGloss() + "\t" +
-                triple.objectLemmaGloss());
-      }
-    }
+    // commented code below is working example for openie annotation, test will fail if we openie not used
+//    for (CoreMap sentence : document.get(CoreAnnotations.SentencesAnnotation.class)) {
+//      // Get the OpenIE triples for the sentence
+//      Collection<RelationTriple> triples =
+//              sentence.get(NaturalLogicAnnotations.RelationTriplesAnnotation.class);
+//      // Print the triples
+//      for (RelationTriple triple : triples) {
+//        LOGGER.debug("triple confidence & elements {}", triple.confidence + "\t" +
+//                triple.subjectLemmaGloss() + "\t" +
+//                triple.relationLemmaGloss() + "\t" +
+//                triple.objectLemmaGloss());
+//      }
+//    }
 
 
     LOGGER.debug("Debug document: {}", document);
@@ -98,16 +99,18 @@ public class AnnotatedNYTTest {
 
   // run all Annotators on this text
 //    pipeline.annotate(document);
-
+//    for (CorefChain cc : document.get(CorefCoreAnnotations.CorefChainAnnotation.class).values()) {
+//      System.out.println("\t" + cc);
+//      LOGGER.debug("Got coref val: {}", cc);
+//    }
 
     // This is the coreference link graph
     // Each chain stores a set of mentions that link to each other,
     // along with a method for getting the most representative mention
     // Both sentence and token offsets start at 1!
-//    for (CorefChain cc : document.get(CorefCoreAnnotations.CorefChainAnnotation.class).values()) {
-//      System.out.println("\t" + cc);
-//      LOGGER.debug("Got coref val: {}", cc);
-//    }
+    // function call changes coming from github issue and recommendation
+    // https://github.com/stanfordnlp/CoreNLP/issues/154
+
 
     Map<Integer, CorefChain> graph = document.get(CorefCoreAnnotations.CorefChainAnnotation.class);
     LOGGER.debug("dCoreref Graph ==> {}", graph);

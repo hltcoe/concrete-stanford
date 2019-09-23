@@ -56,7 +56,8 @@ public enum PipelineLanguage {
 
     @Override
     String allAvailableAnnotators() {
-      return this.preCorefAnnotators() + ", dcoref";
+//      return this.preCorefAnnotators() + ", dcoref";
+      return this.preCorefAnnotators();
     }
 //
 //    @Override
@@ -160,9 +161,10 @@ public enum PipelineLanguage {
     }
 
     @Override
-    String tokenizationAnnotators() {
-      return "segment, ssplit";
-    }
+//    String tokenizationAnnotators() {
+//      return "segment, ssplit, tokenize";
+//    }
+    String tokenizationAnnotators() { return "tokenize, ssplit"; }
 
     @Override
     String preCorefAnnotators() {
