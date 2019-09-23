@@ -51,7 +51,7 @@ public enum PipelineLanguage {
 
     @Override
     String preCorefAnnotators() {
-      return this.tokenizationAnnotators() + ", pos, lemma, parse, ner";
+      return this.tokenizationAnnotators() + ", pos, lemma, parse, ner, dcoref";
     }
 
     @Override
@@ -166,7 +166,7 @@ public enum PipelineLanguage {
 
     @Override
     String preCorefAnnotators() {
-      return this.tokenizationAnnotators() + ", pos, ner, parse";
+      return this.tokenizationAnnotators() + ", pos, ner, parse, dcoref";
     }
 
     @Override

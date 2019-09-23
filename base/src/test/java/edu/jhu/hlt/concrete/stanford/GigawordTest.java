@@ -86,6 +86,7 @@ public class GigawordTest {
 
     CachedSectionedCommunication csc = new CachedSectionedCommunication(this.comm);
     TokenizedCommunication tkzc = this.analytic.annotate(csc);
+    LOGGER.info("annotate object: {}", tkzc);
     Communication newComm = tkzc.getRoot();
     List<Section> osList = tkzc.getSections();
     osList.forEach(sect -> {
@@ -136,7 +137,7 @@ public class GigawordTest {
 
     for (Token t : secondSect.getSentenceListIterator().next().getTokenization().getTokenList().getTokenList()) {
       TextSpan tts = t.getTextSpan();
-      // LOGGER.info("Got token TS: {}", tts);
+       LOGGER.info("Got token TS: {}", tts);
     }
 
     Section thirdSect = asList.get(2);

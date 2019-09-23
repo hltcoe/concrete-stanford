@@ -7,10 +7,10 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="concrete-stanford-annotate" />
-        <module name="concrete-stanford-chinese" />
-        <module name="concrete-stanford-base" />
         <module name="concrete-stanford-spanish" />
+        <module name="concrete-stanford-base" />
         <module name="concrete-stanford-english" />
+        <module name="concrete-stanford-chinese" />
       </profile>
     </annotationProcessing>
   </component>
