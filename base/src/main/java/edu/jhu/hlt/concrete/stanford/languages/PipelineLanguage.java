@@ -55,13 +55,13 @@ public enum PipelineLanguage {
 
     @Override
     String preCorefAnnotators() {
-      return this.tokenizationAnnotators() + ", pos, lemma, parse, ner, dcoref";
+      return this.tokenizationAnnotators() + ", pos, lemma, parse, ner";
     }
 
     @Override
     String allAvailableAnnotators() {
-//      return this.preCorefAnnotators() + ", dcoref";
-      return this.preCorefAnnotators();
+      return this.preCorefAnnotators() + ", dcoref";
+//      return this.preCorefAnnotators();
     }
 //
 //    @Override
@@ -172,7 +172,7 @@ public enum PipelineLanguage {
 
     @Override
     String preCorefAnnotators() {
-      return this.tokenizationAnnotators() + ", pos, ner, parse, dcoref";
+      return this.tokenizationAnnotators() + ", pos, ner, parse";
     }
 
     @Override
@@ -216,7 +216,8 @@ public enum PipelineLanguage {
    * max thinks it matters.
    */
   public ImmutableList<String> getNonTokenizationAnnotators() {
-    ImmutableList<String> spl = ImmutableList.copyOf(this.allAvailableAnnotators().split(", "));
+      ImmutableList<String> spl = ImmutableList.copyOf(this.preCorefAnnotators().split(", "));
+//    ImmutableList<String> spl = ImmutableList.copyOf(this.allAvailableAnnotators().split(", "));
     ImmutableList.Builder<String> b = ImmutableList.builder();
     for (String s : spl) {
       if (!SENTENCE_TOKENS_ANNOTATORS.contains(s))
@@ -224,6 +225,16 @@ public enum PipelineLanguage {
     }
     return b.build();
   }
+
+  public ImmutableList<String> getNonTokenizationAnnotators_1() {
+    ImmutableList<String> spl = ImmutableList.copyOf(this.allAvailableAnnotators().split(", "));
+        ImmutableList.Builder<String> b = ImmutableList.builder();
+        for (String s : spl) {
+            if (!SENTENCE_TOKENS_ANNOTATORS.contains(s))
+                b.add(s);
+        }
+        return b.build();
+    }
 
   /*
    * (non-Javadoc)
@@ -275,9 +286,9 @@ public enum PipelineLanguage {
   }
 
   public ConcreteStanfordPreCorefAnalytic getAllAnalytic() {
-    Properties props = this.getProperties(this.preCorefAnnotators());
+    Properties props = this.getProperties(this.allAvailableAnnotators());
     return new ConcreteStanfordPreCorefAnalytic(props,
         this.getHeadFinder(), this.getGrammaticalFactory(),
-        this.getNonTokenizationAnnotators(), true);
+        this.getNonTokenizationAnnotators_1(), true);
   }
 }
