@@ -20,11 +20,8 @@ import edu.stanford.nlp.trees.EnglishGrammaticalStructureFactory;
 import edu.stanford.nlp.trees.GrammaticalStructureFactory;
 import edu.stanford.nlp.trees.HeadFinder;
 import edu.stanford.nlp.trees.SemanticHeadFinder;
-import edu.stanford.nlp.trees.UniversalSemanticHeadFinder;
 import edu.stanford.nlp.trees.international.pennchinese.ChineseGrammaticalStructureFactory;
-import edu.stanford.nlp.trees.international.pennchinese.UniversalChineseGrammaticalStructureFactory;
 import edu.stanford.nlp.trees.international.pennchinese.ChineseSemanticHeadFinder;
-import edu.stanford.nlp.trees.international.pennchinese.UniversalChineseSemanticHeadFinder;
 import edu.stanford.nlp.trees.international.spanish.SpanishHeadFinder;
 //import edu.stanford.nlp.pipeline.ChineseSegmenterAnnotator
 
@@ -141,8 +138,6 @@ public enum PipelineLanguage {
       props.setProperty("segment.sighanCorporaDict", "edu/stanford/nlp/models/segmenter/chinese");
       props.setProperty("segment.serDictionary", "edu/stanford/nlp/models/segmenter/chinese/dict-chris6.ser.gz");
       props.setProperty("segment.sighanPostProcessing", "true");
-      //below property added to support the ssplit
-//      props.setProperty("tokenize.language", "cn");
       props.setProperty("ssplit.boundaryTokenRegex", "[.]|[!?]+|[。]|[！？]+");
       props.setProperty("pos.model", "edu/stanford/nlp/models/pos-tagger/chinese-distsim/chinese-distsim.tagger");
       props.setProperty("ner.model", "edu/stanford/nlp/models/ner/chinese.misc.distsim.crf.ser.gz");
