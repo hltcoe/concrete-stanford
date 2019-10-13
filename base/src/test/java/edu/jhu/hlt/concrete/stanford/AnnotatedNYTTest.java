@@ -79,31 +79,7 @@ public class AnnotatedNYTTest {
     Annotation document = new Annotation(text);
     // run all Annotators on this text
     pipeline.annotate(document);
-    // commented code below is working example for openie annotation, test will fail if we openie not used
-//    for (CoreMap sentence : document.get(CoreAnnotations.SentencesAnnotation.class)) {
-//      // Get the OpenIE triples for the sentence
-//      Collection<RelationTriple> triples =
-//              sentence.get(NaturalLogicAnnotations.RelationTriplesAnnotation.class);
-//      // Print the triples
-//      for (RelationTriple triple : triples) {
-//        LOGGER.debug("triple confidence & elements {}", triple.confidence + "\t" +
-//                triple.subjectLemmaGloss() + "\t" +
-//                triple.relationLemmaGloss() + "\t" +
-//                triple.objectLemmaGloss());
-//      }
-//    }
-
-
     LOGGER.debug("Debug document: {}", document);
-//    LOGGER.debug("Core{}", document.get(CorefChainAnnotation.class));
-
-  // run all Annotators on this text
-//    pipeline.annotate(document);
-//    for (CorefChain cc : document.get(CorefCoreAnnotations.CorefChainAnnotation.class).values()) {
-//      System.out.println("\t" + cc);
-//      LOGGER.debug("Got coref val: {}", cc);
-//    }
-
     // This is the coreference link graph
     // Each chain stores a set of mentions that link to each other,
     // along with a method for getting the most representative mention

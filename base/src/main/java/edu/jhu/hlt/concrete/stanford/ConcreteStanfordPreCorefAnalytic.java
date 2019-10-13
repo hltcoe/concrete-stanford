@@ -108,7 +108,6 @@ public class ConcreteStanfordPreCorefAnalytic implements TokenizationedCommunica
   public List<String> getToolNotes() {
     return new ArrayList<>();
   }
-
   private static List<Sentence> annotationToSentenceList(Annotation anno, HeadFinder hf, final List<Sentence> origSentListRef, final AnalyticUUIDGenerator gen)
       throws AnalyticException {
     List<Sentence> slist = new ArrayList<>();
